@@ -48,21 +48,42 @@ export function bindWorldInput(world) {
   return reset;
 }
 
-export function bindTouchMovement(buttons, world, canMove) {
-  const held = new Map(), keyFor = { up: 'w', down: 's', left: 'a', right: 'd' };
-  const reset = () => { held.forEach(key => world.keys.delete(key)); held.clear(); buttons.forEach(b => b.classList.remove('held')); };
-  for (const button of buttons) {
-    const key = keyFor[button.dataset.direction];
-    button.addEventListener('pointerdown', e => {
-      e.preventDefault(); if (!canMove()) return;
-      held.set(e.pointerId, key); world.keys.add(key); button.classList.add('held'); button.setPointerCapture(e.pointerId);
-    });
-    const release = e => {
-      held.delete(e.pointerId); if (![...held.values()].includes(key)) { world.keys.delete(key); button.classList.remove('held'); }
-    };
-    for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) button.addEventListener(event, release);
-  }
-  window.addEventListener('blur', reset); document.addEventListener('visibilitychange', reset);
+export function bindVirtualStick(base, thumb, world, canMove) {
+  let activePointer = null;
+  world.stick = { x: 0, y: 0 };
+  const reset = () => {
+    const id = activePointer; activePointer = null;
+    world.stick.x = world.stick.y = 0;
+    thumb.style.transform = 'translate3d(0px, 0px, 0)';
+    base.classList.remove('active');
+    if (id !== null && base.hasPointerCapture?.(id)) base.releasePointerCapture(id);
+  };
+  const move = e => {
+    if (e.pointerId !== activePointer) return;
+    if (!canMove()) { reset(); return; }
+    const rect = base.getBoundingClientRect();
+    const radius = Math.max(1, (rect.width - (thumb.getBoundingClientRect().width || rect.width * .44)) / 2);
+    const dx = e.clientX - rect.left - rect.width / 2, dy = e.clientY - rect.top - rect.height / 2;
+    const length = Math.hypot(dx, dy), amount = Math.min(1, length / radius);
+    const x = length ? dx / length : 0, y = length ? dy / length : 0;
+    // A small dead zone avoids drifting when the thumb rests near the centre.
+    const speed = Math.max(0, (amount - .12) / .88);
+    world.stick.x = x * speed; world.stick.y = y * speed;
+    thumb.style.transform = `translate3d(${x * amount * radius}px, ${y * amount * radius}px, 0)`;
+  };
+  base.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    if (activePointer !== null || !canMove() || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    activePointer = e.pointerId; base.setPointerCapture(e.pointerId); base.classList.add('active');
+    // Take over from tap-to-walk, including a centred press in the dead zone.
+    world.destination = null; world.marker.visible = false; move(e);
+  });
+  base.addEventListener('pointermove', move);
+  const release = e => { if (e.pointerId === activePointer) reset(); };
+  for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) base.addEventListener(event, release);
+  base.addEventListener('contextmenu', e => e.preventDefault());
+  window.addEventListener('blur', reset); window.addEventListener('resize', reset);
+  document.addEventListener('visibilitychange', reset);
   return reset;
 }
 

@@ -302,7 +302,11 @@ export class CityWorld {
       if (this.keys.has('a') || this.keys.has('arrowleft')) x--;
       if (this.keys.has('d') || this.keys.has('arrowright')) x++;
       let direction = new THREE.Vector3();
-      if (x || z) { direction.set(x, 0, z).normalize().applyAxisAngle(new THREE.Vector3(0, 1, 0), this.yaw); this.destination = null; this.marker.visible = false; }
+      const stick = this.stick || { x: 0, y: 0 };
+      if (x || z || stick.x || stick.y) {
+        if (x || z) direction.set(x, 0, z).normalize();
+        else direction.set(stick.x, 0, stick.y);
+        direction.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.yaw); this.destination = null; this.marker.visible = false; }
       else if (this.destination) { direction.subVectors(this.destination, this.player.position); if (direction.length() < .15) { this.destination = null; this.marker.visible = false; direction.set(0, 0, 0); } else direction.normalize(); }
       if (direction.lengthSq()) { this.player.position.addScaledVector(direction, 4.6 * dt); this.player.rotation.y = Math.atan2(direction.x, direction.z); }
       this.player.position.x = clamp(this.player.position.x, -6.7, 6.7); this.player.position.z = clamp(this.player.position.z, -24.5, 27.5);

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Window } from 'happy-dom';
 import { Vector2 } from 'three';
-import { bindWorldInput, bindTouchMovement, renderProfile } from '../src/input.js';
+import { bindWorldInput, bindVirtualStick, renderProfile } from '../src/input.js';
 
 function environment() {
   const window = new Window(), previous = { window: globalThis.window, document: globalThis.document };
@@ -38,17 +38,47 @@ test('touch tap, drag, pinch, and cancellation stay distinct and use canvas coor
     world.keys.add('w'); window.dispatchEvent(new window.Event('blur')); assert.equal(world.keys.size, 0);
   } finally { restore(); }
 });
-test('multi-touch movement supports diagonals, releases outside the button, and stops on background', () => {
+test('round stick supports analogue 360-degree movement, dead zone and clamping', () => {
   const { window, restore } = environment();
   try {
-    const buttons = ['up', 'right'].map(direction => { const button = window.document.createElement('button'); button.dataset.direction = direction; button.setPointerCapture = () => {}; return button; });
-    const world = { keys: new Set() }; let canMove = true;
-    bindTouchMovement(buttons, world, () => canMove);
-    pointer(window, buttons[0], 'pointerdown', 1); pointer(window, buttons[1], 'pointerdown', 2);
-    assert.deepEqual([...world.keys].sort(), ['d', 'w']);
-    pointer(window, buttons[0], 'lostpointercapture', 1); assert.deepEqual([...world.keys], ['d']);
-    window.document.dispatchEvent(new window.Event('visibilitychange')); assert.equal(world.keys.size, 0); assert.equal(buttons[1].classList.contains('held'), false);
-    canMove = false; pointer(window, buttons[0], 'pointerdown', 3); assert.equal(world.keys.size, 0);
+    const base = window.document.createElement('div'), thumb = window.document.createElement('span');
+    base.setPointerCapture = () => {}; base.getBoundingClientRect = () => ({ left: 10, top: 20, width: 140, height: 140 });
+    thumb.getBoundingClientRect = () => ({ width: 60 });
+    const world = { destination: { x: 1 }, marker: { visible: true } };
+    bindVirtualStick(base, thumb, world, () => true);
+    pointer(window, base, 'pointerdown', 1, 80, 90);
+    assert.equal(world.stick.x, 0); assert.equal(world.stick.y, 0); assert.equal(world.destination, null);
+    assert.equal(world.marker.visible, false);
+    pointer(window, base, 'pointermove', 1, 83, 90); assert.equal(world.stick.x, 0, 'tiny thumb movement stays inside the dead zone');
+    pointer(window, base, 'pointermove', 1, 100, 90);
+    assert.ok(world.stick.x > .4 && world.stick.x < .5, 'half displacement gives a slow walk');
+    pointer(window, base, 'pointermove', 1, 120, 90); assert.equal(world.stick.x, 1); assert.equal(world.stick.y, 0);
+    pointer(window, base, 'pointermove', 1, 200, -30);
+    assert.ok(world.stick.x > 0 && world.stick.y < 0);
+    assert.ok(Math.abs(Math.hypot(world.stick.x, world.stick.y) - 1) < 1e-10, 'diagonal speed cannot exceed straight movement');
+    const before = { ...world.stick };
+    pointer(window, base, 'pointerdown', 2, 10, 10); pointer(window, base, 'pointerup', 2);
+    assert.deepEqual(world.stick, before, 'another finger cannot take over or release the active stick');
+    pointer(window, base, 'pointerup', 1, 200, -30);
+    assert.deepEqual(world.stick, { x: 0, y: 0 }); assert.equal(base.classList.contains('active'), false);
+    assert.equal(thumb.style.transform, 'translate3d(0px, 0px, 0)');
+  } finally { restore(); }
+});
+test('stick stops on cancellation, lost capture, background, resize, and a gameplay pause', () => {
+  const { window, restore } = environment();
+  try {
+    const base = window.document.createElement('div'), thumb = window.document.createElement('span');
+    base.setPointerCapture = () => {}; base.getBoundingClientRect = () => ({ left: 0, top: 0, width: 140, height: 140 });
+    thumb.getBoundingClientRect = () => ({ width: 60 });
+    const world = { marker: { visible: false } }; let canMove = true;
+    const reset = bindVirtualStick(base, thumb, world, () => canMove);
+    const press = () => { pointer(window, base, 'pointerdown', 1, 110, 70); assert.equal(world.stick.x, 1); };
+    for (const event of ['pointercancel', 'lostpointercapture']) { press(); pointer(window, base, event, 1); assert.equal(world.stick.x, 0); }
+    for (const event of ['blur', 'resize']) { press(); window.dispatchEvent(new window.Event(event)); assert.equal(world.stick.x, 0); }
+    press(); window.document.dispatchEvent(new window.Event('visibilitychange')); assert.equal(world.stick.x, 0);
+    press(); canMove = false; pointer(window, base, 'pointermove', 1, 120, 70); assert.equal(world.stick.x, 0);
+    pointer(window, base, 'pointerdown', 2, 120, 70); assert.equal(world.stick.x, 0);
+    canMove = true; press(); reset(); assert.equal(world.stick.x, 0);
   } finally { restore(); }
 });
 test('phone rendering budget remains low after rotating into landscape', () => {

@@ -43,8 +43,13 @@ button, a { touch-action: manipulation; }
   .camera-help::before { content: 'タップで移動 · 2本指でズーム'; font-size: 10px; }
   .camera-help button { min-height: 44px; padding: 0 8px; font-size: 12px; }
   #touch-controls { display: block; left: max(12px, var(--safe-left)); bottom: calc(56px + var(--safe-bottom)); user-select: none; -webkit-user-select: none; }
-  #touch-controls button { width: 52px; height: 52px; margin: 3px; font-size: 22px; border-radius: 12px; background: #172431f5; }
-  #touch-controls button.held { background: #9ce6c5; color: #142b23; border-color: #9ce6c5; }
+  .movement-stick { position: relative; width: 140px; height: 140px; border: 1px solid #b6e9d544; border-radius: 50%; background: radial-gradient(circle, #9ce6c50a 38%, #182b3ae6 40%, #14202dda 70%); box-shadow: inset 0 0 0 8px #ffffff04, 0 6px 22px #0003; touch-action: none; cursor: grab; }
+  .movement-stick::before { content: ''; position: absolute; inset: 19px; border: 1px dashed #b6e9d52b; border-radius: 50%; pointer-events: none; }
+  .stick-guide { position: absolute; inset: 0; border-radius: 50%; pointer-events: none; background: linear-gradient(#b6e9d521, #b6e9d521) center / 1px 74% no-repeat, linear-gradient(#b6e9d521, #b6e9d521) center / 74% 1px no-repeat; }
+  .stick-thumb { position: absolute; left: calc(50% - 31px); top: calc(50% - 31px); width: 62px; height: 62px; border: 1px solid #b4f4d6aa; border-radius: 50%; background: radial-gradient(circle at 35% 25%, #c2f3dc, #75bda1); box-shadow: 0 5px 14px #0006, inset 0 0 0 5px #ffffff18; pointer-events: none; will-change: transform; }
+  .movement-stick.active { border-color: #9ce6c59c; cursor: grabbing; }
+  .movement-stick.active .stick-thumb { box-shadow: 0 5px 14px #0006, 0 0 15px #9ce6c53d; }
+  #stick-help { display: block; margin-top: 7px; color: #b5c5cf; font-size: 10px; letter-spacing: 1px; pointer-events: none; }
   .touch-actions { position: absolute; right: max(12px, var(--safe-right)); bottom: calc(62px + var(--safe-bottom)); display: flex; flex-direction: column; align-items: flex-end; gap: 12px; pointer-events: auto; }
   #nearby-person { order: 2; min-height: 56px; padding: 12px 14px; background: #9ce6c5; color: #152d25; border-color: #9ce6c5; font-size: 12px; font-weight: 700; border-radius: 14px; }
   #nearby-person span { font-size: 18px; margin-left: 6px; }
@@ -71,7 +76,7 @@ button, a { touch-action: manipulation; }
   #app:not([data-mode='explore']):not([data-mode='escort']) :is(#touch-controls, .touch-actions) { display: none; }
   #app[data-mode='escort'] #nearby-person { display: none; }
   .toast { top: auto; bottom: calc(190px + var(--safe-bottom)); max-width: calc(100% - 24px - var(--safe-left) - var(--safe-right)); padding: 12px 15px; font-size: 12px; line-height: 1.7; z-index: 7; }
-  .escort { left: max(12px, var(--safe-left)); right: max(12px, var(--safe-right)); bottom: calc(195px + var(--safe-bottom)); padding: 14px; max-width: none; background: #182130f5; }
+  .escort { left: max(12px, var(--safe-left)); right: max(12px, var(--safe-right)); bottom: calc(234px + var(--safe-bottom)); padding: 14px; max-width: none; background: #182130f5; }
   .escort h2 { font-size: 15px; margin: 8px 0; }
   .escort p { font-size: 11px; margin: 8px 0; }
   .escort-row { gap: 8px; margin-top: 10px; flex-wrap: wrap; }
@@ -110,7 +115,7 @@ button, a { touch-action: manipulation; }
   .brand small { font-size: 7px; }
   .map-switch button span, .location h1 span { display: none; }
   .map-switch button { padding: 8px 12px; }
-  #touch-controls button { width: 46px; height: 50px; margin: 2px; }
+  .movement-stick { width: 124px; height: 124px; }
   #nearby-person { padding: 10px; font-size: 11px; }
   .intro h2 { font-size: 50px; }
 }
@@ -124,6 +129,8 @@ button, a { touch-action: manipulation; }
   .escort .eyebrow, .escort p { display: none; }
   .escort h2 { font-size: 13px; margin: 0; }
   .escort-row { margin-top: 4px; }
+  .movement-stick { width: 112px; height: 112px; }
+  #stick-help { display: none; }
   .intro h2 { font-size: 42px; margin: 15px auto; }
   .intro-steps, .intro .intro-tip { display: none; }
   .responses { position: sticky; bottom: -20px; padding: 8px 0; background: #182130; }

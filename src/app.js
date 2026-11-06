@@ -1,4 +1,4 @@
-import { bindTouchMovement } from './input.js';
+import { bindVirtualStick } from './input.js';
 import { OPENERS, RESPONSES, evaluateOpener, buildLines, applyResponse, rank, loadBest, saveBest } from './game.js';
 
 export function startGame(CityWorld) {
@@ -88,7 +88,7 @@ function completeEscort() {
 function changeMap(map) {
   if (state.map === map) return;
   if (state.mode !== 'explore') { toast('今の会話や同行を終えてから、エリアを切り替えよう。'); return; }
-  closeInspect(); state.map = map; world.setMap(map); document.querySelectorAll('[data-map]').forEach(b => b.classList.toggle('active', b.dataset.map === map));
+  resetTouch(); closeInspect(); state.map = map; world.setMap(map); document.querySelectorAll('[data-map]').forEach(b => b.classList.toggle('active', b.dataset.map === map));
   const night = map === 'kabukicho'; $('location-name').innerHTML = night ? '歌舞伎町<span> KABUKICHO</span>' : '名古屋駅<span> NAGOYA STATION</span>';
   $('location-description').textContent = night ? 'ネオンの向こうに、今日の出会い。' : 'いつもの駅に、新しいきっかけ。'; $('weather').innerHTML = night ? '◐ 21:30 <span>夜のにぎわい · 警戒度 高め</span>' : '☀ 15:00 <span>穏やかな午後 · 待ち合わせの街</span>'; $('map-coord').textContent = night ? '新宿 / TOKYO' : '名駅 / NAGOYA';
   mission('OBSERVE', 'まずは、街を歩こう。', '近くの人を選んで、サインを観察。'); toast(night ? '歌舞伎町へ。夜は相手の警戒にも気を配ろう。' : '名古屋駅へ。金時計のまわりを歩いてみよう。');
@@ -107,7 +107,7 @@ $('goal-walk').addEventListener('click', () => { if (state.mode === 'escort') wo
 $('escort-cancel').addEventListener('click', () => { finishNpc(world.companion); explore(); toast('同行を終えた。またね、と挨拶して別れた。'); });
 $('camera-reset').addEventListener('click', () => world.resetCamera()); document.querySelectorAll('[data-map]').forEach(b => b.addEventListener('click', () => changeMap(b.dataset.map)));
 $('sound').addEventListener('click', () => { state.sound = !state.sound; $('sound').innerHTML = `♪<span>${state.sound ? 'ON' : 'OFF'}</span>`; $('sound').setAttribute('aria-pressed', String(state.sound)); $('sound').setAttribute('aria-label', `効果音を${state.sound ? 'オフ' : 'オン'}にする`); tone(); });
-resetTouch = bindTouchMovement([...document.querySelectorAll('[data-direction]')], world, () => ['explore', 'escort'].includes(state.mode) && !state.selected);
+resetTouch = bindVirtualStick($('movement-stick'), $('stick-thumb'), world, () => ['explore', 'escort'].includes(state.mode) && !state.selected);
 function nearestPerson() {
   return (world.npcs || []).filter(n => !n.ambient && n.cooldown <= state.elapsed && world.distanceTo(n) < 10).sort((a, b) => world.distanceTo(a) - world.distanceTo(b))[0];
 }
