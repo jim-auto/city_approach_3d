@@ -23,7 +23,7 @@ test('both detailed maps build and repeated switches clean up NPC labels and GPU
     });
     world.scene.background = new THREE.Color();
     world.setMap('kabukicho');
-    assert.equal(labels.size, 9);
+    assert.equal(labels.size, 11);
     assert.ok(world.npcs.some(n => n.ambient && !n.label));
     let disposedGeometry = false, disposedTexture = false, texture, disposedCharacter = false;
     const sharedFace = world.npcs[0].mesh.getObjectByName('face-and-hair').geometry;
@@ -36,7 +36,7 @@ test('both detailed maps build and repeated switches clean up NPC labels and GPU
     for (const map of ['nagoya', 'kabukicho', 'nagoya']) {
       world.setMap(map);
       assert.equal(world.map, map);
-      assert.equal(labels.size, 9, 'old labels must be removed, including maps with unlabelled pedestrians');
+      assert.equal(labels.size, 11, 'old labels must be removed, including maps with unlabelled pedestrians');
       assert.equal(world.scene.children.length, 1, 'old city must leave the scene');
       const batches = world.city.children.filter(o => o.isInstancedMesh);
       assert.ok(batches.length > 0, 'static scenery uses instanced drawing');

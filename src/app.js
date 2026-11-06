@@ -78,20 +78,20 @@ function endTalk(failed) {
   closeInspect(); result(failed ? '相手のペースを大切に。' : 'ひとときの会話を、ありがとう。', failed ? '少し戸惑わせてしまったようだ。追わずに離れて、次は相手の話をゆっくり聞こう。' : '会話はここでおしまい。提案は好感度だけでなく、タイミングも大切。', points, '街に戻る ↗', explore, !failed);
 }
 function beginEscort() {
-  closeInspect(); world.companion = state.talk.npc; state.talk = null; setMode('escort'); $('escort').hidden = false; mission('WALK TOGETHER', 'ラウンジまで、一緒に。', '紫のマーカーへ、ふたりのペースで歩こう。', '03');
+  closeInspect(); world.companion = state.talk.npc; state.talk = null; setMode('escort'); $('escort').hidden = false; $('escort-description').textContent = state.map === 'nagoya' ? 'タワーズ側の入口へ。紫のマーカーが目印。' : '東宝ビルのホテル入口へ。紫のマーカーが目印。'; mission('WALK TOGETHER', 'ラウンジまで、一緒に。', '紫のマーカーへ、ふたりのペースで歩こう。', '03');
 }
 function completeEscort() {
   const n = world.companion; finishNpc(n); world.companion = null; $('escort').hidden = true;
   const clear = state.score + 100 >= 500 && !state.clearShown; if (clear) state.clearShown = true;
-  result(clear ? 'CITY CLEAR' : '街に、ひとつのつながり。', clear ? '500ポイント達成！ 相手の気持ちを大切にしながら、街の出会いを楽しめた。続けてベストスコアを更新しよう。' : 'ふたりでホテルラウンジに到着。相手のサインを読み、会話を聞いて、自然な提案ができた。', 100, 'また街を歩く ↗', explore, true);
+  result(clear ? 'CITY CLEAR' : '街に、ひとつのつながり。', clear ? '500ポイント達成！ 相手の気持ちを大切にしながら、街の出会いを楽しめた。続けてベストスコアを更新しよう。' : (state.map === 'nagoya' ? 'ふたりでタワーズ側の入口に到着。この先のラウンジで会話の続きを楽しもう。' : 'ふたりでホテルラウンジに到着。相手のサインを読み、会話を聞いて、自然な提案ができた。'), 100, 'また街を歩く ↗', explore, true);
 }
 function changeMap(map) {
   if (state.map === map) return;
   if (state.mode !== 'explore') { toast('今の会話や同行を終えてから、エリアを切り替えよう。'); return; }
   resetTouch(); closeInspect(); state.map = map; world.setMap(map); document.querySelectorAll('[data-map]').forEach(b => b.classList.toggle('active', b.dataset.map === map));
-  const night = map === 'kabukicho'; $('location-name').innerHTML = night ? '歌舞伎町<span> KABUKICHO</span>' : '名古屋駅<span> NAGOYA STATION</span>';
-  $('location-description').textContent = night ? 'ネオンの向こうに、今日の出会い。' : 'いつもの駅に、新しいきっかけ。'; $('weather').innerHTML = night ? '◐ 21:30 <span>夜のにぎわい · 警戒度 高め</span>' : '☀ 15:00 <span>穏やかな午後 · 待ち合わせの街</span>'; $('map-coord').textContent = night ? '新宿 / TOKYO' : '名駅 / NAGOYA';
-  mission('OBSERVE', 'まずは、街を歩こう。', '近くの人を選んで、サインを観察。'); toast(night ? '歌舞伎町へ。夜は相手の警戒にも気を配ろう。' : '名古屋駅へ。金時計のまわりを歩いてみよう。');
+  const night = map === 'kabukicho'; $('location-name').innerHTML = night ? '歌舞伎町<span> KABUKICHO</span>' : '名古屋駅<span> 中央コンコース</span>';
+  $('location-description').textContent = night ? 'ゴジラロードから、TOHOシネマズ新宿へ。' : '桜通口から太閤通口へ、駅構内を歩く。'; $('weather').innerHTML = night ? '◐ 21:30 <span>夜のにぎわい · 警戒度 高め</span>' : '◷ 15:00 <span>駅構内 · 金時計と銀時計を結ぶ通路</span>'; $('map-coord').textContent = night ? 'ゴジラロード' : '金時計 ↔ 銀時計'; document.querySelector('.compass span').textContent = night ? 'N' : 'W';
+  mission('OBSERVE', 'まずは、街を歩こう。', '近くの人を選んで、サインを観察。'); toast(night ? 'ゴジラロードへ。通りの奥がTOHOシネマズ新宿。' : '名古屋駅の構内へ。金時計から中央通路を進むと銀時計。');
 }
 try { world = new CityWorld($('world'), $('labels'), selectNpc, () => {}); }
 catch (error) { console.error(error); $('fatal').hidden = false; throw error; }

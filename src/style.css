@@ -4,3 +4,5 @@
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
 
 .person-icon{width:64px;height:72px;flex-shrink:0;overflow:hidden;border-radius:12px}.person-icon img{display:block;width:100%;height:100%;object-fit:cover}
+
+.npc-label.landmark-label{pointer-events:none;min-height:0;min-width:0;padding:6px 9px;color:#d7e4ed;font-size:10px;background:#192a3be8;border-color:#bfced650}.landmark-gold-clock{color:#f2d792!important}.landmark-silver-clock{color:#d8e7f1!important}

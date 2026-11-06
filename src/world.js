@@ -2,31 +2,10 @@ import * as THREE from 'three';
 import { PROFILES, clamp } from './game.js';
 import { bindWorldInput, renderProfile } from './input.js';
 import { createCharacter, animateCharacter, isCharacterResource } from './characters.js';
+import { mats, boxGeo, material, box, cylinder, textSign } from './scenery.js';
+import { buildNagoyaConcourse, buildKabukichoLandmarks, MAP_LAYOUTS } from './locations.js';
+import { planPath, resolveDestination, isWalkable } from './navigation.js';
 
-const mats = new Map();
-function material(color, glow = false) {
-  const key = `${color}-${glow}`;
-  if (!mats.has(key)) mats.set(key, new THREE.MeshStandardMaterial({ color, roughness: glow ? 0.4 : 0.85, metalness: 0.08, emissive: glow ? color : 0x000000, emissiveIntensity: glow ? 1.6 : 0 }));
-  return mats.get(key);
-}
-const boxGeo = new THREE.BoxGeometry(1, 1, 1);
-function box(parent, x, y, z, w, h, d, color, glow = false) {
-  const m = new THREE.Mesh(boxGeo, material(color, glow));
-  m.position.set(x, y, z); m.scale.set(w, h, d); m.castShadow = !glow; m.receiveShadow = true; parent.add(m); return m;
-}
-function cylinder(parent, x, y, z, radius, height, color, sides = 10) {
-  const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, height, sides), material(color));
-  mesh.position.set(x, y, z); mesh.castShadow = true; mesh.receiveShadow = true; parent.add(mesh); return mesh;
-}
-function textSign(parent, text, x, y, z, width, height, bg, fg, rotation = 0) {
-  const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = Math.round(512 * height / width);
-  const ctx = canvas.getContext('2d'); ctx.fillStyle = bg; ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.strokeStyle = fg; ctx.lineWidth = 8; ctx.strokeRect(9, 9, 494, canvas.height - 18);
-  ctx.fillStyle = fg; ctx.font = `700 ${Math.min(canvas.height * .55, 440 / Math.max(text.length * .6, 1))}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, 256, canvas.height * .52, 460);
-  const tex = new THREE.CanvasTexture(canvas); tex.colorSpace = THREE.SRGBColorSpace;
-  const m = new THREE.Mesh(new THREE.PlaneGeometry(width, height), new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide }));
-  m.position.set(x, y, z); m.rotation.y = rotation; parent.add(m); return m;
-}
 export class CityWorld {
   constructor(container, labels, onSelect, onMove) {
     this.container = container; this.labels = labels; this.onSelect = onSelect; this.onMove = onMove;
@@ -50,7 +29,7 @@ export class CityWorld {
     this.registerInput(); this.setMap('kabukicho');
     this.resizeObserver = new ResizeObserver(() => this.resize()); this.resizeObserver.observe(container);
   }
-  makeLabel(text, cls = '') { const interactive = !cls.includes('player-label') && !cls.includes('goal-label'); const el = document.createElement(interactive ? 'button' : 'div'); if (!interactive) el.setAttribute('aria-hidden', 'true'); el.className = `npc-label ${cls}`; el.textContent = text; this.labels.append(el); return el; }
+  makeLabel(text, cls = '') { const interactive = !cls.includes('player-label') && !cls.includes('goal-label') && !cls.includes('landmark-label'); const el = document.createElement(interactive ? 'button' : 'div'); if (!interactive) el.setAttribute('aria-hidden', 'true'); el.className = `npc-label ${cls}`; el.textContent = text; this.labels.append(el); return el; }
   setMap(map) {
     if (this.city) {
       this.scene.remove(this.city);
@@ -62,35 +41,35 @@ export class CityWorld {
         o.shadow?.dispose();
       });
       resources.forEach(resource => resource.dispose());
-      this.npcs.forEach(n => n.label?.remove()); this.goalLabel.remove();
+      this.npcs.forEach(n => n.label?.remove()); this.goalLabel.remove(); (this.landmarkLabels || []).forEach(item => item.el.remove());
     }
     this.map = map; this.city = new THREE.Group(); this.scene.add(this.city); this.selected = null; this.companion = null; this.destination = null; this.marker.visible = false;
+    this.layout = MAP_LAYOUTS[map]; this.waypoints = [];
     const night = map === 'kabukicho';
-    this.scene.background.set(night ? '#141b2d' : '#a4b1bc'); this.scene.fog = new THREE.Fog(night ? '#141b2d' : '#a4b1bc', 35, 88);
+    this.scene.background.set(night ? '#141b2d' : '#b4bdbb'); this.scene.fog = new THREE.Fog(night ? '#141b2d' : '#b4bdbb', night ? 42 : 48, 100);
     this.city.add(new THREE.HemisphereLight(night ? '#a9bafa' : '#f5ecdc', night ? '#3d344b' : '#737e7b', night ? 2.1 : 2.8));
     const sun = new THREE.DirectionalLight(night ? '#b7c8ff' : '#ffe3ad', night ? 2 : 3.6); sun.position.set(-12, 27, 15); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -28, right: 28, top: 30, bottom: -30, far: 85 }); sun.shadow.bias = -.001; this.city.add(sun);
-    box(this.city, 0, -.7, 0, 36, 1.2, 64, night ? '#1b2436' : '#7b8589');
-    box(this.city, 0, -.07, 0, 17, .18, 62, night ? '#2d3548' : '#a6aaa8');
-    // Pavement joints, curb edges and crosswalk create readable movement space.
-    for (let z = -30; z <= 30; z += 2) for (let x = -8; x < 8; x += 2) box(this.city, x + 1, .026, z, 1.97, .015, .025, night ? '#41485b' : '#bcc0bc');
-    for (let x = -6; x <= 6; x += 1.5) box(this.city, x, .035, 12, .85, .02, 3.7, night ? '#9b9ba8' : '#e4e0cf');
-    for (const side of [-1, 1]) {
-      box(this.city, side * 8.7, .06, 0, 1.2, .3, 62, night ? '#46495b' : '#b7b8ae');
-      box(this.city, side * 8.05, .045, 0, .08, .04, 60, night ? '#b68583' : '#dbcf9b');
-      for (let i = 0; i < 9; i++) this.buildBuilding(side, -27 + i * 7, i, night);
-      for (let i = 0; i < 7; i++) this.streetLamp(side * 7.4, -23 + i * 8, night);
-      for (let i = 0; i < 5; i++) this.planter(side * 7.4, -19 + i * 11, night);
-    }
-    if (night) this.buildGate(); else this.buildStation();
-    this.buildAtmosphere(night);
-    this.goal = new THREE.Vector3(-6.1, 0, -22);
+    if (night) {
+      box(this.city, 0, -.7, 0, 47, 1.2, 78, '#1b2436');
+      box(this.city, 0, -.07, 0, 17, .18, 62, '#2d3548');
+      for (let z = -30; z <= 30; z += 2) for (let x = -8; x < 8; x += 2) box(this.city, x + 1, .026, z, 1.97, .015, .025, '#41485b');
+      for (const side of [-1, 1]) {
+        box(this.city, side * 8.7, .06, 4, 1.2, .3, 52, '#46495b');
+        box(this.city, side * 8.05, .045, 4, .08, .04, 52, '#b68583');
+        for (let i = 0; i < 7; i++) this.buildBuilding(side, -17 + i * 7, i, true);
+        for (let i = 0; i < 6; i++) this.streetLamp(side * 7.4, -16 + i * 8, true);
+        for (let i = 0; i < 4; i++) this.planter(side * 7.4, -13 + i * 11, true);
+      }
+      this.buildAtmosphere(true); buildKabukichoLandmarks(this.city);
+    } else buildNagoyaConcourse(this.city);
+    this.goal = new THREE.Vector3(this.layout.goal[0], 0, this.layout.goal[1]);
     const goalRing = new THREE.Mesh(new THREE.RingGeometry(1.1, 1.25, 48), new THREE.MeshBasicMaterial({ color: '#c6a0fa', side: THREE.DoubleSide, transparent: true, opacity: .75 }));
     goalRing.rotation.x = -Math.PI / 2; goalRing.position.copy(this.goal); goalRing.position.y = .04; this.city.add(goalRing);
     this.goalBeacon = new THREE.Mesh(new THREE.CylinderGeometry(.045, .045, 6, 8), new THREE.MeshBasicMaterial({ color: '#c6a0fa', transparent: true, opacity: .3 })); this.goalBeacon.position.copy(this.goal); this.goalBeacon.position.y = 3; this.city.add(this.goalBeacon);
-    this.goalLabel = this.makeLabel('HOTEL LOUNGE ↗', 'goal-label');
-    textSign(this.city, 'HOTEL LOUNGE', -10.2, 3, -21.9, 5, 1, '#22263d', '#d3b2f7', Math.PI / 2);
+    this.goalLabel = this.makeLabel(this.layout.goalLabel, 'goal-label');
+    this.landmarkLabels = this.layout.landmarks.slice(0, 2).map(item => ({ ...item, el: this.makeLabel(item.name, `landmark-label landmark-${item.id}`) }));
     this.batchScenery();
-    const positions = [[-3.4, 4], [3.2, 1], [-4, -5], [1.5, -10], [4.7, 8], [5.5, -7], [-5.5, 15], [3.5, -18]];
+    const positions = this.layout.people;
     this.npcs = PROFILES.map((profile, i) => {
       const mesh = createCharacter(profile.color, profile.hair, profile.id); mesh.position.set(positions[i][0], 0, positions[i][1]); mesh.rotation.y = i % 2 ? Math.PI * .8 : Math.PI * .2; this.city.add(mesh);
       const label = this.makeLabel(profile.traits[0], profile.guarded ? 'guarded' : ''); const n = { profile, mesh, label, home: mesh.position.clone(), phase: i * 1.8, cooldown: 0 };
@@ -98,10 +77,10 @@ export class CityWorld {
     });
     for (let i = 0; i < (this.mobile ? (night ? 6 : 4) : (night ? 18 : 12)); i++) {
       const mesh = createCharacter(['#72778d', '#9b8392', '#b3a184', '#758e8d'][i % 4], '#3b3440', PROFILES[i % PROFILES.length].id, { detailed: false });
-      mesh.position.set((i % 2 ? 1 : -1) * (1 + (i * 1.7) % 6), 0, -28 + (i * 4.3) % 56); mesh.scale.setScalar(.88 + (i % 3) * .06); this.city.add(mesh);
+      mesh.position.set((i % 2 ? 1 : -1) * (2.7 + (i * .7) % 3.5), 0, -28 + (i * 4.3) % 56); mesh.scale.setScalar(.88 + (i % 3) * .06); this.city.add(mesh);
       this.npcs.push({ mesh, ambient: true, speed: .45 + (i % 4) * .2, direction: i % 2 ? 1 : -1, phase: i });
     }
-    this.player.position.set(0, 0, 8); this.player.rotation.y = Math.PI; this.cameraTarget.copy(this.player.position); this.cameraTarget.y = 1; this.resetCamera();
+    this.player.position.set(this.layout.start[0], 0, this.layout.start[1]); this.player.rotation.y = Math.PI; this.cameraTarget.copy(this.player.position); this.cameraTarget.y = 1; this.resetCamera();
   }
   buildBuilding(side, z, i, night) {
     const w = 5.5 + i % 3, h = 7 + (i * 7 % 13), x = side * (9.7 + w / 2), front = side * 9.65;
@@ -213,31 +192,13 @@ export class CityWorld {
     for (let i = 0; i < 3; i++) { const bush = new THREE.Mesh(new THREE.IcosahedronGeometry(.6, 0), material(night ? '#3e6860' : '#658a6e')); bush.position.set(x, .9, z - .5 + i * .5); bush.scale.y = 1.4; bush.castShadow = true; this.city.add(bush); }
     box(this.city, x - Math.sign(x) * .3, .6, z + 2, .8, .12, 2, '#736759'); for (const d of [-.7, .7]) box(this.city, x, .3, z + 2 + d, .1, .6, .12, '#53616b');
   }
-  buildGate() {
-    for (const x of [-7, 7]) { box(this.city, x, 4.4, -15, .35, 8.8, .55, '#9a3f59'); box(this.city, x, 4.4, -14.68, .09, 8.8, .04, '#f5a7ba', true); }
-    box(this.city, 0, 8.6, -15, 14.5, 1.2, .6, '#723447');
-    textSign(this.city, '歌 舞 伎 町', 0, 8.6, -14.67, 10, 1, '#73374d', '#ffd1cc');
-    box(this.city, 0, 9.3, -15, 15, .15, .7, '#ee8d9e', true);
-  }
-  buildStation() {
-    box(this.city, 0, 5, -30, 29, 10, 6, '#b0b6b6');
-    box(this.city, 0, 2.5, -26.9, 15, 5, .2, '#344956');
-    for (let i = -6; i <= 6; i += 2) box(this.city, i, 2.5, -26.7, .1, 5, .2, '#b2bbb8');
-    box(this.city, 0, 6, -26, 22, .3, 3, '#d1d3c7');
-    textSign(this.city, 'NAGOYA STATION  /  名古屋駅', 0, 7.6, -26.9, 19, 1.5, '#455c62', '#edf4de');
-    // The meeting-point golden clock.
-    cylinder(this.city, 0, 1.5, -12, .24, 3, '#b49a5d'); cylinder(this.city, 0, .15, -12, 1, .3, '#b49a5d');
-    const clock = new THREE.Mesh(new THREE.CylinderGeometry(.82, .82, .25, 32), material('#dac286')); clock.rotation.x = Math.PI / 2; clock.position.set(0, 3.4, -12); this.city.add(clock);
-    textSign(this.city, '◷', 0, 3.4, -11.85, 1.3, 1.3, '#e3d9b9', '#554c37');
-    textSign(this.city, '金時計', 0, 2.3, -11.7, 1.2, .4, '#806b45', '#f6e3ac');
-    // Central tactile paving, with a gap around the clock.
-    for (let z = -24; z < 29; z += 1) if (Math.abs(z + 12) > 1.5) box(this.city, 0, .04, z, .45, .035, .92, '#c4ab62');
-  }
   // Static scenery shares geometry/material draw calls; animated people stay separate.
   batchScenery() {
     const batches = new Map();
-    for (const mesh of [...this.city.children]) {
-      if (mesh.geometry !== boxGeo) continue;
+    this.city.updateMatrixWorld(true);
+    const meshesToBatch = []; this.city.traverse(mesh => { if (mesh.geometry === boxGeo) meshesToBatch.push(mesh); });
+    const inverse = this.city.matrixWorld.clone().invert();
+    for (const mesh of meshesToBatch) {
       const key = `${mesh.material.uuid}-${mesh.castShadow}`;
       if (!batches.has(key)) batches.set(key, []);
       batches.get(key).push(mesh);
@@ -245,15 +206,18 @@ export class CityWorld {
     for (const meshes of batches.values()) {
       const batch = new THREE.InstancedMesh(boxGeo, meshes[0].material, meshes.length);
       batch.castShadow = meshes[0].castShadow; batch.receiveShadow = true;
-      meshes.forEach((mesh, i) => { mesh.updateMatrix(); batch.setMatrixAt(i, mesh.matrix); this.city.remove(mesh); });
+      meshes.forEach((mesh, i) => { batch.setMatrixAt(i, new THREE.Matrix4().multiplyMatrices(inverse, mesh.matrixWorld)); mesh.parent.remove(mesh); });
       batch.computeBoundingSphere(); this.city.add(batch);
     }
   }
   registerInput() { this.resetInput = bindWorldInput(this); }
   zoom(amount) { this.distance = clamp(this.distance + amount, 15, 43); }
   walkTo(pos) {
-    this.destination = new THREE.Vector3(clamp(pos.x, -6.7, 6.7), 0, clamp(pos.z, -24.5, 27.5));
-    this.marker.position.copy(this.destination); this.marker.position.y = .04; this.marker.visible = true;
+    const path = planPath(this.player.position, pos, this.layout);
+    this.waypoints = path.map(p => new THREE.Vector3(p.x, 0, p.z));
+    this.destination = this.waypoints.shift() || null;
+    if (path.length) { const end = path.at(-1); this.marker.position.set(end.x, .04, end.z); }
+    this.marker.visible = !!path.length;
   }
   resetCamera() { this.yaw = .23; this.distance = this.camera.aspect < .75 ? 32 : this.mobile ? 23 : 26; }
   select(n) { this.selected = n; this.npcs.filter(p => !p.ambient).forEach(p => p.label.classList.toggle('selected', p === n)); }
@@ -306,18 +270,25 @@ export class CityWorld {
       if (x || z || stick.x || stick.y) {
         if (x || z) direction.set(x, 0, z).normalize();
         else direction.set(stick.x, 0, stick.y);
-        direction.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.yaw); this.destination = null; this.marker.visible = false; }
-      else if (this.destination) { direction.subVectors(this.destination, this.player.position); if (direction.length() < .15) { this.destination = null; this.marker.visible = false; direction.set(0, 0, 0); } else direction.normalize(); }
+        direction.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.yaw); this.destination = null; this.waypoints = []; this.marker.visible = false; }
+      else if (this.destination) { direction.subVectors(this.destination, this.player.position); if (direction.length() < .15) { this.destination = this.waypoints.shift() || null; this.marker.visible = !!this.destination; direction.set(0, 0, 0); } else direction.normalize(); }
       if (direction.lengthSq()) { this.player.position.addScaledVector(direction, 4.6 * dt); this.player.rotation.y = Math.atan2(direction.x, direction.z); }
-      this.player.position.x = clamp(this.player.position.x, -6.7, 6.7); this.player.position.z = clamp(this.player.position.z, -24.5, 27.5);
-      if (this.map === 'nagoya' && Math.hypot(this.player.position.x, this.player.position.z + 12) < 1.1) { this.player.position.copy(previous); this.destination = null; this.marker.visible = false; }
+      const b = this.layout.bounds;
+      this.player.position.x = clamp(this.player.position.x, b.minX, b.maxX); this.player.position.z = clamp(this.player.position.z, b.minZ, b.maxZ);
+      if (!isWalkable(this.player.position, this.layout)) {
+        const next = this.player.position.clone(); this.player.position.copy(previous);
+        if (isWalkable({ x: next.x, z: previous.z }, this.layout)) this.player.position.x = next.x;
+        else if (isWalkable({ x: previous.x, z: next.z }, this.layout)) this.player.position.z = next.z;
+      }
     }
     animateCharacter(this.player, previous.distanceToSquared(this.player.position) > .00001, time);
     for (const n of this.npcs) {
       let moving = false;
       if (!this.paused && n !== this.selected) {
         if (n === this.companion) {
-          const target = this.player.position.clone().add(new THREE.Vector3(1, 0, 1)); const dir = target.sub(n.mesh.position); if (dir.length() > 1.1) { dir.normalize(); n.mesh.position.addScaledVector(dir, 4.9 * dt); n.mesh.rotation.y = Math.atan2(dir.x, dir.z); moving = true; }
+          const follow = resolveDestination(this.player.position.clone().add(new THREE.Vector3(1, 0, 1)), this.layout);
+          const route = planPath(n.mesh.position, follow, this.layout);
+          const target = route.length ? new THREE.Vector3(route[0].x, 0, route[0].z) : n.mesh.position.clone(); const dir = target.sub(n.mesh.position); if (dir.length() > (route.length > 1 ? .12 : 1.1)) { dir.normalize(); n.mesh.position.addScaledVector(dir, 4.9 * dt); n.mesh.rotation.y = Math.atan2(dir.x, dir.z); moving = true; }
         } else if (n.ambient) { n.mesh.position.z += n.speed * n.direction * dt; n.mesh.rotation.y = n.direction === 1 ? 0 : Math.PI; if (Math.abs(n.mesh.position.z) > 29) n.mesh.position.z *= -.97; moving = true; }
         else if (n.profile.speed > .2) { const delta = Math.sin(time * .15 + n.phase); n.mesh.position.z = n.home.z + delta * (n.profile.guarded ? 3 : 1.4); n.mesh.rotation.y = Math.cos(time * .15 + n.phase) > 0 ? 0 : Math.PI; moving = true; }
       }
@@ -336,6 +307,9 @@ export class CityWorld {
     const desired = this.cameraTarget.clone().add(new THREE.Vector3(Math.sin(this.yaw) * horizontal, this.distance * .65, Math.cos(this.yaw) * horizontal));
     this.camera.position.lerp(desired, 1 - Math.exp(-dt * 5)); this.camera.lookAt(this.cameraTarget);
     this.camera.updateMatrixWorld(); this.placeLabel(this.playerLabel, this.player.position, 2.8); this.placeLabel(this.goalLabel, this.goal, 2.2);
+    for (const item of this.landmarkLabels) {
+      this.placeLabel(item.el, new THREE.Vector3(item.x, 0, item.z), this.map === 'nagoya' ? (item.id === 'gold-clock' ? 5.8 : 4.4) : 11.7);
+    }
     this.renderer.render(this.scene, this.camera);
   }
   drawMinimap(ctx) {
@@ -347,6 +321,12 @@ export class CityWorld {
     ctx.strokeStyle = '#7b696e'; ctx.strokeRect(34, 0, 112, 180);
     ctx.setLineDash([3, 4]); ctx.strokeStyle = '#60677a'; ctx.beginPath(); ctx.moveTo(90, 0); ctx.lineTo(90, 180); ctx.stroke(); ctx.setLineDash([]);
     for (const n of this.npcs) { const [x, y] = point(n.mesh.position); ctx.beginPath(); ctx.arc(x, y, n.ambient ? 1.3 : 2.4, 0, Math.PI * 2); ctx.fillStyle = n === this.selected ? '#a2e8c7' : n.ambient ? '#596477' : n.profile.guarded ? '#9295ae' : '#e4b48d'; ctx.fill(); }
+    ctx.font = '9px sans-serif'; ctx.textAlign = 'center';
+    for (const item of this.layout.landmarks) {
+      const [x, y] = point(item); ctx.fillStyle = item.color; ctx.beginPath(); ctx.arc(x, y, 3.5, 0, Math.PI * 2); ctx.fill();
+      if (this.map === 'nagoya' && item.id.includes('clock')) ctx.fillText(item.id === 'gold-clock' ? '金' : '銀', x + 13, y + 3);
+      if (item.id === 'toho-cinemas') ctx.fillText('TOHO', x, y + 12);
+    }
     const [gx, gy] = point(this.goal); ctx.fillStyle = '#c5a3f2'; ctx.fillRect(gx - 3, gy - 3, 6, 6);
     const [px, py] = point(this.player.position); ctx.fillStyle = '#a2e8c7'; ctx.shadowBlur = 9; ctx.shadowColor = '#a2e8c7'; ctx.beginPath(); ctx.arc(px, py, 3.5, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
     ctx.strokeStyle = '#a2e8c755'; ctx.beginPath(); ctx.arc(px, py, 8, 0, Math.PI * 2); ctx.stroke();

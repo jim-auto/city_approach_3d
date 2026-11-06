@@ -11,7 +11,7 @@
   <div class="top-actions"><button id="sound" class="icon-btn" aria-label="効果音をオンにする" aria-pressed="false">♪<span>OFF</span></button><button id="help" class="icon-btn" aria-label="遊び方">?</button></div>
 </header>
 <main>
-  <section class="location"><div class="eyebrow"><i></i> EXPLORING THE CITY</div><h1 id="location-name">歌舞伎町<span> KABUKICHO</span></h1><p id="location-description">ネオンの向こうに、今日の出会い。</p><div class="weather" id="weather">◐ 21:30 <span>夜のにぎわい · 警戒度 高め</span></div></section>
+  <section class="location"><div class="eyebrow"><i></i> EXPLORING THE CITY</div><h1 id="location-name">歌舞伎町<span> KABUKICHO</span></h1><p id="location-description">ゴジラロードから、TOHOシネマズ新宿へ。</p><div class="weather" id="weather">◐ 21:30 <span>夜のにぎわい · 警戒度 高め</span></div></section>
   <section class="scoreboard" aria-label="スコア"><div><span>SCORE</span><strong id="score">000</strong></div><div class="best"><span>BEST</span><strong id="best">000</strong></div><div class="rank"><span>RANK</span><strong id="rank">D</strong></div><div class="score-track"><i id="score-progress"></i></div><small id="clear-progress">CITY CLEAR まで 500 pt</small></section>
   <aside class="mission glass"><span class="mission-number" id="mission-number">01</span><div><small id="mission-step">OBSERVE</small><h2 id="mission-title">まずは、街を歩こう。</h2><p id="mission-text">近くの人を選んで、サインを観察。</p></div></aside>
   <div class="compass"><span>N</span><i>↑</i></div>
@@ -19,7 +19,7 @@
   <section id="inspect" class="inspect glass" hidden aria-label="相手を観察"><div class="panel-heading"><span class="eyebrow">OBSERVATION</span><button id="inspect-close" class="close" aria-label="観察を閉じる">×</button></div><div class="person-heading"><span id="person-icon" class="person-icon">◎</span><div><h2 id="person-name"></h2><span id="person-status">サインをよく見てみよう</span></div><span id="person-distance"></span></div><div id="traits" class="traits"></div><p id="person-cue"></p><div id="opener-actions" class="opener-actions"></div><button id="leave" class="leave">会釈して離れる <span>↗</span></button></section>
   <div id="walk-hint" class="walk-hint"><span class="hint-dot"></span> 人をクリックで観察 <span class="hint-divider">/</span> 地面をクリックで移動</div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <section id="escort" class="escort glass" hidden><span class="eyebrow">WALK TOGETHER</span><h2>ふたりで、もう少し歩こう。</h2><p>合意したホテルラウンジへ。紫のマーカーが目印。</p><div class="escort-row"><span id="goal-distance"></span><button id="goal-walk">ラウンジへ歩く ↗</button><button id="escort-cancel">同行を終える</button></div></section>
+  <section id="escort" class="escort glass" hidden><span class="eyebrow">WALK TOGETHER</span><h2>ふたりで、もう少し歩こう。</h2><p id="escort-description">東宝ビルのホテル入口へ。紫のマーカーが目印。</p><div class="escort-row"><span id="goal-distance"></span><button id="goal-walk">ラウンジへ歩く ↗</button><button id="escort-cancel">同行を終える</button></div></section>
 </main>
 <footer class="bottom-bar"><div class="keyboard-help"><kbd>W</kbd><div><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></div><span>移動 <small>矢印キーも使えます</small></span></div><div class="camera-help"><span>↔ ドラッグで視点回転</span><span>⊙ スクロールでズーム</span><button id="camera-reset">視点を戻す <kbd>R</kbd></button></div><span class="footer-note">OBSERVE. CONNECT. RESPECT.</span></footer>
 <div class="touch-actions"><button id="nearby-person">近くの人を見る <span>◎</span></button><div class="touch-zoom"><button id="zoom-in" aria-label="視点を近づける">＋</button><button id="zoom-out" aria-label="視点を遠ざける">−</button></div></div>
