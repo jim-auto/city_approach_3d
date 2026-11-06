@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ja">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#11151e"><meta name="description" content="街を歩き、相手のサインを読み、会話を楽しむ3Dブラウザゲーム。"><title>CITY APPROACH 3D — 街と、ひとと、きっかけと。</title>  <script type="module" crossorigin src="./assets/index-Dg6WXvPj.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/three-B3Ahm7Zt.js">
+  <link rel="stylesheet" crossorigin href="./assets/index-CBVTLKis.css">
+</head>
+<body>
+<div id="world" aria-label="3Dの街"></div>
+<div id="labels" aria-label="街の人々"></div>
+<div id="app">
+<header class="topbar">
+  <a class="brand" href="./" aria-label="CITY APPROACH 3D ホーム"><span class="brand-mark">C<span>↗</span></span><span>CITY APPROACH <b>3D</b><small>街と、ひとと、きっかけと。</small></span></a>
+  <nav class="map-switch" aria-label="エリア切替"><button data-map="nagoya">名古屋駅 <span>DAY</span></button><button data-map="kabukicho" class="active">歌舞伎町 <span>NIGHT</span></button></nav>
+  <div class="top-actions"><button id="sound" class="icon-btn" aria-label="効果音をオンにする" aria-pressed="false">♪<span>OFF</span></button><button id="help" class="icon-btn" aria-label="遊び方">?</button></div>
+</header>
+<main>
+  <section class="location"><div class="eyebrow"><i></i> EXPLORING THE CITY</div><h1 id="location-name">歌舞伎町<span> KABUKICHO</span></h1><p id="location-description">ネオンの向こうに、今日の出会い。</p><div class="weather" id="weather">◐ 21:30 <span>夜のにぎわい · 警戒度 高め</span></div></section>
+  <section class="scoreboard" aria-label="スコア"><div><span>SCORE</span><strong id="score">000</strong></div><div class="best"><span>BEST</span><strong id="best">000</strong></div><div class="rank"><span>RANK</span><strong id="rank">D</strong></div><div class="score-track"><i id="score-progress"></i></div><small id="clear-progress">CITY CLEAR まで 500 pt</small></section>
+  <aside class="mission glass"><span class="mission-number" id="mission-number">01</span><div><small id="mission-step">OBSERVE</small><h2 id="mission-title">まずは、街を歩こう。</h2><p id="mission-text">近くの人を選んで、サインを観察。</p></div></aside>
+  <div class="compass"><span>N</span><i>↑</i></div>
+  <aside class="minimap glass"><div class="minimap-header"><span>AREA MAP</span><span id="map-coord">新宿 / TOKYO</span></div><canvas id="minimap" width="180" height="180" aria-label="現在地と周辺の人の地図"></canvas><div class="map-legend"><span><i class="mint"></i> YOU</span><span><i class="peach"></i> PEOPLE</span><span><i class="purple"></i> GOAL</span></div></aside>
+  <section id="inspect" class="inspect glass" hidden aria-label="相手を観察"><div class="panel-heading"><span class="eyebrow">OBSERVATION</span><button id="inspect-close" class="close" aria-label="観察を閉じる">×</button></div><div class="person-heading"><span id="person-icon" class="person-icon">◎</span><div><h2 id="person-name"></h2><span id="person-status">サインをよく見てみよう</span></div><span id="person-distance"></span></div><div id="traits" class="traits"></div><p id="person-cue"></p><div id="opener-actions" class="opener-actions"></div><button id="leave" class="leave">会釈して離れる <span>↗</span></button></section>
+  <div id="walk-hint" class="walk-hint"><span class="hint-dot"></span> 人をクリックで観察 <span class="hint-divider">/</span> 地面をクリックで移動</div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <section id="escort" class="escort glass" hidden><span class="eyebrow">WALK TOGETHER</span><h2>ふたりで、もう少し歩こう。</h2><p>合意したホテルラウンジへ。紫のマーカーが目印。</p><div class="escort-row"><span id="goal-distance"></span><button id="goal-walk">ラウンジへ歩く ↗</button><button id="escort-cancel">同行を終える</button></div></section>
+</main>
+<footer class="bottom-bar"><div class="keyboard-help"><kbd>W</kbd><div><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></div><span>移動 <small>矢印キーも使えます</small></span></div><div class="camera-help"><span>↔ ドラッグで視点回転</span><span>⊙ スクロールでズーム</span><button id="camera-reset">視点を戻す <kbd>R</kbd></button></div><span class="footer-note">OBSERVE. CONNECT. RESPECT.</span></footer>
+<div class="touch-actions"><button id="nearby-person">近くの人を見る <span>◎</span></button><div class="touch-zoom"><button id="zoom-in" aria-label="視点を近づける">＋</button><button id="zoom-out" aria-label="視点を遠ざける">−</button></div></div>
+<div id="touch-controls" aria-label="移動ボタン"><button data-direction="up" aria-label="前へ">↑</button><div><button data-direction="left" aria-label="左へ">←</button><button data-direction="down" aria-label="後ろへ">↓</button><button data-direction="right" aria-label="右へ">→</button></div></div>
+</div>
+<dialog id="intro" class="modal intro"><button class="close" id="intro-close" aria-label="閉じる">×</button><div class="eyebrow">A LITTLE COURAGE, A NEW STORY.</div><h2>CITY<br>APPROACH<span>3D</span></h2><p class="intro-lead">街と、ひとと、きっかけと。</p><p>街を歩いて、相手のサインを観察。<br>言葉を選んで、会話のきっかけを見つけよう。</p><div class="intro-steps"><span><b>01</b> 観察する</span><i>→</i><span><b>02</b> 話を聞く</span><i>→</i><span><b>03</b> 一緒に歩く</span></div><div class="intro-tip">話す余裕がなさそうなら、そっと離れるのも正解。</div><button id="start" class="primary">街を歩きはじめる <span>↗</span></button><small class="desktop-instructions">WASD / 矢印キーで移動 · クリックで操作</small><small class="mobile-instructions">地面をタップで移動 · ドラッグで視点回転<br>2本指で広げる・縮めるとズーム</small></dialog>
+<dialog id="conversation" class="modal conversation"><div class="panel-heading"><span class="eyebrow">A MOMENT TO CONNECT</span><button id="talk-exit" class="close" aria-label="会話を終える">×</button></div><div class="talk-top"><span id="talk-name"></span><span id="talk-turn"></span></div><div class="meters"><div><label for="favor">好感度 <b id="favor-value"></b></label><meter id="favor" min="0" max="100"></meter></div><div class="discomfort"><label for="discomfort">違和感 <b id="discomfort-value"></b></label><meter id="discomfort" min="0" max="100"></meter></div></div><div class="dialogue-mark">“</div><p id="talk-line"></p><span id="talk-cue" class="talk-cue"></span><p id="talk-feedback" role="status" aria-live="polite"></p><div id="responses" class="responses"></div><small>好感度68以上・違和感60未満で、文脈に合う提案を。</small></dialog>
+<dialog id="result" class="modal result"><div class="eyebrow" id="result-eyebrow">A NEW CONNECTION</div><div class="result-symbol" id="result-symbol">↗</div><h2 id="result-title"></h2><p id="result-body"></p><div id="result-points" class="result-points"></div><button id="result-next" class="primary"></button></dialog>
+<div id="fatal" hidden role="alert"><h1>3D表示を開始できませんでした</h1><p>WebGL 2対応のブラウザで、ハードウェアアクセラレーションを有効にして再読み込みしてください。</p></div>
+</body></html>
