@@ -33,6 +33,12 @@ function selectNpc(n) {
   if (state.mode !== 'explore') return;
   if (n.cooldown > state.elapsed) { toast('今は相手の時間。ほかの出会いを探してみよう。'); return; }
   resetTouch(); $('app').dataset.panel = 'observation'; state.selected = n; world.select(n); $('inspect').hidden = false;
+  // Use the same 3D model for the close-up, once per person rather than every frame.
+  $('person-icon').replaceChildren();
+  if (world.portrait) {
+    try { const image = document.createElement('img'); image.src = world.portrait(n); image.alt = ''; $('person-icon').append(image); }
+    catch { $('person-icon').textContent = '◎'; }
+  } else $('person-icon').textContent = '◎';
   $('person-name').textContent = n.profile.name; $('person-icon').style.color = n.profile.color; $('person-icon').style.background = `${n.profile.color}20`;
   $('traits').replaceChildren(...n.profile.traits.map(t => { const span = document.createElement('span'); span.textContent = t; return span; }));
   $('person-cue').textContent = n.profile.cue; $('person-status').textContent = n.profile.guarded ? '今はそっとしておこう' : '相手のペースを大切に';

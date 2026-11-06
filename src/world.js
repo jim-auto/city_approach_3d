@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { PROFILES, clamp } from './game.js';
 import { bindWorldInput, renderProfile } from './input.js';
+import { createCharacter, animateCharacter, isCharacterResource } from './characters.js';
 
 const mats = new Map();
 function material(color, glow = false) {
@@ -26,48 +27,13 @@ function textSign(parent, text, x, y, z, width, height, bg, fg, rotation = 0) {
   const m = new THREE.Mesh(new THREE.PlaneGeometry(width, height), new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide }));
   m.position.set(x, y, z); m.rotation.y = rotation; parent.add(m); return m;
 }
-function character(color, hair, kind = '') {
-  const group = new THREE.Group();
-  // Small, fully modelled characters: body, coat, hair and articulated limbs.
-  const torso = box(group, 0, 1.15, 0, .52, .68, .3, color);
-  box(group, 0, .82, 0, .48, .16, .31, '#313549');
-  const head = box(group, 0, 1.77, 0, .39, .42, .36, '#e7bc9f');
-  box(group, 0, 1.97, -.035, .43, .18, .4, hair);
-  box(group, 0, 1.8, -.19, .43, .35, .13, hair);
-  box(group, -.205, 1.84, -.04, .07, .27, .32, hair);
-  box(group, .205, 1.84, -.04, .07, .27, .32, hair);
-  box(group, -.09, 1.8, .187, .035, .04, .015, '#332e34');
-  box(group, .09, 1.8, .187, .035, .04, .015, '#332e34');
-  const legs = [], arms = [];
-  for (const side of [-1, 1]) {
-    const leg = new THREE.Group(); leg.position.set(side * .15, .8, 0); group.add(leg);
-    box(leg, 0, -.29, 0, .19, .58, .23, '#35384b'); box(leg, 0, -.64, .04, .21, .12, .35, '#e1dfd9'); legs.push(leg);
-    const arm = new THREE.Group(); arm.position.set(side * .33, 1.42, 0); group.add(arm);
-    box(arm, 0, -.23, 0, .15, .43, .22, color); box(arm, 0, -.49, 0, .13, .14, .18, '#e7bc9f'); arms.push(arm);
-  }
-  if (kind === 'waiting' || kind === 'busy') { arms[1].rotation.x = -0.8; box(arms[1], 0, -.49, .07, .12, .2, .035, '#1c2334'); }
-  if (kind === 'cafe') { arms[1].rotation.x = -.7; cylinder(arms[1], 0, -.43, .1, .09, .18, '#f1e5ca'); }
-  if (kind === 'tourist') { box(group, 0, 1.05, .23, .28, .2, .17, '#293545'); cylinder(group, 0, 1.05, .36, .065, .05, '#8290a1').rotation.x = Math.PI / 2; }
-  if (kind === 'earphones') { box(group, 0, 2.04, 0, .5, .06, .14, '#d8c4e4'); box(group, -.24, 1.84, .01, .08, .2, .2, '#d8c4e4'); box(group, .24, 1.84, .01, .08, .2, .2, '#d8c4e4'); }
-  if (kind === 'reader') { arms.forEach(a => a.rotation.x = -.8); box(group, 0, 1.06, .5, .42, .06, .3, '#d6d2b7'); }
-  const shadow = new THREE.Mesh(new THREE.CircleGeometry(.48, 20), new THREE.MeshBasicMaterial({ color: '#080b18', transparent: true, opacity: .25, depthWrite: false }));
-  shadow.rotation.x = -Math.PI / 2; shadow.position.y = .014; group.add(shadow);
-  group.userData = { legs, arms, torso, head }; return group;
-}
-function animatePerson(mesh, moving, time, seed = 0) {
-  const { legs, arms, torso } = mesh.userData;
-  const swing = moving ? Math.sin(time * 9 + seed) * .45 : 0;
-  legs[0].rotation.x = swing; legs[1].rotation.x = -swing;
-  arms[0].rotation.x = -swing * .65;
-  torso.position.y = 1.15 + (moving ? Math.abs(Math.sin(time * 9 + seed)) * .025 : Math.sin(time * 2 + seed) * .008);
-}
 export class CityWorld {
   constructor(container, labels, onSelect, onMove) {
     this.container = container; this.labels = labels; this.onSelect = onSelect; this.onMove = onMove;
     this.scene = new THREE.Scene(); this.scene.background = new THREE.Color('#171d31');
     this.camera = new THREE.PerspectiveCamera(43, innerWidth / innerHeight, .1, 160);
     this.profile = renderProfile(innerWidth, window.matchMedia('(pointer: coarse)').matches, devicePixelRatio);
-    this.mobile = this.profile.mobile;
+    this.mobile = this.profile.mobile; this.portraits = new Map();
     this.renderer = new THREE.WebGLRenderer({ antialias: !this.mobile, powerPreference: this.mobile ? 'default' : 'high-performance' });
     this.renderer.setPixelRatio(this.profile.pixelRatio); this.renderer.setSize(innerWidth, innerHeight);
     this.renderer.shadowMap.enabled = this.profile.shadows; this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -75,7 +41,7 @@ export class CityWorld {
     container.append(this.renderer.domElement);
     this.ray = new THREE.Raycaster(); this.pointer = new THREE.Vector2(); this.target = new THREE.Vector3(0, 0, 4);
     this.cameraTarget = this.target.clone(); this.yaw = .22; this.distance = 26; this.keys = new Set(); this.destination = null;
-    this.player = character('#a1d6c8', '#2c3038'); this.player.position.set(0, 0, 8); this.scene.add(this.player);
+    this.player = createCharacter('#a1d6c8', '#2c3038', 'player'); this.player.position.set(0, 0, 8); this.scene.add(this.player);
     this.playerLabel = this.makeLabel('YOU', 'player-label');
     this.ring = new THREE.Mesh(new THREE.RingGeometry(.62, .68, 48), new THREE.MeshBasicMaterial({ color: '#a5efd0', side: THREE.DoubleSide, transparent: true, opacity: .85, depthWrite: false }));
     this.ring.rotation.x = -Math.PI / 2; this.ring.position.y = .03; this.scene.add(this.ring);
@@ -90,8 +56,8 @@ export class CityWorld {
       this.scene.remove(this.city);
       const resources = new Set(), sharedMaterials = new Set(mats.values());
       this.city.traverse(o => {
-        if (o.geometry && o.geometry !== boxGeo) resources.add(o.geometry);
-        if (o.material && !sharedMaterials.has(o.material)) { resources.add(o.material); if (o.material.map) resources.add(o.material.map); }
+        if (o.geometry && o.geometry !== boxGeo && !isCharacterResource(o.geometry)) resources.add(o.geometry);
+        if (o.material && !sharedMaterials.has(o.material) && !isCharacterResource(o.material)) { resources.add(o.material); if (o.material.map) resources.add(o.material.map); }
         if (o.isInstancedMesh) resources.add(o);
         o.shadow?.dispose();
       });
@@ -126,12 +92,12 @@ export class CityWorld {
     this.batchScenery();
     const positions = [[-3.4, 4], [3.2, 1], [-4, -5], [1.5, -10], [4.7, 8], [5.5, -7], [-5.5, 15], [3.5, -18]];
     this.npcs = PROFILES.map((profile, i) => {
-      const mesh = character(profile.color, profile.hair, profile.id); mesh.position.set(positions[i][0], 0, positions[i][1]); mesh.rotation.y = i % 2 ? Math.PI * .8 : Math.PI * .2; this.city.add(mesh);
+      const mesh = createCharacter(profile.color, profile.hair, profile.id); mesh.position.set(positions[i][0], 0, positions[i][1]); mesh.rotation.y = i % 2 ? Math.PI * .8 : Math.PI * .2; this.city.add(mesh);
       const label = this.makeLabel(profile.traits[0], profile.guarded ? 'guarded' : ''); const n = { profile, mesh, label, home: mesh.position.clone(), phase: i * 1.8, cooldown: 0 };
       mesh.traverse(o => { if (o.isMesh) o.userData.npc = n; }); label.addEventListener('click', e => { e.stopPropagation(); this.onSelect(n); }); return n;
     });
     for (let i = 0; i < (this.mobile ? (night ? 6 : 4) : (night ? 18 : 12)); i++) {
-      const mesh = character(['#72778d', '#9b8392', '#b3a184', '#758e8d'][i % 4], '#3b3440');
+      const mesh = createCharacter(['#72778d', '#9b8392', '#b3a184', '#758e8d'][i % 4], '#3b3440', PROFILES[i % PROFILES.length].id, { detailed: false });
       mesh.position.set((i % 2 ? 1 : -1) * (1 + (i * 1.7) % 6), 0, -28 + (i * 4.3) % 56); mesh.scale.setScalar(.88 + (i % 3) * .06); this.city.add(mesh);
       this.npcs.push({ mesh, ambient: true, speed: .45 + (i % 4) * .2, direction: i % 2 ? 1 : -1, phase: i });
     }
@@ -299,6 +265,28 @@ export class CityWorld {
     // Browser address-bar resizing must preserve the chosen angle and zoom.
     if (this.mobile && wasPortrait !== (this.camera.aspect < .75)) this.distance = this.camera.aspect < .75 ? 32 : 23;
   }
+  portrait(n) {
+    const { profile } = n;
+    if (this.portraits.has(profile.id)) return this.portraits.get(profile.id);
+    const size = 192, target = new THREE.WebGLRenderTarget(size, size); target.texture.colorSpace = THREE.SRGBColorSpace;
+    const scene = new THREE.Scene(); scene.background = new THREE.Color('#34445a');
+    const person = createCharacter(profile.color, profile.hair, profile.id);
+    person.rotation.y = -.18; scene.add(person);
+    scene.add(new THREE.HemisphereLight('#fff4e4', '#66768f', 2.5));
+    const key = new THREE.DirectionalLight('#fff0dc', 3); key.position.set(-2, 4, 3); scene.add(key);
+    const camera = new THREE.PerspectiveCamera(31, 1, .1, 12);
+    camera.position.set(.25, 1.94, 1.95); camera.lookAt(0, 1.78, 0);
+    const previous = this.renderer.getRenderTarget();
+    try {
+      this.renderer.setRenderTarget(target); this.renderer.render(scene, camera);
+      const pixels = new Uint8Array(size * size * 4); this.renderer.readRenderTargetPixels(target, 0, 0, size, size, pixels);
+      const canvas = document.createElement('canvas'); canvas.width = canvas.height = size;
+      const ctx = canvas.getContext('2d'), data = ctx.createImageData(size, size);
+      for (let y = 0; y < size; y++) data.data.set(pixels.subarray((size - 1 - y) * size * 4, (size - y) * size * 4), y * size * 4);
+      ctx.putImageData(data, 0, 0);
+      const image = canvas.toDataURL('image/png'); this.portraits.set(profile.id, image); return image;
+    } finally { this.renderer.setRenderTarget(previous); target.dispose(); }
+  }
   distanceTo(n) { return this.player.position.distanceTo(n.mesh.position); }
   placeLabel(el, position, offset = 2.7) {
     const p = position.clone(); p.y += offset; p.project(this.camera);
@@ -320,7 +308,7 @@ export class CityWorld {
       this.player.position.x = clamp(this.player.position.x, -6.7, 6.7); this.player.position.z = clamp(this.player.position.z, -24.5, 27.5);
       if (this.map === 'nagoya' && Math.hypot(this.player.position.x, this.player.position.z + 12) < 1.1) { this.player.position.copy(previous); this.destination = null; this.marker.visible = false; }
     }
-    animatePerson(this.player, previous.distanceToSquared(this.player.position) > .00001, time);
+    animateCharacter(this.player, previous.distanceToSquared(this.player.position) > .00001, time);
     for (const n of this.npcs) {
       let moving = false;
       if (!this.paused && n !== this.selected) {
@@ -329,7 +317,7 @@ export class CityWorld {
         } else if (n.ambient) { n.mesh.position.z += n.speed * n.direction * dt; n.mesh.rotation.y = n.direction === 1 ? 0 : Math.PI; if (Math.abs(n.mesh.position.z) > 29) n.mesh.position.z *= -.97; moving = true; }
         else if (n.profile.speed > .2) { const delta = Math.sin(time * .15 + n.phase); n.mesh.position.z = n.home.z + delta * (n.profile.guarded ? 3 : 1.4); n.mesh.rotation.y = Math.cos(time * .15 + n.phase) > 0 ? 0 : Math.PI; moving = true; }
       }
-      animatePerson(n.mesh, moving, time, n.phase);
+      animateCharacter(n.mesh, moving, time, n.phase);
       if (!n.ambient) {
         n.label.style.opacity = n === this.companion || n.cooldown > time ? '.25' : '1';
         if (this.mobile && this.distanceTo(n) > 14 && n !== this.selected) n.label.style.display = 'none';

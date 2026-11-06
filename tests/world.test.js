@@ -25,7 +25,9 @@ test('both detailed maps build and repeated switches clean up NPC labels and GPU
     world.setMap('kabukicho');
     assert.equal(labels.size, 9);
     assert.ok(world.npcs.some(n => n.ambient && !n.label));
-    let disposedGeometry = false, disposedTexture = false, texture;
+    let disposedGeometry = false, disposedTexture = false, texture, disposedCharacter = false;
+    const sharedFace = world.npcs[0].mesh.getObjectByName('face-and-hair').geometry;
+    sharedFace.addEventListener('dispose', () => { disposedCharacter = true; });
     world.city.traverse(o => {
       if (!texture && o.material?.map) texture = o.material.map;
       if (o.geometry?.type === 'PlaneGeometry') o.geometry.addEventListener('dispose', () => { disposedGeometry = true; });
@@ -46,6 +48,8 @@ test('both detailed maps build and repeated switches clean up NPC labels and GPU
     world.mobile = true; world.setMap('kabukicho');
     assert.equal(world.npcs.filter(n => n.ambient).length, 6);
     assert.equal(world.npcs.filter(n => !n.ambient).length, 8, 'all interactive people remain available on mobile');
+    assert.equal(disposedCharacter, false, 'shared character geometry survives map switches');
+    assert.equal(world.npcs[0].mesh.getObjectByName('face-and-hair').geometry, sharedFace);
     assert.equal(disposedGeometry, true);
     assert.equal(disposedTexture, true);
   } finally {
