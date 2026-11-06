@@ -6,3 +6,11 @@
 .person-icon{width:64px;height:72px;flex-shrink:0;overflow:hidden;border-radius:12px}.person-icon img{display:block;width:100%;height:100%;object-fit:cover}
 
 .npc-label.landmark-label{pointer-events:none;min-height:0;min-width:0;padding:6px 9px;color:#d7e4ed;font-size:10px;background:#192a3be8;border-color:#bfced650}.landmark-gold-clock{color:#f2d792!important}.landmark-silver-clock{color:#d8e7f1!important}
+
+.action-dock { position: absolute; right: 235px; bottom: 112px; pointer-events: auto; z-index: 4; }
+#action-toggle { min-height: 48px; padding: 12px 17px; border-radius: 14px; background: #233446f5; border-color: #9ce6c55a; font-size: 13px; }
+#action-toggle[aria-expanded='true'] { background: #345846; color: #c4f5dc; }
+.action-menu { position: absolute; bottom: calc(100% + 10px); right: 0; width: 240px; display: grid; grid-template-columns: 1fr 1fr; gap: 7px; padding: 10px; border: 1px solid #9ce6c54a; border-radius: 16px; background: #182637fa; box-shadow: 0 10px 30px #0005; }
+.action-menu button { min-height: 64px; padding: 10px 6px; font-size: 12px; background: #ffffff08; }
+.action-menu kbd { display: block; margin-top: 6px; font-size: 9px; color: #a8bfc0; }
+#app[data-panel='observation'] .action-dock, #app:not([data-mode='explore']):not([data-mode='escort']) .action-dock { display: none; }

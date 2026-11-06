@@ -1,3 +1,4 @@
+import { ACTIONS } from './actions.js';
 import { bindVirtualStick } from './input.js';
 import { OPENERS, RESPONSES, evaluateOpener, buildLines, applyResponse, rank, loadBest, saveBest } from './game.js';
 
@@ -21,7 +22,7 @@ function toast(text) { $('toast').textContent = text; $('toast').classList.add('
 function score(points) { state.score += points; state.best = Math.max(state.best, state.score); saveBest(storage, state.best); updateScore(); }
 function updateScore() { $('score').textContent = String(state.score).padStart(3, '0'); $('best').textContent = String(state.best).padStart(3, '0'); $('rank').textContent = rank(state.score); $('score-progress').style.width = `${Math.min(100, state.score / 5)}%`; $('clear-progress').textContent = state.score >= 500 ? 'CITY CLEAR · 街のつながりが広がった！' : `CITY CLEAR まで ${500 - state.score} pt`; }
 function mission(step, title, text, number = '01') { $('mission-step').textContent = step; $('mission-title').textContent = title; $('mission-text').textContent = text; $('mission-number').textContent = number; }
-function setMode(mode) { resetTouch(); $('app').dataset.mode = mode; state.mode = mode; world.paused = !['explore', 'escort'].includes(mode); if (world.paused) world.keys.clear(); $('touch-controls').style.visibility = ['explore', 'escort'].includes(mode) ? '' : 'hidden'; }
+function setMode(mode) { closeActions(); world.cancelAction?.(); resetTouch(); $('app').dataset.mode = mode; state.mode = mode; world.paused = !['explore', 'escort'].includes(mode); if (world.paused) world.keys.clear(); $('touch-controls').style.visibility = ['explore', 'escort'].includes(mode) ? '' : 'hidden'; }
 function openModal(id) { $(id).showModal(); }
 function closeInspect() { delete $('app').dataset.panel; $('inspect').hidden = true; state.selected = null; world.select(null); }
 function explore() { closeInspect(); $('escort').hidden = true; world.companion = null; setMode('explore'); mission('OBSERVE', 'まずは、街を歩こう。', '近くの人を選んで、サインを観察。'); }
@@ -32,7 +33,7 @@ function finishNpc(n) { if (n) n.cooldown = state.elapsed + 28; }
 function selectNpc(n) {
   if (state.mode !== 'explore') return;
   if (n.cooldown > state.elapsed) { toast('今は相手の時間。ほかの出会いを探してみよう。'); return; }
-  resetTouch(); $('app').dataset.panel = 'observation'; state.selected = n; world.select(n); $('inspect').hidden = false;
+  closeActions(); world.cancelAction?.(); resetTouch(); $('app').dataset.panel = 'observation'; state.selected = n; world.select(n); $('inspect').hidden = false;
   // Use the same 3D model for the close-up, once per person rather than every frame.
   $('person-icon').replaceChildren();
   if (world.portrait) {
@@ -111,6 +112,30 @@ resetTouch = bindVirtualStick($('movement-stick'), $('stick-thumb'), world, () =
 function nearestPerson() {
   return (world.npcs || []).filter(n => !n.ambient && n.cooldown <= state.elapsed && world.distanceTo(n) < 10).sort((a, b) => world.distanceTo(a) - world.distanceTo(b))[0];
 }
+function closeActions() { $('action-menu').hidden = true; $('action-toggle').setAttribute('aria-expanded', 'false'); }
+function runAction(id) {
+  if (!['explore', 'escort'].includes(state.mode) || state.selected || document.hidden) return;
+  resetTouch();
+  if (world.performAction(id)) { const action = ACTIONS.find(a => a.id === id); toast(action.label); tone(); }
+  closeActions();
+}
+$('action-toggle').addEventListener('click', () => {
+  if (!['explore', 'escort'].includes(state.mode) || state.selected) return;
+  const open = $('action-menu').hidden;
+  $('action-menu').hidden = !open; $('action-toggle').setAttribute('aria-expanded', String(open));
+});
+$('action-menu').replaceChildren(...ACTIONS.map(action => {
+  const button = document.createElement('button'); button.dataset.action = action.id;
+  button.textContent = `${action.icon} ${action.label}`;
+  const hint = document.createElement('kbd'); hint.textContent = action.key === ' ' ? 'SPACE' : action.key.toUpperCase(); button.append(hint);
+  button.addEventListener('click', () => runAction(action.id)); return button;
+}));
+window.addEventListener('keydown', event => {
+  if (event.key === 'Escape') closeActions();
+  if (event.repeat || event.ctrlKey || event.altKey || event.metaKey || /^(INPUT|TEXTAREA|SELECT)$/.test(event.target?.tagName) || (event.key === ' ' && event.target?.tagName === 'BUTTON') || event.target?.isContentEditable) return;
+  const action = ACTIONS.find(a => a.key === event.key.toLowerCase());
+  if (action && ['explore', 'escort'].includes(state.mode) && !state.selected) { event.preventDefault(); runAction(action.id); }
+});
 $('nearby-person').addEventListener('click', () => { const n = nearestPerson(); if (n) selectNpc(n); else toast('地面をタップして移動し、近くの人を探してみよう。'); });
 $('zoom-in').addEventListener('click', () => world.zoom(-3));
 $('zoom-out').addEventListener('click', () => world.zoom(3));

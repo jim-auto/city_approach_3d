@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { ACTIONS, animateAction } from './actions.js';
 import { PROFILES, clamp } from './game.js';
 import { bindWorldInput, renderProfile } from './input.js';
 import { createCharacter, animateCharacter, isCharacterResource } from './characters.js';
@@ -43,6 +44,7 @@ export class CityWorld {
       resources.forEach(resource => resource.dispose());
       this.npcs.forEach(n => n.label?.remove()); this.goalLabel.remove(); (this.landmarkLabels || []).forEach(item => item.el.remove());
     }
+    this.cancelAction();
     this.map = map; this.city = new THREE.Group(); this.scene.add(this.city); this.selected = null; this.companion = null; this.destination = null; this.marker.visible = false;
     this.layout = MAP_LAYOUTS[map]; this.waypoints = [];
     const night = map === 'kabukicho';
@@ -212,7 +214,14 @@ export class CityWorld {
   }
   registerInput() { this.resetInput = bindWorldInput(this); }
   zoom(amount) { this.distance = clamp(this.distance + amount, 15, 43); }
+  cancelAction() { this.action = null; }
+  performAction(id) {
+    if (this.paused || !ACTIONS.some(action => action.id === id)) return false;
+    this.destination = null; this.waypoints = []; this.marker.visible = false; this.keys.clear();
+    this.action = { id, elapsed: 0 }; return true;
+  }
   walkTo(pos) {
+    this.cancelAction();
     const path = planPath(this.player.position, pos, this.layout);
     this.waypoints = path.map(p => new THREE.Vector3(p.x, 0, p.z));
     this.destination = this.waypoints.shift() || null;
@@ -268,6 +277,7 @@ export class CityWorld {
       let direction = new THREE.Vector3();
       const stick = this.stick || { x: 0, y: 0 };
       if (x || z || stick.x || stick.y) {
+        this.cancelAction();
         if (x || z) direction.set(x, 0, z).normalize();
         else direction.set(stick.x, 0, stick.y);
         direction.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.yaw); this.destination = null; this.waypoints = []; this.marker.visible = false; }
@@ -282,6 +292,10 @@ export class CityWorld {
       }
     }
     animateCharacter(this.player, previous.distanceToSquared(this.player.position) > .00001, time);
+    if (this.action && !this.paused) {
+      this.action.elapsed += dt;
+      if (!animateAction(this.player, this.action.id, this.action.elapsed)) this.cancelAction();
+    }
     for (const n of this.npcs) {
       let moving = false;
       if (!this.paused && n !== this.selected) {

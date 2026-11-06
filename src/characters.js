@@ -216,15 +216,16 @@ export function animateCharacter(model, moving, time, seed = 0) {
   const { body, head, arms, elbows, legs, knees, kind, props } = model.userData;
   const wave = Math.sin(time * 8 + seed), swing = moving ? wave * .42 : 0;
   body.position.y = moving ? Math.abs(wave) * .025 : Math.sin(time * 1.8 + seed) * .009;
+  body.rotation.x = body.rotation.y = 0; body.position.z = 0;
   body.rotation.z = moving ? Math.sin(time * 4 + seed) * .025 : 0;
   head.rotation.y = moving ? 0 : Math.sin(time * .6 + seed) * .065;
   head.rotation.x = ['waiting', 'busy', 'reader'].includes(kind) ? .12 : 0;
   for (let i = 0; i < 2; i++) {
     const phase = i ? -swing : swing;
-    legs[i].rotation.x = phase;
+    legs[i].position.y = .95; legs[i].rotation.set(phase, 0, 0);
     knees[i].rotation.x = moving ? Math.max(0, -phase) * 1.15 : .025;
     arms[i].rotation.set(-phase * .65, 0, i ? -.06 : .06);
-    elbows[i].rotation.x = moving ? -.12 - Math.max(0, phase) * .45 : -.12;
+    elbows[i].rotation.set(moving ? -.12 - Math.max(0, phase) * .45 : -.12, 0, 0);
   }
   if (['waiting', 'busy', 'cafe'].includes(kind)) { arms[1].rotation.x = -.24; elbows[1].rotation.x = -1.12; }
   if (kind === 'cafe') props[0].quaternion.copy(body.quaternion).multiply(arms[1].quaternion).multiply(elbows[1].quaternion).invert();

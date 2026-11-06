@@ -26,6 +26,8 @@ test('explore → observe → conversation → escort → arrival, help resume, 
     distanceTo(n) { return this.player.position.distanceTo(n.mesh.position); }
     walkTo(pos) { this.destination = pos.clone(); this.player.position.copy(pos); }
     setMap(map) { this.map = map; this.companion = null; }
+    performAction(id) { this.action = id; return !this.paused; }
+    cancelAction() { this.action = null; }
     resetCamera() {}
     update() {}
     drawMinimap() {}
@@ -35,11 +37,19 @@ test('explore → observe → conversation → escort → arrival, help resume, 
     const click = id => doc.getElementById(id).click();
     const choose = key => { doc.querySelector(`[data-response="${key}"]`).click(); t.mock.timers.tick(710); };
     assert.equal(state.mode, 'intro'); click('start'); assert.equal(state.mode, 'explore');
+    click('action-toggle'); assert.equal(doc.getElementById('action-menu').hidden, false);
+    doc.querySelector('[data-action="jump"]').click(); assert.equal(world.action, 'jump');
+    assert.equal(doc.getElementById('action-menu').hidden, true); assert.equal(state.score, 0);
+    window.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'e' })); assert.equal(world.action, 'wave');
+    click('help'); assert.equal(world.action, null);
+    window.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'q' })); assert.equal(world.action, null);
+    click('start');
     const npc = { profile: PROFILES[0], mesh: { position: new Vector3(-3.4, 0, 4) }, cooldown: 0 };
     world.npcs = [npc];
     click('nearby-person'); assert.equal(state.selected, npc);
     assert.equal(doc.getElementById('app').dataset.panel, 'observation');
     assert.equal(doc.getElementById('inspect').hidden, false);
+    doc.querySelector('[data-action="dance"]').click(); assert.equal(world.action, null, 'observation blocks action commands');
     doc.querySelector('[data-opener="empathy"]').click(); assert.equal(state.mode, 'talk');
     assert.equal(doc.getElementById('app').dataset.panel, undefined);
     assert.equal(doc.getElementById('app').dataset.mode, 'talk');
