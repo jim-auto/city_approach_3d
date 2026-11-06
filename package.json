@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
     "test": "node --test tests/*.test.js",
-    "build:pages": "vite build --outDir docs"
+    "build:pages": "vite build --outDir docs",
+    "preview:characters": "node scripts/render-characters.mjs"
   },
   "dependencies": {
     "three": "^0.180.0"

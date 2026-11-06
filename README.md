@@ -60,7 +60,7 @@ npm run dev
 
 パーツ内の形状をまとめ、同じモデルの形状・材質を共有してスマホの負荷を抑えています。判定は引き続き行動サインだけで決まります。
 
-`node scripts/render-characters.mjs` でブラウザを操作せずにモデル一覧のSVGを `artifacts/characters.svg` に書き出せます。
+`npm run preview:characters` でブラウザを操作せずにモデル一覧のSVGを `artifacts/characters.svg` に書き出せます。
 
 ## エリア
 
