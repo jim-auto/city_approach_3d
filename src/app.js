@@ -183,7 +183,7 @@ $('camera-reset').addEventListener('click', () => world.resetCamera()); document
 $('sound').addEventListener('click', () => { state.sound = !state.sound; $('sound').innerHTML = `♪<span>${state.sound ? 'ON' : 'OFF'}</span>`; $('sound').setAttribute('aria-pressed', String(state.sound)); $('sound').setAttribute('aria-label', `効果音を${state.sound ? 'オフ' : 'オン'}にする`); tone(); });
 resetTouch = bindVirtualStick($('movement-stick'), $('stick-thumb'), world, () => ['explore', 'escort'].includes(state.mode) && !state.selected);
 function nearestPerson() {
-  return (world.npcs || []).filter(n => !n.ambient && !n.profile.role && n.cooldown <= state.elapsed && world.distanceTo(n) < 10).sort((a, b) => world.distanceTo(a) - world.distanceTo(b))[0];
+  return (world.npcs || []).filter(n => !n.ambient && !n.profile.role && n.cooldown <= state.elapsed && world.distanceTo(n) < (n.profile.guarded ? 10 : 18)).sort((a, b) => Number(!!a.profile.guarded) - Number(!!b.profile.guarded) || world.distanceTo(a) - world.distanceTo(b))[0];
 }
 function closeActions() { $('action-menu').hidden = true; $('action-toggle').setAttribute('aria-expanded', 'false'); }
 function runAction(id) {

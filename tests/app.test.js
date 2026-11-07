@@ -56,7 +56,7 @@ test('explore → observe → conversation → escort → arrival, help resume, 
     window.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'q' })); assert.equal(world.action, null);
     click('start');
     const npc = { profile: PROFILES[0], mesh: { position: new Vector3(-3.4, 0, 4) }, cooldown: 0 };
-    world.npcs = [npc];
+    world.npcs = [npc, { profile: PROFILES[3], mesh: { position: world.player.position.clone() }, cooldown: 0 }];
     click('nearby-person'); assert.equal(state.selected, npc);
     assert.equal(doc.getElementById('app').dataset.panel, 'observation');
     assert.equal(doc.getElementById('inspect').hidden, false);
