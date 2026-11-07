@@ -44,5 +44,5 @@ test('routes between clock plazas and every NPC reach goals without crossing eit
   for (const o of layout.obstacles) assert.ok(isWalkable(resolveDestination(o, layout), layout));
 });
 test('all map spawn points, interactive people and arrival goals are reachable', () => {
-  for (const layout of Object.values(MAP_LAYOUTS)) for (const [x, z] of [layout.start, layout.goal, ...layout.people]) assert.ok(isWalkable({ x, z }, layout));
+  for (const layout of Object.values(MAP_LAYOUTS)) for (const [x, z] of [layout.start, layout.goal, ...layout.people, ...(layout.streetPeople || [])]) assert.ok(isWalkable({ x, z }, layout));
 });

@@ -8,7 +8,7 @@ import { planPath, segmentClear, isWalkable } from '../src/navigation.js';
 test('every NPC can take street routes to all three invitation destinations', () => {
   for (const map of ['nagoya', 'kabukicho']) {
     const layout = MAP_LAYOUTS[map];
-    for (const [x, z] of [...layout.people, layout.start]) for (const destination of destinationsFor(map)) {
+    for (const [x, z] of [...layout.people, ...(layout.streetPeople || []), layout.start]) for (const destination of destinationsFor(map)) {
       const path = planPath({ x, z }, destination, layout); assert.ok(path.length, `${map}/${x},${z}/${destination.id}`);
       let from = { x, z };
       for (const next of path) { assert.ok(isWalkable(next, layout)); assert.ok(segmentClear(from, next, layout)); from = next; }

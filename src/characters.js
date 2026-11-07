@@ -6,6 +6,9 @@ const surface = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 
 const shadowMaterial = new THREE.MeshBasicMaterial({ color: '#080b18', transparent: true, opacity: .23, depthWrite: false });
 const templates = new Map();
 const looks = {
+  toyoko_sora: { hair: 'ponytail', outfit: 'hoodie', pants: '#292d3a', skin: '#d9ae96', shoes: '#d8c7dc', accessory: 'headphones' },
+  toyoko_ruka: { hair: 'crop', outfit: 'jacket', pants: '#303743', skin: '#dcaf91', shoes: '#efebdf', accessory: 'phone' },
+  toyoko_neo: { hair: 'long', outfit: 'hoodie', pants: '#343047', skin: '#e5bba3', shoes: '#dad5e6', accessory: 'phone' },
   catch: { hair: 'crop', outfit: 'jacket', pants: '#252734', skin: '#cda181', shoes: '#292933', accessory: 'menu' },
   scout: { hair: 'sidepart', outfit: 'blazer', pants: '#303342', skin: '#dfb49b', shoes: '#262430', accessory: 'watch' },
   player: { hair: 'sidepart', outfit: 'blazer', pants: '#292c39', skin: '#dfb397', shoes: '#302b32', accessory: 'watch' },
@@ -244,7 +247,7 @@ export function animateCharacter(model, moving, time, seed = 0) {
     arms[i].rotation.set(-phase * .65, 0, i ? -.06 : .06);
     elbows[i].rotation.set(moving ? -.12 - Math.max(0, phase) * .45 : -.12, 0, 0);
   }
-  if (['waiting', 'busy', 'cafe', 'catch'].includes(kind)) { arms[1].rotation.x = -.24; elbows[1].rotation.x = -1.12; }
+  if (['waiting', 'busy', 'cafe', 'catch', 'toyoko_ruka', 'toyoko_neo'].includes(kind)) { arms[1].rotation.x = -.24; elbows[1].rotation.x = -1.12; }
   if (kind === 'cafe') props[0].quaternion.copy(body.quaternion).multiply(arms[1].quaternion).multiply(elbows[1].quaternion).invert();
   if (kind === 'reader') { arms.forEach(a => a.rotation.x = -.22); elbows.forEach(a => a.rotation.x = -1.15); }
   if (kind === 'earphones' && !moving) head.rotation.z = Math.sin(time * 2 + seed) * .04;

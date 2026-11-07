@@ -55,7 +55,7 @@ function openStreet(n) {
   if (world.distanceTo(n) > 3.5) { const pos = n.mesh.position.clone(); pos.z += 1.5; world.walkTo(pos); toast('近くまで歩こう。もう一度タップすると話せます。'); return; }
   closeInspect(); world.destination = null; world.waypoints = []; world.marker.visible = false;
   world.faceEachOther?.(n); state.street = n; setMode('street');
-  const encounter = streetLines(n.profile.role);
+  const encounter = streetLines(n.profile.role, n.profile.id);
   $('street-name').textContent = n.profile.name; $('street-line').textContent = encounter.line;
   $('street-options').replaceChildren(...encounter.choices.map(([line, reply]) => {
     const button = document.createElement('button'); button.textContent = line;
@@ -154,6 +154,11 @@ try { world = new CityWorld($('world'), $('labels'), selectNpc, () => {}); }
 catch (error) { console.error(error); $('fatal').hidden = false; throw error; }
 $('start-tour').addEventListener('click', startTour);
 $('menu-tour').addEventListener('click', startTour);
+$('menu-plaza').addEventListener('click', () => {
+  if (state.mode !== 'menu' || state.map !== 'kabukicho' || world.companion) return;
+  resumeMenu(); state.touring = false; world.walkTo(world.player.position.clone().set(-34, 0, -33));
+  toast('シネシティ広場へ。集まっている3人をタップすると雑談できます。');
+});
 $('street-close').addEventListener('click', closeStreet);
 $('street-dialog').addEventListener('cancel', event => { event.preventDefault(); closeStreet(); });
 $('start').addEventListener('click', () => { $('intro').close(); if (state.mode === 'help') setMode(state.resumeMode || 'explore'); else explore(); state.resumeMode = null; tone(); });
@@ -165,6 +170,7 @@ function resumeMenu() {
 }
 $('menu-toggle').addEventListener('click', () => {
   if (!['explore', 'escort'].includes(state.mode) || state.selected) return;
+  $('menu-plaza').disabled = state.map !== 'kabukicho' || !!world.companion;
   state.menuResume = state.mode; setMode('menu'); openModal('game-menu');
 });
 $('menu-close').addEventListener('click', resumeMenu);
@@ -223,7 +229,7 @@ function frame(now) {
   world.update(dt, state.elapsed); mapTick += dt;
   if (state.touring && !world.destination) { state.touring = false; $('guide-text').textContent = '女の子をタップ → 声掛け → 会話 → デートに誘う'; }
   if (state.mode === 'explore' && !state.selected && !state.touring) {
-    const street = (world.npcs || []).find(n => n.profile?.role && n.cooldown <= state.elapsed && world.distanceTo(n) < 2.7);
+    const street = (world.npcs || []).find(n => n.profile?.autoApproach && n.cooldown <= state.elapsed && world.distanceTo(n) < 2.7);
     if (street) openStreet(street);
   }
   if (mapTick > .2) { if ($('game-menu').open) world.drawMinimap(ctx); mapTick = 0; }

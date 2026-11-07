@@ -90,6 +90,7 @@ test('explore → observe → conversation → escort → arrival, help resume, 
     click('result-next'); assert.equal(state.mode, 'explore'); assert.equal(world.companion, null);
     for (const profile of STREET_PROFILES) {
       const streetNpc = { profile, mesh: { position: world.player.position.clone() }, cooldown: 0 };
+      if (profile.role === 'toyoko') { world.npcs = [streetNpc]; nextFrame(performance.now() + 32); assert.equal(state.mode, 'explore', 'plaza group does not interrupt passing players'); }
       world.onSelect(streetNpc); assert.equal(state.mode, 'street');
       assert.equal(doc.getElementById('street-name').textContent, profile.name);
       assert.equal(doc.getElementById('street-options').children.length, 3);
@@ -98,6 +99,8 @@ test('explore → observe → conversation → escort → arrival, help resume, 
       click('street-close'); assert.equal(state.mode, 'explore'); assert.ok(streetNpc.cooldown > state.elapsed);
       assert.equal(world.companion, null);
     }
+    click('menu-toggle'); click('menu-plaza'); assert.equal(state.mode, 'explore');
+    assert.equal(world.destination.x, -34); assert.equal(world.destination.z, -33);
     doc.querySelector('[data-map="nagoya"]').click(); assert.equal(state.map, 'nagoya'); assert.equal(world.map, 'nagoya');
     assert.match(doc.getElementById('location-name').textContent, /名古屋駅/);
     const busy = { profile: PROFILES[3], mesh: { position: world.player.position.clone() }, cooldown: 0 };

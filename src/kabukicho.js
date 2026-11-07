@@ -24,7 +24,7 @@ export const KABUKICHO_LAYOUT = {
     rect('hotel-approach', 'ホテル入口前', 5, 15.8, -28, -17),
     rect('cinema-approach', '映画館入口前', -4, 5, -28, -17),
   ],
-  streetPeople: [[-20, -17], [20, -30]],
+  streetPeople: [[-20, -17], [20, -30], [-34, -37], [-36, -35], [-32, -35]],
   tour: [[0, -17], [-17, -17], [-17, -44.5], [19, -44.5], [19, -17], [0, -17]],
   landmarks: [
     { id: 'toho-cinemas', name: 'TOHOシネマズ 新宿', x: 0, z: -28, color: '#f1e8db', height: 10 },

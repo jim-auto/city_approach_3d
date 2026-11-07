@@ -103,3 +103,4 @@
 .npc-label.date-label { color: #f5c1d5; border-color: #e7a6bf66; }
 .npc-label.street-label { color: #f5d59d; border-color: #dab67c80; }
 #approach-status { font-size: 12px; line-height: 1.6; color: #a6e3c9; margin: 8px 0 12px; }
+.npc-label.gathering-label { color: #c7c7f1; border-color: #a9a4da70; background: #29253ce8; }
