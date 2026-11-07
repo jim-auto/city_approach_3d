@@ -92,13 +92,15 @@ test('explore → observe → conversation → escort → arrival, help resume, 
       const streetNpc = { profile, mesh: { position: world.player.position.clone() }, cooldown: 0 };
       if (profile.role === 'toyoko') { world.npcs = [streetNpc]; nextFrame(performance.now() + 32); assert.equal(state.mode, 'explore', 'plaza group does not interrupt passing players'); }
       world.onSelect(streetNpc); assert.equal(state.mode, 'street');
-      assert.equal(doc.getElementById('street-name').textContent, profile.name);
+      assert.equal(doc.getElementById('street-name').textContent, `${profile.name}（${profile.age}歳）`);
       assert.equal(doc.getElementById('street-options').children.length, 3);
       doc.getElementById('street-options').firstElementChild.click();
       assert.equal(doc.getElementById('street-options').children.length, 0);
       click('street-close'); assert.equal(state.mode, 'explore'); assert.ok(streetNpc.cooldown > state.elapsed);
       assert.equal(world.companion, null);
     }
+    click('menu-toggle'); click('menu-nightlife'); assert.equal(state.mode, 'explore');
+    assert.equal(world.destination.x, 24); assert.equal(world.destination.z, -36);
     click('menu-toggle'); click('menu-plaza'); assert.equal(state.mode, 'explore');
     assert.equal(world.destination.x, -34); assert.equal(world.destination.z, -33);
     doc.querySelector('[data-map="nagoya"]').click(); assert.equal(state.map, 'nagoya'); assert.equal(world.map, 'nagoya');

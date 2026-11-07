@@ -9,6 +9,9 @@ const looks = {
   toyoko_sora: { hair: 'ponytail', outfit: 'hoodie', pants: '#292d3a', skin: '#d9ae96', shoes: '#d8c7dc', accessory: 'headphones' },
   toyoko_ruka: { hair: 'crop', outfit: 'jacket', pants: '#303743', skin: '#dcaf91', shoes: '#efebdf', accessory: 'phone' },
   toyoko_neo: { hair: 'long', outfit: 'hoodie', pants: '#343047', skin: '#e5bba3', shoes: '#dad5e6', accessory: 'phone' },
+  night_mai: { feminine: true, hair: 'long', outfit: 'coat', pants: '#5a4055', skin: '#e6bca2', shoes: '#4c384c', accessory: 'phone' },
+  night_rei: { feminine: true, skirt: true, hair: 'wavy', outfit: 'cardigan', pants: '#cbb6b2', skin: '#dfb199', shoes: '#705266', accessory: 'bag' },
+  night_kaito: { hair: 'sidepart', outfit: 'blazer', pants: '#343141', skin: '#d7ac8c', shoes: '#302b35', accessory: 'watch' },
   catch: { hair: 'crop', outfit: 'jacket', pants: '#252734', skin: '#cda181', shoes: '#292933', accessory: 'menu' },
   scout: { hair: 'sidepart', outfit: 'blazer', pants: '#303342', skin: '#dfb49b', shoes: '#262430', accessory: 'watch' },
   player: { hair: 'sidepart', outfit: 'blazer', pants: '#292c39', skin: '#dfb397', shoes: '#302b32', accessory: 'watch' },
@@ -89,7 +92,7 @@ function buildTemplate(color, hairColor, kind, detailed) {
       b.cone(color, [0, .92, 0], .21, .32, .38, undefined, .8);
       for (const x of [-.18, -.06, .06, .18]) b.box(light, [x, .82, .20], [.014, .16, .014]);
     }
-    if (kind === 'player' || kind === 'scout') {
+    if (kind === 'player' || kind === 'scout' || kind === 'night_kaito') {
       b.box('#1b1c29', [0, 1.4, .185], [.17, .36, .025]);
       b.arc('#d5b575', [0, 1.61, .16], .08, .009, [Math.PI / 2, 0, 0], Math.PI);
       b.box('#d3b474', [.16, 1.48, .19], [.035, .06, .025]);
@@ -247,7 +250,7 @@ export function animateCharacter(model, moving, time, seed = 0) {
     arms[i].rotation.set(-phase * .65, 0, i ? -.06 : .06);
     elbows[i].rotation.set(moving ? -.12 - Math.max(0, phase) * .45 : -.12, 0, 0);
   }
-  if (['waiting', 'busy', 'cafe', 'catch', 'toyoko_ruka', 'toyoko_neo'].includes(kind)) { arms[1].rotation.x = -.24; elbows[1].rotation.x = -1.12; }
+  if (['waiting', 'busy', 'cafe', 'catch', 'toyoko_ruka', 'toyoko_neo', 'night_mai'].includes(kind)) { arms[1].rotation.x = -.24; elbows[1].rotation.x = -1.12; }
   if (kind === 'cafe') props[0].quaternion.copy(body.quaternion).multiply(arms[1].quaternion).multiply(elbows[1].quaternion).invert();
   if (kind === 'reader') { arms.forEach(a => a.rotation.x = -.22); elbows.forEach(a => a.rotation.x = -1.15); }
   if (kind === 'earphones' && !moving) head.rotation.z = Math.sin(time * 2 + seed) * .04;

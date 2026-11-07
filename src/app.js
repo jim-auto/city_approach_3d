@@ -56,7 +56,7 @@ function openStreet(n) {
   closeInspect(); world.destination = null; world.waypoints = []; world.marker.visible = false;
   world.faceEachOther?.(n); state.street = n; setMode('street');
   const encounter = streetLines(n.profile.role, n.profile.id);
-  $('street-name').textContent = n.profile.name; $('street-line').textContent = encounter.line;
+  $('street-name').textContent = `${n.profile.name}（${n.profile.age}歳）`; $('street-line').textContent = encounter.line;
   $('street-options').replaceChildren(...encounter.choices.map(([line, reply]) => {
     const button = document.createElement('button'); button.textContent = line;
     button.addEventListener('click', () => { if (state.mode !== 'street') return; $('street-line').textContent = reply; $('street-options').replaceChildren(); }); return button;
@@ -154,6 +154,12 @@ try { world = new CityWorld($('world'), $('labels'), selectNpc, () => {}); }
 catch (error) { console.error(error); $('fatal').hidden = false; throw error; }
 $('start-tour').addEventListener('click', startTour);
 $('menu-tour').addEventListener('click', startTour);
+$('menu-nightlife').addEventListener('click', () => {
+  if (state.mode !== 'menu' || state.map !== 'kabukicho' || world.companion) return;
+  resumeMenu(); state.touring = false;
+  const [x, z] = world.layout.nightlifeArea.entrance; world.walkTo(world.player.position.clone().set(x, 0, z));
+  toast('待ち合わせ通りへ。人物をタップして話しかけられます。');
+});
 $('menu-plaza').addEventListener('click', () => {
   if (state.mode !== 'menu' || state.map !== 'kabukicho' || world.companion) return;
   resumeMenu(); state.touring = false; world.walkTo(world.player.position.clone().set(-34, 0, -33));
@@ -170,6 +176,7 @@ function resumeMenu() {
 }
 $('menu-toggle').addEventListener('click', () => {
   if (!['explore', 'escort'].includes(state.mode) || state.selected) return;
+  $('menu-nightlife').disabled = state.map !== 'kabukicho' || !!world.companion;
   $('menu-plaza').disabled = state.map !== 'kabukicho' || !!world.companion;
   state.menuResume = state.mode; setMode('menu'); openModal('game-menu');
 });

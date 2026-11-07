@@ -68,7 +68,7 @@ export class CityWorld {
     const positions = [...this.layout.people, ...(this.layout.streetPeople || [])];
     this.npcs = (night ? [...PROFILES, ...STREET_PROFILES] : PROFILES).map((profile, i) => {
       const mesh = createCharacter(profile.color, profile.hair, profile.id); mesh.position.set(positions[i][0], 0, positions[i][1]); mesh.rotation.y = profile.role === 'toyoko' ? Math.atan2(-34 - positions[i][0], -35.8 - positions[i][1]) : i % 2 ? Math.PI * .8 : Math.PI * .2; this.city.add(mesh);
-      const label = this.makeLabel(profile.role ? profile.name : `♡ ${profile.name}`, profile.role === 'toyoko' ? 'gathering-label' : profile.role ? 'street-label' : profile.guarded ? 'guarded' : 'date-label'); const n = { profile, mesh, label, home: mesh.position.clone(), phase: i * 1.8, cooldown: 0 };
+      const label = this.makeLabel(profile.role ? profile.name : `♡ ${profile.name}`, profile.zone === 'nightlife' ? 'nightlife-label' : profile.role === 'toyoko' ? 'gathering-label' : profile.role ? 'street-label' : profile.guarded ? 'guarded' : 'date-label'); const n = { profile, mesh, label, home: mesh.position.clone(), phase: i * 1.8, cooldown: 0 };
       mesh.traverse(o => { if (o.isMesh) o.userData.npc = n; }); label.addEventListener('click', e => { e.stopPropagation(); this.onSelect(n); }); return n;
     });
     for (let i = 0; i < (this.mobile ? (night ? 6 : 4) : (night ? 18 : 12)); i++) {

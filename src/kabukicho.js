@@ -24,7 +24,8 @@ export const KABUKICHO_LAYOUT = {
     rect('hotel-approach', 'ホテル入口前', 5, 15.8, -28, -17),
     rect('cinema-approach', '映画館入口前', -4, 5, -28, -17),
   ],
-  streetPeople: [[-20, -17], [20, -30], [-34, -37], [-36, -35], [-32, -35]],
+  streetPeople: [[-20, -17], [20, -30], [-34, -37], [-36, -35], [-32, -35], [23.5, -43], [23.5, -28], [23.5, -37]],
+  nightlifeArea: { name: '待ち合わせ通り（架空）', entrance: [24, -36], minX: 17.5, maxX: 25.5, minZ: -45, maxZ: -22 },
   tour: [[0, -17], [-17, -17], [-17, -44.5], [19, -44.5], [19, -17], [0, -17]],
   landmarks: [
     { id: 'toho-cinemas', name: 'TOHOシネマズ 新宿', x: 0, z: -28, color: '#f1e8db', height: 10 },
@@ -136,7 +137,14 @@ export function buildKabukichoDistrict(parent) {
   sign(tower, 'KABUKI YOKOCHO', 0, 4.8, 12.6, 14, 1.2, '#a74158');
   const apa = storefront(parent, 'APA HOTEL', -35, -44, 18, 6, 23, '#7e6f65', 0, '#d77831'); apa.name = 'apa-hotel';
   // Rear/eastern blocks and roadside details make cross streets read as a district.
-  for (let i = 0; i < 5; i++) storefront(parent, ['飲食店', 'BAR', 'カラオケ', 'コンビニ', 'DINING'][i], 32, -37 + i * 17, 8, 8, 14 + i * 2, '#565d6c', Math.PI / 2, ['#834b77', '#3d7173', '#af6e3e'][i % 3]);
+  for (let i = 0; i < 5; i++) storefront(parent, ['CLUB LUNA', 'NIGHT CAFE', 'カラオケ', 'コンビニ', 'DINING'][i], 32, -37 + i * 17, 8, 8, 14 + i * 2, '#565d6c', -Math.PI / 2, ['#834b77', '#3d7173', '#af6e3e'][i % 3]);
+  const nightlife = group(parent, 'fictional-nightlife-area', 24.8, -34);
+  box(nightlife, 0, .025, 0, 1.1, .035, 23, '#655064');
+  sign(nightlife, '待ち合わせ通り  /  GAME AREA', -.4, 3.4, 0, 9, .8, '#49364e', '#eed5dd', -Math.PI / 2);
+  for (const z of [-10, 10]) {
+    cylinder(nightlife, 0, 2.1, z, .045, 4.2, '#958294', 8);
+    box(nightlife, 0, 4.2, z, .45, .13, .45, '#f5c5d1', true);
+  }
   for (const side of [-1, 1]) for (let z = -6; z < 39; z += 12) {
     cylinder(parent, side * 5.9, 2.5, z, .055, 5, '#687785', 8);
     box(parent, side * 5.9, 5.0, z, .8, .12, .5, '#e6dcc0', true);
