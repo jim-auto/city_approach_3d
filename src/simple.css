@@ -1,0 +1,71 @@
+/* A small play HUD; secondary information lives in the paused menu. */
+#app .topbar { height: calc(76px + var(--safe-top)); padding: var(--safe-top) max(20px, var(--safe-right)) 0 max(20px, var(--safe-left)); background: none; border: 0; gap: 12px; }
+#app .map-switch { position: static; transform: none; padding: 3px; background: #14212eeb; border-color: #ffffff20; border-radius: 14px; }
+#app .map-switch button { min-height: 44px; padding: 8px 14px; font-size: 13px; border-radius: 10px; }
+#menu-toggle { width: 46px; height: 46px; background: #14212eeb; border-radius: 50%; font-size: 20px; }
+.play-actions { position: absolute; right: max(24px, var(--safe-right)); bottom: calc(24px + var(--safe-bottom)); display: flex; flex-direction: column; align-items: stretch; gap: 10px; pointer-events: auto; }
+#app .action-dock { position: relative; right: auto; bottom: auto; z-index: 4; }
+#action-toggle, #nearby-person { width: 124px; min-height: 50px; border-radius: 16px; padding: 12px; font-size: 13px; }
+#nearby-person { background: #a6e3c9; color: #18372b; border-color: #a6e3c9; font-weight: 700; }
+#app .action-menu { bottom: calc(100% + 10px); right: 0; }
+#app #touch-controls { bottom: calc(22px + var(--safe-bottom)); left: max(20px, var(--safe-left)); }
+#app .movement-stick { width: 124px; height: 124px; background: radial-gradient(circle, #a6e3c907 38%, #14212eaa 40%, #14212eaa 70%); box-shadow: none; }
+#app .stick-guide, #app #stick-help { display: none; }
+#labels .player-label { display: none !important; }
+#app .toast { top: calc(88px + var(--safe-top)); bottom: auto; max-width: calc(100% - 32px); font-size: 12px; padding: 10px 16px; border-radius: 12px; }
+#app .escort { top: calc(88px + var(--safe-top)); bottom: auto; left: max(20px, var(--safe-left)); right: auto; width: min(320px, calc(100% - 40px)); padding: 12px 14px; }
+#app .escort h2, #app .escort .eyebrow, #app .escort p { display: none; }
+#app .escort-row { margin: 0; gap: 8px; flex-wrap: wrap; }
+#app .escort-row button { min-height: 44px; font-size: 11px; }
+#app .escort-row > span { font-size: 21px; }
+#app .inspect { bottom: calc(16px + var(--safe-bottom)); max-height: calc(100dvh - 100px - var(--safe-top) - var(--safe-bottom)); }
+#person-status { display: none; }
+#app[data-panel='observation'] :is(.play-actions, .topbar),
+#app:not([data-mode='explore']):not([data-mode='escort']) :is(.play-actions, .topbar) { display: none; }
+#app[data-mode='escort'] #nearby-person { display: none; }
+.game-menu { width: min(400px, calc(100% - 24px)); padding: 22px; background: #182130; }
+.game-menu .panel-heading h2 { font-size: 18px; margin: 0; }
+.game-menu .close { width: 44px; height: 44px; }
+.game-menu .location { display: block; position: static; margin: 12px 0 20px; }
+.game-menu .location .eyebrow, .game-menu .location h1 span, .game-menu .weather { display: none; }
+.game-menu .location h1 { font-size: 22px; margin: 0 0 6px; letter-spacing: 0; }
+.game-menu .location p { display: block; font-size: 12px; line-height: 1.6; margin: 0; color: #abb8c6; }
+.game-menu .scoreboard { position: static; width: 100%; display: flex; gap: 12px; padding: 16px; margin-bottom: 16px; background: #ffffff05; border-radius: 12px; }
+.game-menu .scoreboard > div:not(.score-track) { display: flex; flex: 1; }
+.game-menu .scoreboard .rank { margin-left: 0; }
+.game-menu .scoreboard span { font-size: 11px; font-family: inherit; letter-spacing: 0; }
+.game-menu .scoreboard strong, .game-menu .scoreboard .best strong { font-size: 28px; margin: 0; }
+.game-menu .scoreboard .score-track { display: none; }
+.game-menu .scoreboard small { width: 100%; margin: 0; font-size: 11px; }
+.game-menu details { margin: 10px 0; border-bottom: 1px solid #ffffff15; }
+.game-menu summary { padding: 14px 2px; min-height: 48px; font-size: 13px; cursor: pointer; }
+.game-menu .minimap { display: block; position: static; width: 100%; padding: 12px; margin: 0 0 10px; background: #121a28; }
+.game-menu .minimap canvas { width: 180px; max-width: 100%; margin: 10px auto; }
+.game-menu .minimap-header { font-size: 11px; letter-spacing: 0; }
+.game-menu .minimap-header span+span { display: block; font-size: 10px; }
+.game-menu .map-legend { display: flex; }
+.game-menu .mission { display: block; position: static; max-width: none; margin-bottom: 12px; padding: 12px; }
+.game-menu .mission-number, .game-menu .mission small, .game-menu .compass { display: none; }
+.game-menu .mission h2 { font-size: 13px; }
+.game-menu .mission p { display: block; font-size: 11px; line-height: 1.7; }
+.game-menu details > p { font-size: 12px; color: #a8b8c6; line-height: 1.7; }
+.menu-tools { display: flex; gap: 8px; margin: 12px 0; }
+.menu-tools button { flex: 1; min-height: 46px; padding: 8px; font-size: 12px; }
+#sound span { margin-left: 8px; }
+#menu-resume { justify-content: center; margin-top: 16px; }
+.modal .eyebrow, .dialogue-mark, .conversation > small, .intro-lead, .intro-steps { display: none; }
+.intro h2 { font: 600 30px/1.4 'Noto Sans JP', sans-serif; letter-spacing: 0; margin: 20px auto; }
+.modal .panel-heading .eyebrow { display: block; font: 13px 'Noto Sans JP', sans-serif; letter-spacing: 0; }
+.conversation #talk-line { margin-top: 24px; }
+@media (max-width: 700px), (pointer: coarse) and (max-width: 1100px) {
+  #app .topbar { height: calc(68px + var(--safe-top)); padding-right: max(14px, var(--safe-right)); padding-left: max(14px, var(--safe-left)); }
+  #app .play-actions { right: max(16px, var(--safe-right)); bottom: calc(22px + var(--safe-bottom)); }
+  #app #touch-controls { left: max(16px, var(--safe-left)); }
+  #app .action-menu { width: min(240px, calc(100vw - 32px - var(--safe-left) - var(--safe-right))); }
+  #app .escort { top: calc(78px + var(--safe-top)); }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  #app .movement-stick { width: 108px; height: 108px; }
+  #app .action-menu { right: calc(100% + 10px); bottom: 0; width: 210px; }
+  #app .escort { width: auto; max-width: calc(100% - 220px); }
+}

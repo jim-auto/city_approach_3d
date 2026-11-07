@@ -48,3 +48,17 @@ test('world actions finish, stop automatic walking, cancel for movement and reje
   assert.equal(world.performAction('unknown'), false);
   world.paused = true; assert.equal(world.performAction('jump'), false);
 });
+
+test('walking HUD labels only the nearest two people and preserves the selected person', () => {
+  const world = makeWorld();
+  world.placeLabel = el => { el.style.display = ''; };
+  world.npcs = [1, 3, 5, 12].map(x => {
+    const mesh = person(); mesh.position.x = x;
+    return { mesh, profile: { speed: 0 }, label: { style: {} }, cooldown: 0 };
+  });
+  world.update(.05, 0);
+  assert.deepEqual(world.npcs.map(n => n.label.style.display), ['', '', 'none', 'none']);
+  world.selected = world.npcs[2]; world.update(.05, .05);
+  assert.equal(world.npcs[2].label.style.display, '');
+  assert.equal(world.npcs[3].label.style.display, 'none');
+});

@@ -37,6 +37,11 @@ test('explore → observe → conversation → escort → arrival, help resume, 
     const click = id => doc.getElementById(id).click();
     const choose = key => { doc.querySelector(`[data-response="${key}"]`).click(); t.mock.timers.tick(710); };
     assert.equal(state.mode, 'intro'); click('start'); assert.equal(state.mode, 'explore');
+    click('menu-toggle'); assert.equal(state.mode, 'menu'); assert.equal(world.paused, true);
+    assert.equal(doc.getElementById('game-menu').open, true);
+    doc.getElementById('game-menu').dispatchEvent(new window.Event('cancel', { cancelable: true }));
+    assert.equal(state.mode, 'explore'); assert.equal(world.paused, false);
+    assert.equal(doc.getElementById('game-menu').open, false);
     click('action-toggle'); assert.equal(doc.getElementById('action-menu').hidden, false);
     doc.querySelector('[data-action="jump"]').click(); assert.equal(world.action, 'jump');
     assert.equal(doc.getElementById('action-menu').hidden, true); assert.equal(state.score, 0);
@@ -58,7 +63,11 @@ test('explore → observe → conversation → escort → arrival, help resume, 
     choose('listen'); choose('empathy'); choose('empathy'); choose('listen'); choose('proposal');
     assert.equal(state.mode, 'result'); assert.equal(state.score, 120);
     click('result-next'); assert.equal(state.mode, 'escort'); assert.equal(world.companion, npc);
-    click('help'); assert.equal(state.mode, 'help'); click('start');
+    click('menu-toggle'); assert.equal(state.mode, 'menu');
+    click('menu-resume'); assert.equal(state.mode, 'escort'); assert.equal(world.companion, npc);
+    click('menu-toggle'); click('help'); assert.equal(state.mode, 'help');
+    assert.equal(doc.getElementById('game-menu').open, false);
+    click('start');
     assert.equal(state.mode, 'escort'); assert.equal(world.companion, npc, 'help must preserve the companion');
     assert.equal(doc.getElementById('escort').hidden, false);
     click('goal-walk'); assert.deepEqual(world.destination, world.goal);

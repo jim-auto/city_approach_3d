@@ -296,6 +296,8 @@ export class CityWorld {
       this.action.elapsed += dt;
       if (!animateAction(this.player, this.action.id, this.action.elapsed)) this.cancelAction();
     }
+    const nearbyLabels = new Set(this.npcs.filter(n => !n.ambient && this.distanceTo(n) <= 9)
+      .sort((a, b) => this.distanceTo(a) - this.distanceTo(b)).slice(0, 2));
     for (const n of this.npcs) {
       let moving = false;
       if (!this.paused && n !== this.selected) {
@@ -309,7 +311,7 @@ export class CityWorld {
       animateCharacter(n.mesh, moving, time, n.phase);
       if (!n.ambient) {
         n.label.style.opacity = n === this.companion || n.cooldown > time ? '.25' : '1';
-        if (this.mobile && this.distanceTo(n) > 14 && n !== this.selected) n.label.style.display = 'none';
+        if (!nearbyLabels.has(n) && n !== this.selected) n.label.style.display = 'none';
         else this.placeLabel(n.label, n.mesh.position);
       }
     }
@@ -320,7 +322,7 @@ export class CityWorld {
     const horizontal = this.distance * .82;
     const desired = this.cameraTarget.clone().add(new THREE.Vector3(Math.sin(this.yaw) * horizontal, this.distance * .65, Math.cos(this.yaw) * horizontal));
     this.camera.position.lerp(desired, 1 - Math.exp(-dt * 5)); this.camera.lookAt(this.cameraTarget);
-    this.camera.updateMatrixWorld(); this.placeLabel(this.playerLabel, this.player.position, 2.8); this.placeLabel(this.goalLabel, this.goal, 2.2);
+    this.camera.updateMatrixWorld(); this.placeLabel(this.playerLabel, this.player.position, 2.8); if (this.companion) this.placeLabel(this.goalLabel, this.goal, 2.2); else this.goalLabel.style.display = 'none';
     for (const item of this.landmarkLabels) {
       this.placeLabel(item.el, new THREE.Vector3(item.x, 0, item.z), this.map === 'nagoya' ? (item.id === 'gold-clock' ? 5.8 : 4.4) : 11.7);
     }

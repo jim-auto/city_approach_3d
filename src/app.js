@@ -99,7 +99,17 @@ catch (error) { console.error(error); $('fatal').hidden = false; throw error; }
 $('start').addEventListener('click', () => { $('intro').close(); if (state.mode === 'help') setMode(state.resumeMode || 'explore'); else explore(); state.resumeMode = null; tone(); });
 $('intro-close').addEventListener('click', () => { $('intro').close(); if (state.mode === 'intro') explore(); else setMode(state.resumeMode || 'explore'); });
 $('intro').addEventListener('cancel', e => { e.preventDefault(); $('intro-close').click(); });
-$('help').addEventListener('click', () => { if (!['explore', 'escort'].includes(state.mode)) return; state.resumeMode = state.mode; setMode('help'); openModal('intro'); });
+$('help').addEventListener('click', () => { if (state.mode === 'menu') resumeMenu(); if (!['explore', 'escort'].includes(state.mode)) return; state.resumeMode = state.mode; setMode('help'); openModal('intro'); });
+function resumeMenu() {
+  $('game-menu').close(); setMode(state.menuResume || 'explore'); state.menuResume = null;
+}
+$('menu-toggle').addEventListener('click', () => {
+  if (!['explore', 'escort'].includes(state.mode) || state.selected) return;
+  state.menuResume = state.mode; setMode('menu'); openModal('game-menu');
+});
+$('menu-close').addEventListener('click', resumeMenu);
+$('menu-resume').addEventListener('click', resumeMenu);
+$('game-menu').addEventListener('cancel', event => { event.preventDefault(); resumeMenu(); });
 $('inspect-close').addEventListener('click', () => { closeInspect(); mission('OBSERVE', 'まずは、街を歩こう。', '近くの人を選んで、サインを観察。'); });
 $('leave').addEventListener('click', () => { const n = state.selected; if (!n) return; const good = n.profile.guarded; finishNpc(n); closeInspect(); score(good ? 20 : 5); toast(good ? 'いい判断！ 相手の時間を尊重できた。 +20 pt' : '軽く会釈して離れた。 +5 pt'); tone(); mission('OBSERVE', '次のきっかけを探そう。', '気になるサインを見つけよう。'); });
 $('talk-exit').addEventListener('click', () => endTalk(false)); $('conversation').addEventListener('cancel', e => { e.preventDefault(); endTalk(false); });
@@ -148,7 +158,7 @@ function frame(now) {
   lastRender = interval ? now - ((now - lastRender) % interval) : now;
   const dt = Math.min((now - previous) / 1000, .05); previous = now; state.elapsed += dt;
   world.update(dt, state.elapsed); mapTick += dt;
-  if (mapTick > (world.mobile ? .2 : .09)) { world.drawMinimap(ctx); mapTick = 0; }
+  if (mapTick > .2) { if ($('game-menu').open) world.drawMinimap(ctx); mapTick = 0; }
   if (state.selected && state.mode === 'explore') {
     const dist = world.distanceTo(state.selected); $('person-distance').textContent = `${dist.toFixed(1)} m`; $('opener-actions').querySelectorAll('button').forEach(b => b.disabled = dist > 3.5);
   }
