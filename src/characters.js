@@ -6,15 +6,17 @@ const surface = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 
 const shadowMaterial = new THREE.MeshBasicMaterial({ color: '#080b18', transparent: true, opacity: .23, depthWrite: false });
 const templates = new Map();
 const looks = {
-  player: { hair: 'crop', outfit: 'jacket', pants: '#344957', skin: '#e5b799', shoes: '#ece8d9', accessory: 'satchel' },
-  waiting: { hair: 'long', outfit: 'coat', pants: '#45405d', skin: '#edc3a6', shoes: '#f0dfcf', accessory: 'phone' },
-  eye: { hair: 'bob', outfit: 'cardigan', pants: '#e1d6c9', skin: '#e1ad90', shoes: '#614d5d', accessory: 'bag' },
-  tourist: { hair: 'crop', outfit: 'jacket', pants: '#536677', skin: '#d5a17e', shoes: '#eee6d3', accessory: 'camera' },
-  busy: { hair: 'sidepart', outfit: 'blazer', pants: '#3c465c', skin: '#deb193', shoes: '#343744', accessory: 'phone' },
-  earphones: { hair: 'ponytail', outfit: 'hoodie', pants: '#445663', skin: '#bd8a6b', shoes: '#e4e9e4', accessory: 'headphones' },
-  cafe: { hair: 'wavy', outfit: 'cardigan', pants: '#d7cbbb', skin: '#e9b69b', shoes: '#e9dfcb', accessory: 'coffee' },
-  reader: { hair: 'bob', outfit: 'knit', pants: '#596073', skin: '#c69273', shoes: '#4c3e41', accessory: 'book', glasses: true },
-  friend: { hair: 'ponytail', outfit: 'jacket', pants: '#4f5167', skin: '#e8bb9e', shoes: '#e4d6d9', accessory: 'bag' },
+  catch: { hair: 'crop', outfit: 'jacket', pants: '#252734', skin: '#cda181', shoes: '#292933', accessory: 'menu' },
+  scout: { hair: 'sidepart', outfit: 'blazer', pants: '#303342', skin: '#dfb49b', shoes: '#262430', accessory: 'watch' },
+  player: { hair: 'sidepart', outfit: 'blazer', pants: '#292c39', skin: '#dfb397', shoes: '#302b32', accessory: 'watch' },
+  waiting: { feminine: true, hair: 'long', outfit: 'coat', pants: '#45405d', skin: '#edc3a6', shoes: '#f0dfcf', accessory: 'phone' },
+  eye: { skirt: true, feminine: true, hair: 'bob', outfit: 'cardigan', pants: '#e1d6c9', skin: '#e1ad90', shoes: '#614d5d', accessory: 'bag' },
+  tourist: { feminine: true, hair: 'wavy', outfit: 'jacket', pants: '#536677', skin: '#d5a17e', shoes: '#eee6d3', accessory: 'camera' },
+  busy: { feminine: true, hair: 'long', outfit: 'blazer', pants: '#3c465c', skin: '#deb193', shoes: '#343744', accessory: 'phone' },
+  earphones: { feminine: true, hair: 'ponytail', outfit: 'hoodie', pants: '#445663', skin: '#bd8a6b', shoes: '#e4e9e4', accessory: 'headphones' },
+  cafe: { skirt: true, feminine: true, hair: 'wavy', outfit: 'cardigan', pants: '#d7cbbb', skin: '#e9b69b', shoes: '#e9dfcb', accessory: 'coffee' },
+  reader: { feminine: true, hair: 'bob', outfit: 'knit', pants: '#596073', skin: '#c69273', shoes: '#4c3e41', accessory: 'book', glasses: true },
+  friend: { feminine: true, hair: 'ponytail', outfit: 'jacket', pants: '#4f5167', skin: '#e8bb9e', shoes: '#e4d6d9', accessory: 'bag' },
 };
 
 function builder() {
@@ -31,7 +33,7 @@ function builder() {
   };
   return {
     box: (color, p, size, r) => add(new THREE.BoxGeometry(1, 1, 1), color, p, size, r),
-    ball: (color, p, size, r) => add(new THREE.SphereGeometry(1, 10, 7), color, p, size, r),
+    ball: (color, p, size, r) => add(new THREE.SphereGeometry(1, Math.max(...size) < .06 ? 8 : 10, Math.max(...size) < .06 ? 5 : 7), color, p, size, r),
     cone: (color, p, radiusTop, radiusBottom, height, r, depth = 1) => add(new THREE.CylinderGeometry(radiusTop, radiusBottom, height, 10), color, p, [1, 1, depth], r),
     arc: (color, p, radius, tube, rotation, length = Math.PI * 2) => add(new THREE.TorusGeometry(radius, tube, 4, 14, length), color, p, [1, 1, 1], rotation),
     scalp: (color, p, size) => add(new THREE.SphereGeometry(1, 12, 7, 0, Math.PI * 2, 0, Math.PI * .56), color, p, size),
@@ -52,7 +54,7 @@ function buildTemplate(color, hairColor, kind, detailed) {
   const body = new THREE.Group(); body.name = 'body'; root.add(body);
   add(body, 'outfit', b => {
     b.cone(color, [0, 1.34, 0], .265, .205, .59, undefined, .66);
-    b.ball(color, [0, 1.56, 0], [.29, .13, .18]);
+    b.ball(color, [0, 1.56, 0], [look.feminine ? .255 : .30, .13, .18]);
     b.cone(look.skin, [0, 1.73, 0], .075, .09, .18);
     b.cone(look.pants, [0, .99, 0], .21, .21, .15, undefined, .7);
     const inner = '#f1e8da', dark = shade(color, .72), light = shade(color, 1.15);
@@ -80,6 +82,15 @@ function buildTemplate(color, hairColor, kind, detailed) {
       b.arc(dark, [0, 1.64, .01], .10, .025, [Math.PI / 2, 0, 0]);
       if (detailed) for (const y of [1.17, 1.29, 1.41]) b.box(shade(color, .88), [0, y, .172], [.38, .018, .02]);
     }
+    if (look.skirt) {
+      b.cone(color, [0, .92, 0], .21, .32, .38, undefined, .8);
+      for (const x of [-.18, -.06, .06, .18]) b.box(light, [x, .82, .20], [.014, .16, .014]);
+    }
+    if (kind === 'player' || kind === 'scout') {
+      b.box('#1b1c29', [0, 1.4, .185], [.17, .36, .025]);
+      b.arc('#d5b575', [0, 1.61, .16], .08, .009, [Math.PI / 2, 0, 0], Math.PI);
+      b.box('#d3b474', [.16, 1.48, .19], [.035, .06, .025]);
+    }
     if (detailed) for (const side of [-1, 1]) b.box(shade(look.pants, .75), [side * .17, .98, .05], [.06, .08, .15]);
   });
   const head = new THREE.Group(); head.name = 'head'; head.position.set(0, 1.94, 0); body.add(head);
@@ -89,21 +100,23 @@ function buildTemplate(color, hairColor, kind, detailed) {
     for (const side of [-1, 1]) {
       b.ball(look.skin, [side * .232, -.01, -.005], [.045, .065, .036]);
       b.ball('#f4f0e9', [side * .087, .024, .203], [.051, .034, .018]);
-      b.ball('#303445', [side * .087, .023, .219], [.023, .029, .009]);
+      b.ball(look.feminine ? '#59414b' : '#303445', [side * .087, .023, .219], [look.feminine ? .027 : .023, .030, .009]);
       if (detailed) {
         b.ball('#fff6e8', [side * .083 - .006, .033, .227], [.007, .009, .004]);
-        b.box(hairColor, [side * .086, .086, .205], [.072, .017, .019], [0, 0, side * -.1]);
+        if (look.feminine) { b.box('#543d49', [side * .09, .053, .222], [.09, .009, .012], [0, 0, side * .12]); b.ball('#e0bf83', [side * .24, -.075, .025], [.018, .03, .018]); }
+        b.box(hairColor, [side * .086, .086, .205], [.072, .012, .019], [0, 0, side * -.1]);
         b.ball('#d99889', [side * .135, -.065, .185], [.047, .022, .013]);
       }
     }
     b.ball(shade(look.skin, .92), [0, -.025, .224], [.028, .043, .032]);
-    b.arc('#995e5e', [0, -.118, .193], .034, .007, [0, 0, Math.PI], Math.PI);
+    b.arc(look.feminine ? '#b56e7b' : '#995e5e', [0, -.118, .193], .034, .007, [0, 0, Math.PI], Math.PI);
     b.scalp(hairColor, [0, .047, -.025], [.254, .275, .24]);
     const hairLight = shade(hairColor, 1.38);
     for (let i = 0; i < 5; i++) {
       const x = -.17 + i * .078;
       b.cone(i % 2 ? hairLight : hairColor, [x, .146 + (kind === 'busy' ? x * .4 : 0), .159], .075, .015, .19, [0, 0, -.18 + i * .08], .55);
     }
+    if (look.feminine && detailed) b.ball(shade(hairColor, 1.2), [.16, .14, .115], [.09, .14, .09], [0, 0, -.25]);
     if (look.hair === 'long' || look.hair === 'bob') {
       b.ball(hairColor, [0, look.hair === 'long' ? -.2 : -.075, -.125], [.25, look.hair === 'long' ? .42 : .28, .15]);
       for (const side of [-1, 1]) b.ball(side > 0 ? hairLight : hairColor, [side * .218, -.115, -.018], [.075, look.hair === 'long' ? .31 : .21, .12]);
@@ -112,7 +125,7 @@ function buildTemplate(color, hairColor, kind, detailed) {
       b.ball(hairColor, [.025, -.15, -.31], [.105, .29, .1], [-.22, 0, -.13]);
       b.arc('#dfb186', [0, .07, -.26], .085, .018, [Math.PI / 2, 0, 0]);
     } else if (look.hair === 'wavy') {
-      for (let i = 0; i < 7; i++) { const a = i / 6 * Math.PI; b.ball(i % 2 ? hairLight : hairColor, [Math.cos(a) * .23, .05, -.035 - Math.sin(a) * .17], [.10, .27, .10]); }
+      for (let i = 0; i < 5; i++) { const a = i / 4 * Math.PI; b.ball(i % 2 ? hairLight : hairColor, [Math.cos(a) * .23, .05, -.035 - Math.sin(a) * .17], [.10, .27, .10]); }
     } else {
       b.ball(hairColor, [0, .17, -.15], [.23, .19, .14]);
       b.ball(hairLight, [-.06, .26, -.035], [.17, .075, .16], [0, 0, -.18]);
@@ -148,7 +161,11 @@ function buildTemplate(color, hairColor, kind, detailed) {
       if (detailed) for (const z of [.04, .085, .13]) b.box('#f9f0df', [0, -.357, z], [.09, .009, .015]);
     });
   }
+  if (look.accessory === 'watch') add(elbows[0], 'wrist-watch', b => { b.cone('#bfa46b', [0, -.26, 0], .075, .075, .055); b.ball('#e1cda1', [0, -.26, .068], [.045, .035, .015]); });
   const held = look.accessory;
+  if (held === 'menu') {
+    const menu = add(elbows[1], 'restaurant-menu', b => { b.box('#862e47', [0, -.31, .10], [.23, .33, .025]); for (let i = 0; i < 4; i++) b.box('#eed9ba', [0, -.21 - i * .06, .117], [.16, .018, .006]); }); props.push(menu);
+  }
   if (held === 'phone') {
     const phone = add(elbows[1], 'phone', b => {
       b.box('#273344', [0, -.34, .07], [.105, .19, .027]); b.box('#9bc9cd', [0, -.34, .087], [.083, .145, .006]);
@@ -227,7 +244,7 @@ export function animateCharacter(model, moving, time, seed = 0) {
     arms[i].rotation.set(-phase * .65, 0, i ? -.06 : .06);
     elbows[i].rotation.set(moving ? -.12 - Math.max(0, phase) * .45 : -.12, 0, 0);
   }
-  if (['waiting', 'busy', 'cafe'].includes(kind)) { arms[1].rotation.x = -.24; elbows[1].rotation.x = -1.12; }
+  if (['waiting', 'busy', 'cafe', 'catch'].includes(kind)) { arms[1].rotation.x = -.24; elbows[1].rotation.x = -1.12; }
   if (kind === 'cafe') props[0].quaternion.copy(body.quaternion).multiply(arms[1].quaternion).multiply(elbows[1].quaternion).invert();
   if (kind === 'reader') { arms.forEach(a => a.rotation.x = -.22); elbows.forEach(a => a.rotation.x = -1.15); }
   if (kind === 'earphones' && !moving) head.rotation.z = Math.sin(time * 2 + seed) * .04;

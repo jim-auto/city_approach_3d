@@ -81,3 +81,20 @@ test('a companion physically follows through the Kabukicho junctions to the chos
     assert.ok(world.distanceTo(npc) < 3.1, `companion reached ${destination.id}`);
   }
 });
+
+test('the one-lap tour walks the player along every side of Toho and returns to its front', () => {
+  const world = makeWorld(); world.layout = MAP_LAYOUTS.kabukicho;
+  world.player.position.set(...[world.layout.start[0], 0, world.layout.start[1]]);
+  assert.equal(world.walkRoute(world.layout.tour), true);
+  const visited = new Set();
+  for (let i = 0; i < 1500 && world.destination; i++) {
+    world.update(.05, i * .05);
+    const p = world.player.position; assert.ok(isWalkable(p, world.layout));
+    if (p.x < -14 && p.z < -25) visited.add('west');
+    if (p.z < -42 && Math.abs(p.x) < 10) visited.add('rear');
+    if (p.x > 17 && p.z < -25) visited.add('east');
+  }
+  assert.deepEqual([...visited].sort(), ['east', 'rear', 'west']);
+  assert.equal(world.destination, null);
+  assert.ok(world.player.position.distanceTo(new THREE.Vector3(0, 0, -17)) < .2);
+});

@@ -1,18 +1,18 @@
 export const PROFILES = [
-  { id: 'waiting', name: '待ち合わせ中の人', traits: ['立ち止まり', 'スマホ', '待ち合わせ'], cue: '時々時計を見て、周囲を見渡している。', open: ['empathy', 'situation'], interest: 52, color: '#dc9aab', hair: '#42293a', speed: 0.15 },
-  { id: 'eye', name: '散歩中の人', traits: ['目が合う', '歩くのがゆっくり'], cue: 'こちらと目が合うと、小さく会釈した。', open: ['empathy', 'situation', 'joke'], interest: 58, color: '#b5b3ec', hair: '#333144', speed: 0.5 },
-  { id: 'tourist', name: '街を見ている人', traits: ['周囲を見る', '観光中', 'カメラ'], cue: 'カメラを片手に、道を探しているようだ。', open: ['item', 'situation'], interest: 48, color: '#e3b86f', hair: '#65483d', speed: 0.3 },
-  { id: 'busy', name: '急いでいる人', traits: ['足早', 'スマホ', '余裕がなさそう'], cue: '画面を見ながら足早に歩いている。今はそっとしておこう。', open: [], interest: 20, color: '#6486a9', hair: '#292936', speed: 1.2, guarded: true },
-  { id: 'earphones', name: '音楽を聴いている人', traits: ['イヤホン', '視線が合わない'], cue: '音楽に集中していて、周囲に注意を向けていない。', open: [], interest: 18, color: '#88ab98', hair: '#383039', speed: 0.85, guarded: true },
-  { id: 'cafe', name: 'ひと休み中の人', traits: ['コーヒー', '立ち止まり', '目が合う'], cue: 'カップを持ってひと休み。少し時間がありそう。', open: ['item', 'empathy'], interest: 60, color: '#e58b74', hair: '#553931', speed: 0 },
-  { id: 'reader', name: '本を読んでいる人', traits: ['読書', '立ち止まり'], cue: '本から顔を上げて、ひと息ついている。', open: ['item'], interest: 42, color: '#a998c2', hair: '#3d3437', speed: 0 },
-  { id: 'friend', name: '友達を待つ人', traits: ['友達と一緒', 'もうすぐ出発'], cue: '友達と話しながら出発するところ。流れを止めずに離れよう。', open: [], interest: 22, color: '#80b6c1', hair: '#413226', speed: 0.6, guarded: true },
+  { id: 'waiting', name: 'ユイ', age: 24, gender: 'woman', traits: ['立ち止まり', 'スマホ', '待ち合わせ'], cue: '時々時計を見て、周囲を見渡している。', open: ['empathy', 'situation'], interest: 52, color: '#dc9aab', hair: '#42293a', speed: 0.15 },
+  { id: 'eye', name: 'ミオ', age: 26, gender: 'woman', traits: ['目が合う', '歩くのがゆっくり'], cue: 'こちらと目が合うと、小さく会釈した。', open: ['empathy', 'situation', 'joke'], interest: 58, color: '#b5b3ec', hair: '#333144', speed: 0.5 },
+  { id: 'tourist', name: 'リナ', age: 25, gender: 'woman', traits: ['周囲を見る', '観光中', 'カメラ'], cue: 'カメラを片手に、道を探しているようだ。', open: ['item', 'situation'], interest: 48, color: '#e3b86f', hair: '#65483d', speed: 0.3 },
+  { id: 'busy', name: 'ミサキ', age: 28, gender: 'woman', traits: ['足早', 'スマホ', '余裕がなさそう'], cue: '画面を見ながら足早に歩いている。今はそっとしておこう。', open: [], interest: 20, color: '#6486a9', hair: '#292936', speed: 1.2, guarded: true },
+  { id: 'earphones', name: 'アオイ', age: 23, gender: 'woman', traits: ['イヤホン', '視線が合わない'], cue: '音楽に集中していて、周囲に注意を向けていない。', open: [], interest: 18, color: '#88ab98', hair: '#383039', speed: 0.85, guarded: true },
+  { id: 'cafe', name: 'ナツキ', age: 27, gender: 'woman', traits: ['コーヒー', '立ち止まり', '目が合う'], cue: 'カップを持ってひと休み。少し時間がありそう。', open: ['item', 'empathy'], interest: 60, color: '#e58b74', hair: '#553931', speed: 0 },
+  { id: 'reader', name: 'サヤ', age: 26, gender: 'woman', traits: ['読書', '立ち止まり'], cue: '本から顔を上げて、ひと息ついている。', open: ['item'], interest: 42, color: '#a998c2', hair: '#3d3437', speed: 0 },
+  { id: 'friend', name: 'ハルカ', age: 24, gender: 'woman', traits: ['友達と一緒', 'もうすぐ出発'], cue: '友達と話しながら出発するところ。流れを止めずに離れよう。', open: [], interest: 22, color: '#80b6c1', hair: '#413226', speed: 0.6, guarded: true },
 ];
 export const OPENERS = [
-  { key: 'empathy', label: '共感する', text: '「今日は人が多いですね」' },
-  { key: 'situation', label: '状況いじり', text: '「ここ、待ち合わせの定番ですね」' },
-  { key: 'item', label: '持ち物に触れる', text: '「それ、素敵ですね」' },
-  { key: 'joke', label: 'ユーモア賭け', text: '「この街、迷路みたいですね」' },
+  { key: 'empathy', label: '自然に声をかける', text: '「今日は人が多いですね」' },
+  { key: 'situation', label: '今の状況から話す', text: '「ここ、待ち合わせの定番ですね」' },
+  { key: 'item', label: '持ち物を褒める', text: '「それ、素敵ですね」' },
+  { key: 'joke', label: '軽い冗談で話す', text: '「この街、迷路みたいですね」' },
 ];
 export const RESPONSES = [{ key: 'listen', label: '聞く', sub: '相手のペースで' }, { key: 'empathy', label: '共感', sub: '気持ちを受け止める' }, { key: 'joke', label: 'ツッコミ', sub: '軽く笑いにする' }, { key: 'proposal', label: '提案', sub: '次のきっかけを' }];
 export const clamp = (v, min = 0, max = 100) => Math.min(max, Math.max(min, v));

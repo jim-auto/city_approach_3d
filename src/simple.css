@@ -82,3 +82,24 @@
 @media (max-width: 700px), (pointer: coarse) and (max-width: 1100px) {
   .responses button { font-size: 13px; }
 }
+
+.play-guide { position: absolute; top: calc(78px + var(--safe-top)); left: max(16px, var(--safe-left)); max-width: calc(100% - 32px); padding: 9px 13px; border-radius: 12px; background: #14212edc; }
+.play-guide strong { display: block; font-size: 12px; color: #e4a9bf; margin-bottom: 4px; }
+.play-guide span { font-size: 11px; color: #e2e8ed; }
+#app[data-panel='observation'] .play-guide { display: none; }
+#nearby-person { width: 152px; font-size: 12px; }
+#app .action-dock #action-toggle { width: 100%; }
+#app .play-actions { align-items: stretch; }
+.how-to-play { text-align: left; padding-left: 24px; margin: 24px 0; }
+.how-to-play li { margin: 14px 0; padding-left: 5px; font-size: 14px; }
+.how-to-play li::marker { color: #a6e3c9; font-weight: 700; }
+.how-to-play span { display: block; color: #b3c1cd; font-size: 12px; line-height: 1.7; margin-top: 5px; }
+.intro h2 { font-size: clamp(20px, 5vw, 28px); }
+.tour-button { width: 100%; min-height: 48px; margin-top: 10px; padding: 10px; font-size: 12px; }
+#street-name { font-size: 18px; }
+#street-line { font-size: 18px; line-height: 1.8; min-height: 80px; }
+#street-options { display: grid; gap: 9px; }
+#street-options button { min-height: 50px; text-align: left; padding: 12px; font-size: 13px; }
+.npc-label.date-label { color: #f5c1d5; border-color: #e7a6bf66; }
+.npc-label.street-label { color: #f5d59d; border-color: #dab67c80; }
+#approach-status { font-size: 12px; line-height: 1.6; color: #a6e3c9; margin: 8px 0 12px; }

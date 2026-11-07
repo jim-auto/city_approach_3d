@@ -4,6 +4,8 @@ import { readFile } from 'node:fs/promises';
 import { Window } from 'happy-dom';
 import { Vector3 } from 'three';
 import { startGame } from '../src/app.js';
+import { MAP_LAYOUTS } from '../src/locations.js';
+import { STREET_PROFILES } from '../src/street-encounters.js';
 import { PROFILES } from '../src/game.js';
 
 // Test the real application controller and HTML without opening or controlling Chrome.
@@ -20,12 +22,13 @@ test('explore → observe → conversation → escort → arrival, help resume, 
   t.mock.timers.enable({ apis: ['setTimeout'] });
   class WorldStub {
     constructor(container, labels, onSelect) {
-      this.onSelect = onSelect; this.player = { position: new Vector3(0, 0, 8) }; this.keys = new Set(); this.marker = { visible: false }; this.map = 'kabukicho'; this.goal = new Vector3(-6, 0, -22); this.selected = null;
+      this.onSelect = onSelect; this.player = { position: new Vector3(0, 0, 8) }; this.keys = new Set(); this.marker = { visible: false }; this.map = 'kabukicho'; this.goal = new Vector3(-6, 0, -22); this.selected = null; this.layout = MAP_LAYOUTS.kabukicho;
     }
     select(n) { this.selected = n; }
     distanceTo(n) { return this.player.position.distanceTo(n.mesh.position); }
     walkTo(pos) { this.destination = pos.clone(); this.player.position.copy(pos); }
     setMap(map) { this.map = map; this.companion = null; }
+    walkRoute(points) { this.lastTour = points; this.destination = new Vector3(points[0][0], 0, points[0][1]); return true; }
     setDestination(destination) { this.goal.set(destination.x, 0, destination.z); this.escortDestination = destination; }
     performAction(id) { this.action = id; return !this.paused; }
     cancelAction() { this.action = null; }
@@ -37,7 +40,9 @@ test('explore → observe → conversation → escort → arrival, help resume, 
     const { state, world } = startGame(WorldStub), doc = window.document;
     const click = id => doc.getElementById(id).click();
     const choose = key => { doc.querySelector(`[data-response="${key}"]`).click(); t.mock.timers.tick(710); };
-    assert.equal(state.mode, 'intro'); click('start'); assert.equal(state.mode, 'explore');
+    assert.equal(state.mode, 'intro'); assert.match(doc.getElementById('intro').textContent, /ナンパシミュレーター/);
+    click('start-tour'); assert.equal(state.mode, 'explore'); assert.equal(world.lastTour.length, 6);
+    click('start'); assert.equal(state.mode, 'explore');
     click('menu-toggle'); assert.equal(state.mode, 'menu'); assert.equal(world.paused, true);
     assert.equal(doc.getElementById('game-menu').open, true);
     doc.getElementById('game-menu').dispatchEvent(new window.Event('cancel', { cancelable: true }));
@@ -83,6 +88,16 @@ test('explore → observe → conversation → escort → arrival, help resume, 
     assert.equal(state.mode, 'result'); assert.equal(state.score, 220);
     assert.match(doc.getElementById('result-body').textContent, /シネシティ広場/);
     click('result-next'); assert.equal(state.mode, 'explore'); assert.equal(world.companion, null);
+    for (const profile of STREET_PROFILES) {
+      const streetNpc = { profile, mesh: { position: world.player.position.clone() }, cooldown: 0 };
+      world.onSelect(streetNpc); assert.equal(state.mode, 'street');
+      assert.equal(doc.getElementById('street-name').textContent, profile.name);
+      assert.equal(doc.getElementById('street-options').children.length, 3);
+      doc.getElementById('street-options').firstElementChild.click();
+      assert.equal(doc.getElementById('street-options').children.length, 0);
+      click('street-close'); assert.equal(state.mode, 'explore'); assert.ok(streetNpc.cooldown > state.elapsed);
+      assert.equal(world.companion, null);
+    }
     doc.querySelector('[data-map="nagoya"]').click(); assert.equal(state.map, 'nagoya'); assert.equal(world.map, 'nagoya');
     assert.match(doc.getElementById('location-name').textContent, /名古屋駅/);
     const busy = { profile: PROFILES[3], mesh: { position: world.player.position.clone() }, cooldown: 0 };

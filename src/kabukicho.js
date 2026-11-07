@@ -14,6 +14,9 @@ export const KABUKICHO_LAYOUT = {
     rect('cinema-front-road', '東宝ビル前', -50, 35, -22, -12),
     rect('ichibangai', '歌舞伎町一番街', -27, -18, -58, 49),
     rect('east-road', '東宝ビル東側', 17, 26, -58, 49),
+    rect('toho-west', '東宝ビル西側', -22, -14, -51, -18),
+    rect('toho-rear', '東宝ビル裏', -23, 25, -48, -41.3),
+    rect('toho-east', '東宝ビル東側歩道', 14.2, 24, -51, -18),
     rect('hanamichi', '花道通り', -50, 35, -58, -48),
     rect('yasukuni', '靖国通り', -50, 35, 39, 49),
     rect('middle-alley', '仲通り', -50, 35, 12, 19),
@@ -21,6 +24,8 @@ export const KABUKICHO_LAYOUT = {
     rect('hotel-approach', 'ホテル入口前', 5, 15.8, -28, -17),
     rect('cinema-approach', '映画館入口前', -4, 5, -28, -17),
   ],
+  streetPeople: [[-20, -17], [20, -30]],
+  tour: [[0, -17], [-17, -17], [-17, -44.5], [19, -44.5], [19, -17], [0, -17]],
   landmarks: [
     { id: 'toho-cinemas', name: 'TOHOシネマズ 新宿', x: 0, z: -28, color: '#f1e8db', height: 10 },
     { id: 'cinecity', name: 'シネシティ広場', x: -35, z: -30, color: '#8dd5d7', height: 2 },
@@ -29,7 +34,7 @@ export const KABUKICHO_LAYOUT = {
     { id: 'godzilla-head', name: 'ゴジラヘッド', x: -6.8, z: -28.8, color: '#9bb3a1' },
   ],
   destinations: [
-    { id: 'cinema', label: '映画館の入口', x: 0, z: -26, invitation: '映画の看板を一緒に見に行きませんか？', answer: 'いいですね。TOHOの入口まで一緒に行きましょう。' },
+    { id: 'cinema', label: '映画館の入口', x: 0, z: -26, invitation: '一緒に映画を観ませんか？', answer: 'いいですね。TOHOの入口まで一緒に行きましょう。' },
     { id: 'plaza', label: 'シネシティ広場', x: -35, z: -32, invitation: '広場のほうで、もう少し話しませんか？', answer: '少しなら。広場のほうに歩きましょう。' },
     { id: 'lounge', label: 'ホテルのラウンジ入口', x: 9.8, z: -25.8, invitation: 'ラウンジで続きを話しませんか？', answer: 'もう少し話したいです。まず入口まで一緒に行きましょう。' },
   ],
@@ -45,7 +50,7 @@ function vertical(parent, text, x, y, z, color, rotation = 0, width = 1.05) {
 }
 function storefront(parent, name, x, z, width, depth, height, color, rotation = 0, accent = '#d4c47f') {
   const g = group(parent, name, x, z); g.rotation.y = rotation;
-  box(g, 0, height / 2, 0, width, height, depth, color);
+  const body = box(g, 0, height / 2, 0, width, height, depth, color); body.userData.cameraBlocker = true;
   box(g, 0, height + .1, 0, width + .15, .25, depth + .15, '#50565e');
   for (let y = 3.8; y < height - .5; y += 2.5) {
     box(g, 0, y, depth / 2 + .02, width - .3, .12, .04, '#8a8d8e');
@@ -124,7 +129,7 @@ export function buildKabukichoDistrict(parent) {
     cylinder(parent, x, 3.0, -27, .06, 6, '#88969b', 8); box(parent, x, 6, -27, 1.3, .12, .45, '#d6e5e7', true);
   }
   const tower = group(parent, 'tokyu-tower', -55, -35);
-  box(tower, 0, 4, 0, 17, 8, 25, '#314853'); box(tower, 0, 32, -2, 13, 52, 19, '#416e86');
+  box(tower, 0, 4, 0, 17, 8, 25, '#314853').userData.cameraBlocker = true; box(tower, 0, 32, -2, 13, 52, 19, '#416e86').userData.cameraBlocker = true;
   for (let y = 9; y < 58; y += 1.35) box(tower, 0, y, 7.6, 12.8, .12, .09, '#8ab8cb');
   for (let x = -6; x <= 6; x += 1.3) box(tower, x, 33, 7.7, .09, 49, .07, '#96bfd1');
   sign(tower, '東急歌舞伎町タワー', 0, 7.0, 12.6, 15, 1.0, '#273e52');
@@ -138,6 +143,7 @@ export function buildKabukichoDistrict(parent) {
     const crown = new THREE.Mesh(new THREE.IcosahedronGeometry(.75, 1), material('#365f53')); crown.position.set(side * 6.0, 2.9, z + 1.5); parent.add(crown);
     cylinder(parent, side * 6, 1.35, z + 1.5, .07, 2.7, '#796b5b', 8);
   }
+  sign(parent, '← 東宝ビル裏 →', 0, .055, -44.5, 10, 1.0, '#343942', '#c6d0d3').rotation.x = -Math.PI / 2;
   for (const [text, x, z, width] of [['ゴジラロード', 0, 22, 5.5], ['一番街', -22.5, 29, 4], ['花道通り', -8, -53, 10]]) {
     const label = sign(parent, text, x, .055, z, width, .8, '#343942', '#bbb9b3'); label.rotation.x = -Math.PI / 2;
   }

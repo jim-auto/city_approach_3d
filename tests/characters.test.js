@@ -2,10 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { createCharacter, animateCharacter, isCharacterResource } from '../src/characters.js';
+import { STREET_PROFILES } from '../src/street-encounters.js';
 import { PROFILES } from '../src/game.js';
 
 test('every model has a bounded mobile budget, finite geometry and articulated joints', () => {
-  for (const profile of [{ id: 'player', color: '#a1d6c8', hair: '#2c3038' }, ...PROFILES]) {
+  for (const profile of [{ id: 'player', color: '#a1d6c8', hair: '#2c3038' }, ...PROFILES, ...STREET_PROFILES]) {
     const person = createCharacter(profile.color, profile.hair, profile.id);
     let meshes = 0, triangles = 0;
     person.traverse(o => {

@@ -1,3 +1,4 @@
+import { streetLines } from './street-encounters.js';
 import { destinationsFor, evaluateInvitation, spokenReplies } from './encounters.js';
 import { ACTIONS } from './actions.js';
 import { bindVirtualStick } from './input.js';
@@ -23,16 +24,17 @@ function toast(text) { $('toast').textContent = text; $('toast').classList.add('
 function score(points) { state.score += points; state.best = Math.max(state.best, state.score); saveBest(storage, state.best); updateScore(); }
 function updateScore() { $('score').textContent = String(state.score).padStart(3, '0'); $('best').textContent = String(state.best).padStart(3, '0'); $('rank').textContent = rank(state.score); $('score-progress').style.width = `${Math.min(100, state.score / 5)}%`; $('clear-progress').textContent = state.score >= 500 ? 'CITY CLEAR · 街のつながりが広がった！' : `CITY CLEAR まで ${500 - state.score} pt`; }
 function mission(step, title, text, number = '01') { $('mission-step').textContent = step; $('mission-title').textContent = title; $('mission-text').textContent = text; $('mission-number').textContent = number; }
-function setMode(mode) { closeActions(); world.cancelAction?.(); resetTouch(); $('app').dataset.mode = mode; state.mode = mode; world.paused = !['explore', 'escort'].includes(mode); if (world.paused) world.keys.clear(); $('touch-controls').style.visibility = ['explore', 'escort'].includes(mode) ? '' : 'hidden'; }
+function setMode(mode) { closeActions(); world.cancelAction?.(); resetTouch(); $('app').dataset.mode = mode; state.mode = mode; world.paused = !['explore', 'escort'].includes(mode); if (world.paused) world.keys.clear(); $('touch-controls').style.visibility = ['explore', 'escort'].includes(mode) ? '' : 'hidden'; $('guide').hidden = mode !== 'explore'; }
 function openModal(id) { $(id).showModal(); }
 function closeInspect() { delete $('app').dataset.panel; $('inspect').hidden = true; state.selected = null; world.select(null); }
-function explore() { state.invitation = null; state.escort = null; closeInspect(); $('escort').hidden = true; world.companion = null; setMode('explore'); mission('OBSERVE', 'まずは、街を歩こう。', '近くの人を選んで、サインを観察。'); }
+function explore() { state.touring = false; $('guide-text').textContent = '女の子をタップ → 声掛け → 会話 → デートに誘う'; state.invitation = null; state.escort = null; closeInspect(); $('escort').hidden = true; world.companion = null; setMode('explore'); mission('OBSERVE', 'まずは、街を歩こう。', '近くの人を選んで、サインを観察。'); }
 function result(title, body, points, button, action, good = false) {
   setMode('result'); $('conversation').close(); $('result-title').textContent = title; $('result-body').textContent = body; $('result-points').textContent = points ? `+${points} POINTS` : 'A MOMENT TO LEARN'; $('result-symbol').textContent = good ? '↗' : '◌'; $('result-eyebrow').textContent = good ? 'A NEW CONNECTION' : 'RESPECT THEIR PACE'; $('result-next').textContent = button; resultAction = action; if (points) score(points); tone(good ? 'success' : 'miss'); openModal('result');
 }
 function finishNpc(n) { if (n) n.cooldown = state.elapsed + 28; }
 function selectNpc(n) {
   if (state.mode !== 'explore') return;
+  if (n.profile.role) { openStreet(n); return; }
   if (n.cooldown > state.elapsed) { toast('今は相手の時間。ほかの出会いを探してみよう。'); return; }
   closeActions(); world.cancelAction?.(); resetTouch(); $('app').dataset.panel = 'observation'; state.selected = n; world.select(n); $('inspect').hidden = false;
   // Use the same 3D model for the close-up, once per person rather than every frame.
@@ -41,12 +43,30 @@ function selectNpc(n) {
     try { const image = document.createElement('img'); image.src = world.portrait(n); image.alt = ''; $('person-icon').append(image); }
     catch { $('person-icon').textContent = '◎'; }
   } else $('person-icon').textContent = '◎';
-  $('person-name').textContent = n.profile.name; $('person-icon').style.color = n.profile.color; $('person-icon').style.background = `${n.profile.color}20`;
+  $('person-name').textContent = `${n.profile.name} · ${n.profile.age}歳`; $('person-icon').style.color = n.profile.color; $('person-icon').style.background = `${n.profile.color}20`;
   $('traits').replaceChildren(...n.profile.traits.map(t => { const span = document.createElement('span'); span.textContent = t; return span; }));
   $('person-cue').textContent = n.profile.cue; $('person-status').textContent = n.profile.guarded ? '今はそっとしておこう' : '相手のペースを大切に';
-  $('opener-actions').replaceChildren(...OPENERS.map(opener => { const button = document.createElement('button'); button.dataset.opener = opener.key; button.textContent = opener.label; const small = document.createElement('small'); small.textContent = opener.text; button.append(small); button.addEventListener('click', () => startTalk(opener.key)); return button; }));
+  $('opener-actions').replaceChildren(...OPENERS.map(opener => { const button = document.createElement('button'); button.dataset.opener = opener.key; button.textContent = opener.text; const small = document.createElement('small'); small.textContent = opener.label; button.append(small); button.addEventListener('click', () => startTalk(opener.key)); return button; }));
   if (world.distanceTo(n) > 3.1) { const pos = n.mesh.position.clone(); pos.z += 2.1; world.walkTo(pos); toast('近くまで歩いて、相手のサインを見てみよう。'); }
   mission('READ THE SIGNS', '声をかける？ それとも離れる？', 'サインに合う、自然なきっかけを選ぼう。', '02'); tone();
+}
+function openStreet(n) {
+  if (state.mode !== 'explore' || n.cooldown > state.elapsed) return;
+  if (world.distanceTo(n) > 3.5) { const pos = n.mesh.position.clone(); pos.z += 1.5; world.walkTo(pos); toast('近くまで歩こう。もう一度タップすると話せます。'); return; }
+  closeInspect(); world.destination = null; world.waypoints = []; world.marker.visible = false;
+  world.faceEachOther?.(n); state.street = n; setMode('street');
+  const encounter = streetLines(n.profile.role);
+  $('street-name').textContent = n.profile.name; $('street-line').textContent = encounter.line;
+  $('street-options').replaceChildren(...encounter.choices.map(([line, reply]) => {
+    const button = document.createElement('button'); button.textContent = line;
+    button.addEventListener('click', () => { if (state.mode !== 'street') return; $('street-line').textContent = reply; $('street-options').replaceChildren(); }); return button;
+  })); openModal('street-dialog');
+}
+function closeStreet() { if (state.mode !== 'street') return; state.street.cooldown = state.elapsed + 60; state.street = null; $('street-dialog').close(); explore(); }
+function startTour() {
+  if (world.companion || state.map !== 'kabukicho') { toast('歌舞伎町の探索中に使えます。'); return; }
+  $('intro').close(); $('game-menu').close(); explore(); resetTouch();
+  if (world.walkRoute(world.layout.tour)) { state.touring = true; $('guide-text').textContent = 'TOHO一周散策中 · スティックを倒すと自由移動'; toast('正面 → 西側 → 裏側 → 東側を一周します。'); }
 }
 function startTalk(key) {
   const n = state.selected; if (!n || state.mode !== 'explore') return;
@@ -85,7 +105,7 @@ function endTalk(failed) {
 function openInvitation() {
   $('conversation').close(); closeInspect(); setMode('invite');
   $('invite-name').textContent = state.talk.npc.profile.name;
-  $('invite-line').textContent = 'どの辺に行きましょうか？';
+  $('invite-line').textContent = 'いいですよ。どこに行きましょう？';
   $('invite-confirm').hidden = true; state.invitation = null;
   $('invite-options').replaceChildren(...destinationsFor(state.map).map(destination => {
     const button = document.createElement('button'); button.dataset.destination = destination.id; button.textContent = destination.invitation;
@@ -114,13 +134,13 @@ function beginEscort() {
   $('goal-walk').textContent = `${destination.label}へ`;
   $('escort-description').textContent = `${destination.label}まで、一緒に歩こう。`;
   mission('WALK TOGETHER', `${destination.label}へ、一緒に。`, '紫のマーカーへ、ふたりのペースで歩こう。', '03');
-  toast(`「一緒に行きましょう」 ${destination.label}へ。`); tone('success');
+  toast(`デートOK！「一緒に行きましょう」 ${destination.label}へ。`); tone('success');
 }
 function completeEscort() {
   const n = world.companion, destination = state.escort.destination;
   finishNpc(n); world.faceEachOther?.(n); world.companion = null; $('escort').hidden = true; state.escort = null;
   const clear = state.score + 100 >= 500 && !state.clearShown; if (clear) state.clearShown = true;
-  result(clear ? 'CITY CLEAR' : `${destination.label}に到着。`, `「一緒に歩けて楽しかった。続きを話しましょう」${destination.label}まで、ふたりで歩いた。` + (clear ? ' 500ポイント達成！' : ''), 100, 'また街を歩く ↗', explore, true);
+  result(clear ? 'CITY CLEAR · デート成立' : 'デート成立！', `「一緒に歩けて楽しかった。続きを話しましょう」${destination.label}まで、ふたりで歩いた。` + (clear ? ' 500ポイント達成！' : ''), 100, 'また街を歩く ↗', explore, true);
 }
 function changeMap(map) {
   if (state.map === map) return;
@@ -132,10 +152,14 @@ function changeMap(map) {
 }
 try { world = new CityWorld($('world'), $('labels'), selectNpc, () => {}); }
 catch (error) { console.error(error); $('fatal').hidden = false; throw error; }
+$('start-tour').addEventListener('click', startTour);
+$('menu-tour').addEventListener('click', startTour);
+$('street-close').addEventListener('click', closeStreet);
+$('street-dialog').addEventListener('cancel', event => { event.preventDefault(); closeStreet(); });
 $('start').addEventListener('click', () => { $('intro').close(); if (state.mode === 'help') setMode(state.resumeMode || 'explore'); else explore(); state.resumeMode = null; tone(); });
 $('intro-close').addEventListener('click', () => { $('intro').close(); if (state.mode === 'intro') explore(); else setMode(state.resumeMode || 'explore'); });
 $('intro').addEventListener('cancel', e => { e.preventDefault(); $('intro-close').click(); });
-$('help').addEventListener('click', () => { if (state.mode === 'menu') resumeMenu(); if (!['explore', 'escort'].includes(state.mode)) return; state.resumeMode = state.mode; setMode('help'); openModal('intro'); });
+$('help').addEventListener('click', () => { if (state.mode === 'menu') resumeMenu(); if (!['explore', 'escort'].includes(state.mode)) return; state.resumeMode = state.mode; $('start-tour').disabled = !!world.companion || state.map !== 'kabukicho'; setMode('help'); openModal('intro'); });
 function resumeMenu() {
   $('game-menu').close(); setMode(state.menuResume || 'explore'); state.menuResume = null;
 }
@@ -159,7 +183,7 @@ $('camera-reset').addEventListener('click', () => world.resetCamera()); document
 $('sound').addEventListener('click', () => { state.sound = !state.sound; $('sound').innerHTML = `♪<span>${state.sound ? 'ON' : 'OFF'}</span>`; $('sound').setAttribute('aria-pressed', String(state.sound)); $('sound').setAttribute('aria-label', `効果音を${state.sound ? 'オフ' : 'オン'}にする`); tone(); });
 resetTouch = bindVirtualStick($('movement-stick'), $('stick-thumb'), world, () => ['explore', 'escort'].includes(state.mode) && !state.selected);
 function nearestPerson() {
-  return (world.npcs || []).filter(n => !n.ambient && n.cooldown <= state.elapsed && world.distanceTo(n) < 10).sort((a, b) => world.distanceTo(a) - world.distanceTo(b))[0];
+  return (world.npcs || []).filter(n => !n.ambient && !n.profile.role && n.cooldown <= state.elapsed && world.distanceTo(n) < 10).sort((a, b) => world.distanceTo(a) - world.distanceTo(b))[0];
 }
 function closeActions() { $('action-menu').hidden = true; $('action-toggle').setAttribute('aria-expanded', 'false'); }
 function runAction(id) {
@@ -185,7 +209,7 @@ window.addEventListener('keydown', event => {
   const action = ACTIONS.find(a => a.key === event.key.toLowerCase());
   if (action && ['explore', 'escort'].includes(state.mode) && !state.selected) { event.preventDefault(); runAction(action.id); }
 });
-$('nearby-person').addEventListener('click', () => { const n = nearestPerson(); if (n) selectNpc(n); else toast('地面をタップして移動し、近くの人を探してみよう。'); });
+$('nearby-person').addEventListener('click', () => { const n = nearestPerson(); if (n) selectNpc(n); else toast('地面をタップして移動し、女の子を探してみよう。'); });
 $('zoom-in').addEventListener('click', () => world.zoom(-3));
 $('zoom-out').addEventListener('click', () => world.zoom(3));
 window.addEventListener('keydown', e => { if (state.mode === 'talk' && ['1', '2', '3', '4'].includes(e.key)) respond(RESPONSES[Number(e.key) - 1].key); if (e.key === 'Escape' && state.mode === 'explore') closeInspect(); });
@@ -197,9 +221,14 @@ function frame(now) {
   lastRender = interval ? now - ((now - lastRender) % interval) : now;
   const dt = Math.min((now - previous) / 1000, .05); previous = now; state.elapsed += dt;
   world.update(dt, state.elapsed); mapTick += dt;
+  if (state.touring && !world.destination) { state.touring = false; $('guide-text').textContent = '女の子をタップ → 声掛け → 会話 → デートに誘う'; }
+  if (state.mode === 'explore' && !state.selected && !state.touring) {
+    const street = (world.npcs || []).find(n => n.profile?.role && n.cooldown <= state.elapsed && world.distanceTo(n) < 2.7);
+    if (street) openStreet(street);
+  }
   if (mapTick > .2) { if ($('game-menu').open) world.drawMinimap(ctx); mapTick = 0; }
   if (state.selected && state.mode === 'explore') {
-    const dist = world.distanceTo(state.selected); $('person-distance').textContent = `${dist.toFixed(1)} m`; $('opener-actions').querySelectorAll('button').forEach(b => b.disabled = dist > 3.5);
+    const dist = world.distanceTo(state.selected); $('approach-status').textContent = dist > 3.5 ? '近くまで移動中… 到着したら台詞を選ぼう。' : state.selected.profile.guarded ? '今は話す余裕がなさそう。会釈して次の出会いへ。' : '最初にかけるひと言を選ぼう。'; $('person-distance').textContent = `${dist.toFixed(1)} m`; $('opener-actions').querySelectorAll('button').forEach(b => b.disabled = dist > 3.5);
   }
   if (state.mode === 'escort') {
     state.escort.distance += state.escort.previous.distanceTo(world.player.position); state.escort.previous.copy(world.player.position);

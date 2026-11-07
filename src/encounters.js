@@ -7,7 +7,7 @@ export function destinationsFor(map) {
   ];
 }
 export function evaluateInvitation(profile, destination, talk) {
-  if (!destination || profile.guarded || talk.favor < 68 || talk.discomfort >= 60) return { accepted: false, answer: '今日はここで。また機会があれば。' };
+  if (!destination || profile.role || profile.guarded || talk.favor < 68 || talk.discomfort >= 60) return { accepted: false, answer: '今日はここで。また機会があれば。' };
   if (profile.id === 'waiting' && destination.id === 'lounge') return { accepted: false, answer: '友達が来るので、ラウンジはやめておきます。近くを歩くくらいなら。' };
   return { accepted: true, answer: destination.answer };
 }

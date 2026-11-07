@@ -25,7 +25,7 @@ test('Kabukicho map connects central road, parallel Ichibangai, west plaza and n
   const tower = layout.landmarks.find(l => l.id === 'tokyu-tower'), plaza = layout.landmarks.find(l => l.id === 'cinecity');
   assert.ok(tower.x < plaza.x && plaza.x < -18);
   const around = planPath({ x: -22, z: -35 }, { x: 21, z: -35 }, layout);
-  assert.ok(around.some(p => p.z < -45 || p.z > -23), 'route goes around the Toho footprint');
+  assert.ok(around.some(p => p.z < -41 || p.z > -23), 'route goes around the Toho footprint');
 });
 test('invitations require readiness and respect schedule; spoken replies exist for every turn', () => {
   const destinations = destinationsFor('kabukicho'), ready = { favor: 90, discomfort: 12 };

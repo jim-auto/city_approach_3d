@@ -3,11 +3,12 @@ import { Window } from 'happy-dom';
 import * as THREE from 'three';
 import { SVGRenderer } from 'three/addons/renderers/SVGRenderer.js';
 import { createCharacter, animateCharacter } from '../src/characters.js';
+import { STREET_PROFILES } from '../src/street-encounters.js';
 import { PROFILES } from '../src/game.js';
 
 // Offline geometry preview: does not launch or control a browser.
 const window = new Window(); globalThis.document = window.document;
-const variants = [{ id: 'player', name: 'PLAYER', color: '#a1d6c8', hair: '#2c3038' }, ...PROFILES];
+const variants = [{ id: 'player', name: 'PLAYER', color: '#303544', hair: '#28232c' }, ...PROFILES, ...STREET_PROFILES];
 let cells = '';
 for (const [i, profile] of variants.entries()) {
   const scene = new THREE.Scene(); scene.add(new THREE.AmbientLight('#ffffff', .9));
@@ -18,5 +19,5 @@ for (const [i, profile] of variants.entries()) {
   cells += `<g transform="translate(${(i % 5) * 320 + 160},${Math.floor(i / 5) * 450 + 230})">${renderer.domElement.innerHTML}<text x="0" y="210" text-anchor="middle" fill="#dae1ed" font-family="sans-serif" font-size="17">${profile.id.toUpperCase()}</text></g>`;
 }
 await fs.mkdir('artifacts', { recursive: true });
-await fs.writeFile('artifacts/characters.svg', `<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="920" viewBox="0 0 1600 920"><rect width="1600" height="920" fill="#273345"/>${cells}</svg>`);
+await fs.writeFile('artifacts/characters.svg', `<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1370" viewBox="0 0 1600 1370"><rect width="1600" height="1370" fill="#273345"/>${cells}</svg>`);
 console.log('Saved artifacts/characters.svg'); window.happyDOM.abort();

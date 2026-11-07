@@ -1,3 +1,5 @@
+import { cameraView } from './camera.js';
+import { STREET_PROFILES } from './street-encounters.js';
 import * as THREE from 'three';
 import { ACTIONS, animateAction } from './actions.js';
 import { PROFILES, clamp } from './game.js';
@@ -21,7 +23,7 @@ export class CityWorld {
     container.append(this.renderer.domElement);
     this.ray = new THREE.Raycaster(); this.pointer = new THREE.Vector2(); this.target = new THREE.Vector3(0, 0, 4);
     this.cameraTarget = this.target.clone(); this.yaw = .22; this.distance = 26; this.keys = new Set(); this.destination = null;
-    this.player = createCharacter('#a1d6c8', '#2c3038', 'player'); this.player.position.set(0, 0, 8); this.scene.add(this.player);
+    this.player = createCharacter('#303544', '#28232c', 'player'); this.player.position.set(0, 0, 8); this.scene.add(this.player);
     this.playerLabel = this.makeLabel('YOU', 'player-label');
     this.ring = new THREE.Mesh(new THREE.RingGeometry(.62, .68, 48), new THREE.MeshBasicMaterial({ color: '#a5efd0', side: THREE.DoubleSide, transparent: true, opacity: .85, depthWrite: false }));
     this.ring.rotation.x = -Math.PI / 2; this.ring.position.y = .03; this.scene.add(this.ring);
@@ -60,11 +62,13 @@ export class CityWorld {
     this.goalBeacon = new THREE.Mesh(new THREE.CylinderGeometry(.045, .045, 6, 8), new THREE.MeshBasicMaterial({ color: '#c6a0fa', transparent: true, opacity: .3 })); this.goalBeacon.position.copy(this.goal); this.goalBeacon.position.y = 3; this.city.add(this.goalBeacon);
     this.goalLabel = this.makeLabel(this.layout.goalLabel, 'goal-label');
     this.landmarkLabels = this.layout.landmarks.slice(0, 2).map(item => ({ ...item, el: this.makeLabel(item.name, `landmark-label landmark-${item.id}`) }));
+    this.cameraBlockers = []; this.city.updateMatrixWorld(true);
+    this.city.traverse(o => { if (o.userData.cameraBlocker) this.cameraBlockers.push(new THREE.Box3().setFromObject(o)); });
     this.batchScenery();
-    const positions = this.layout.people;
-    this.npcs = PROFILES.map((profile, i) => {
+    const positions = [...this.layout.people, ...(this.layout.streetPeople || [])];
+    this.npcs = (night ? [...PROFILES, ...STREET_PROFILES] : PROFILES).map((profile, i) => {
       const mesh = createCharacter(profile.color, profile.hair, profile.id); mesh.position.set(positions[i][0], 0, positions[i][1]); mesh.rotation.y = i % 2 ? Math.PI * .8 : Math.PI * .2; this.city.add(mesh);
-      const label = this.makeLabel(profile.traits[0], profile.guarded ? 'guarded' : ''); const n = { profile, mesh, label, home: mesh.position.clone(), phase: i * 1.8, cooldown: 0 };
+      const label = this.makeLabel(profile.role ? profile.name : `♡ ${profile.name}`, profile.role ? 'street-label' : profile.guarded ? 'guarded' : 'date-label'); const n = { profile, mesh, label, home: mesh.position.clone(), phase: i * 1.8, cooldown: 0 };
       mesh.traverse(o => { if (o.isMesh) o.userData.npc = n; }); label.addEventListener('click', e => { e.stopPropagation(); this.onSelect(n); }); return n;
     });
     for (let i = 0; i < (this.mobile ? (night ? 6 : 4) : (night ? 18 : 12)); i++) {
@@ -101,6 +105,18 @@ export class CityWorld {
     if (this.paused || !ACTIONS.some(action => action.id === id)) return false;
     this.destination = null; this.waypoints = []; this.marker.visible = false; this.keys.clear();
     this.action = { id, elapsed: 0 }; return true;
+  }
+  walkRoute(points) {
+    let from = this.player.position; const route = [];
+    for (const [x, z] of points) {
+      const segment = planPath(from, { x, z }, this.layout);
+      if (!segment.length) return false;
+      route.push(...segment); from = segment.at(-1);
+    }
+    this.cancelAction(); this.keys.clear();
+    this.waypoints = route.map(p => new THREE.Vector3(p.x, 0, p.z)); this.destination = this.waypoints.shift();
+    if (route.length) this.marker.position.set(from.x, .04, from.z);
+    this.marker.visible = !!route.length; return !!route.length;
   }
   walkTo(pos) {
     this.cancelAction();
@@ -225,7 +241,11 @@ export class CityWorld {
     this.cameraTarget.lerp(this.player.position.clone().add(new THREE.Vector3(0, this.map === 'kabukicho' ? 4 : 1.1, this.map === 'kabukicho' ? -6 : -2)), 1 - Math.exp(-dt * 3));
     const night = this.map === 'kabukicho', horizontal = this.distance * (night ? .94 : .82);
     const desired = this.cameraTarget.clone().add(new THREE.Vector3(Math.sin(this.yaw) * horizontal, this.distance * (night ? .36 : .65), Math.cos(this.yaw) * horizontal));
-    this.camera.position.lerp(desired, 1 - Math.exp(-dt * 5)); this.camera.lookAt(this.cameraTarget);
+    const focus = this.player.position.clone().add(new THREE.Vector3(0, 1.5, 0));
+    const view = cameraView(focus, desired, this.cameraBlockers, this.yaw); let blocked = view.obstructed;
+    if (view.obstructed) this.camera.position.copy(view.position);
+    else { this.camera.position.lerp(view.position, 1 - Math.exp(-dt * 5)); const transition = cameraView(focus, this.camera.position, this.cameraBlockers, this.yaw); if (transition.obstructed) { blocked = true; this.camera.position.copy(transition.position); } }
+    this.camera.lookAt(blocked ? focus : this.cameraTarget);
     this.camera.updateMatrixWorld(); this.placeLabel(this.playerLabel, this.player.position, 2.8); if (this.companion) this.placeLabel(this.goalLabel, this.goal, 2.2); else this.goalLabel.style.display = 'none';
     for (const item of this.landmarkLabels) {
       this.placeLabel(item.el, new THREE.Vector3(item.x, 0, item.z), this.map === 'nagoya' ? (item.id === 'gold-clock' ? 5.8 : 4.4) : item.height || 11.7);

@@ -10,7 +10,7 @@ function sign(parent, text, x, y, z, w, h, bg = '#25313b', fg = '#f1ead9', rotat
 export function buildTohoBuilding(parent) {
   // Godzilla Road reaches the Toho cinema directly. The Ichibangai arch belongs to the parallel western street.
   const building = landmark(parent, 'toho-cinemas', [0, 0, -34]);
-  box(building, 0, 5.6, 0, 27, 11.2, 11, '#b6b9b7');
+  box(building, 0, 5.6, 0, 27, 11.2, 11, '#b6b9b7').userData.cameraBlocker = true;
   box(building, 0, 5.1, 5.62, 26.5, 7.6, .15, '#bbc4c4');
   // Asymmetric poster bay and the tall recessed cinema entrance.
   box(building, -6, 5.9, 5.93, 8.2, 9.8, .12, '#182b3e');
@@ -34,7 +34,7 @@ export function buildTohoBuilding(parent) {
   }
   sign(building, 'MARUHAN', -6, .85, 6.07, 7.8, .65, '#20202a', '#f2e9dd');
   const tower = landmark(parent, 'hotel-gracery-tower', [3.2, 0, -36]);
-  box(tower, 0, 22.0, 0, 15.4, 28, 9.5, '#333c49');
+  box(tower, 0, 22.0, 0, 15.4, 28, 9.5, '#333c49').userData.cameraBlocker = true;
   for (let floor = 0; floor < 23; floor++) {
     const y = 10.2 + floor * 1.05;
     box(tower, 0, y, 4.85, 15.6, .10, .20, '#89949b');
