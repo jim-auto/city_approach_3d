@@ -151,8 +151,8 @@ export class CityWorld {
     person.rotation.y = -.18; scene.add(person);
     scene.add(new THREE.HemisphereLight('#fff4e4', '#66768f', 2.5));
     const key = new THREE.DirectionalLight('#fff0dc', 3); key.position.set(-2, 4, 3); scene.add(key);
-    const camera = new THREE.PerspectiveCamera(31, 1, .1, 12);
-    camera.position.set(.25, 1.94, 1.95); camera.lookAt(0, 1.78, 0);
+    const camera = new THREE.PerspectiveCamera(27, 1, .1, 12);
+    camera.position.set(.15, 2.03, 1.48); camera.lookAt(0, 1.96, 0);
     const previous = this.renderer.getRenderTarget();
     try {
       this.renderer.setRenderTarget(target); this.renderer.render(scene, camera);

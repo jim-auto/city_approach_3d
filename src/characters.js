@@ -1,8 +1,9 @@
+import { loftGeometry, buildHead, strandGeometry, clothPanelGeometry, lapelGeometry, loftFront } from './character-shapes.js';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 // One shared, vertex-coloured surface per articulated part keeps draw calls small.
-const surface = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .8, metalness: .03 });
+const surface = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .72, metalness: .03 });
 const shadowMaterial = new THREE.MeshBasicMaterial({ color: '#080b18', transparent: true, opacity: .23, depthWrite: false });
 const templates = new Map();
 const looks = {
@@ -25,7 +26,7 @@ const looks = {
   friend: { feminine: true, hair: 'ponytail', outfit: 'jacket', pants: '#4f5167', skin: '#e8bb9e', shoes: '#e4d6d9', accessory: 'bag' },
 };
 
-function builder() {
+function builder(detailed = true) {
   const geometries = [];
   const add = (geometry, color, position, scale = [1, 1, 1], rotation = [0, 0, 0]) => {
     const g = geometry.index ? geometry.toNonIndexed() : geometry;
@@ -33,14 +34,25 @@ function builder() {
     g.deleteAttribute('uv');
     const transform = new THREE.Matrix4().compose(new THREE.Vector3(...position), new THREE.Quaternion().setFromEuler(new THREE.Euler(...rotation)), new THREE.Vector3(...scale));
     g.applyMatrix4(transform);
-    const c = new THREE.Color(color), colors = new Float32Array(g.attributes.position.count * 3);
-    for (let i = 0; i < colors.length; i += 3) { colors[i] = c.r; colors[i + 1] = c.g; colors[i + 2] = c.b; }
+    const c = new THREE.Color(color), blush = new THREE.Color('#cc9193'), vertex = new THREE.Color(), colors = new Float32Array(g.attributes.position.count * 3);
+    for (let i = 0; i < colors.length; i += 3) {
+      vertex.copy(c);
+      if (geometry.userData.skinGradient) {
+        const p = g.attributes.position, x = p.getX(i / 3), y = p.getY(i / 3), z = p.getZ(i / 3);
+        const warmth = z > .05 ? .14 * Math.exp(-1 * ((Math.abs(x) - .105) / .042) ** 2 - ((y + .055) / .034) ** 2) : 0;
+        vertex.lerp(blush, warmth).multiplyScalar(1 + .035 * y);
+      }
+      colors[i] = vertex.r; colors[i + 1] = vertex.g; colors[i + 2] = vertex.b;
+    }
     g.setAttribute('color', new THREE.BufferAttribute(colors, 3)); geometries.push(g);
   };
   return {
+    geometry: (g, color) => add(g, color, [0, 0, 0]),
+    loft: (color, rings, segments) => add(loftGeometry(rings, segments || (detailed ? 20 : 10)), color, [0, 0, 0]),
+    strand: (color, points, widths, depths) => add(strandGeometry(points, widths, depths, detailed), color, [0, 0, 0]),
     box: (color, p, size, r) => add(new THREE.BoxGeometry(1, 1, 1), color, p, size, r),
-    ball: (color, p, size, r) => add(new THREE.SphereGeometry(1, Math.max(...size) < .06 ? 8 : 10, Math.max(...size) < .06 ? 5 : 7), color, p, size, r),
-    cone: (color, p, radiusTop, radiusBottom, height, r, depth = 1) => add(new THREE.CylinderGeometry(radiusTop, radiusBottom, height, 10), color, p, [1, 1, depth], r),
+    ball: (color, p, size, r) => add(new THREE.SphereGeometry(1, Math.max(...size) < .06 ? 8 : detailed ? 16 : 10, Math.max(...size) < .06 ? 5 : detailed ? 10 : 7), color, p, size, r),
+    cone: (color, p, radiusTop, radiusBottom, height, r, depth = 1) => add(new THREE.CylinderGeometry(radiusTop, radiusBottom, height, detailed ? 20 : 10), color, p, [1, 1, depth], r),
     arc: (color, p, radius, tube, rotation, length = Math.PI * 2) => add(new THREE.TorusGeometry(radius, tube, 4, 14, length), color, p, [1, 1, 1], rotation),
     scalp: (color, p, size) => add(new THREE.SphereGeometry(1, 12, 7, 0, Math.PI * 2, 0, Math.PI * .56), color, p, size),
     finish() {
@@ -49,122 +61,73 @@ function builder() {
     },
   };
 }
-function part(name, build) {
-  const b = builder(); build(b); const mesh = new THREE.Mesh(b.finish(), surface); mesh.name = name; mesh.castShadow = true; mesh.receiveShadow = true; return mesh;
+function part(name, build, detailed) {
+  const b = builder(detailed); build(b); const mesh = new THREE.Mesh(b.finish(), surface); mesh.name = name; mesh.castShadow = true; mesh.receiveShadow = true; return mesh;
 }
 function shade(color, multiplier) { return new THREE.Color(color).multiplyScalar(multiplier); }
 
 function buildTemplate(color, hairColor, kind, detailed) {
   const look = looks[kind] || looks.player, root = new THREE.Group(); root.name = `person-${kind}`;
-  const add = (parent, name, fn) => { const mesh = part(name, fn); parent.add(mesh); return mesh; };
+  const add = (parent, name, fn) => { const mesh = part(name, fn, detailed); parent.add(mesh); return mesh; };
   const body = new THREE.Group(); body.name = 'body'; root.add(body);
+  const torsoRings = [[.99, .18, .12], [1.13, look.outfit === 'hoodie' ? .20 : look.feminine ? .166 : .19, .125], [1.32, .205, .145], [1.51, look.feminine ? .23 : .26, .135], [1.59, look.feminine ? .19 : .21, .115], [1.65, .075, .075]];
   add(body, 'outfit', b => {
-    b.cone(color, [0, 1.34, 0], .265, .205, .59, undefined, .66);
-    b.ball(color, [0, 1.56, 0], [look.feminine ? .255 : .30, .13, .18]);
-    b.cone(look.skin, [0, 1.73, 0], .075, .09, .18);
-    b.cone(look.pants, [0, .99, 0], .21, .21, .15, undefined, .7);
-    const inner = '#f1e8da', dark = shade(color, .72), light = shade(color, 1.15);
+    b.loft(color, torsoRings);
+    b.loft(look.skin, [[1.63, .065, .062], [1.72, .058, .058], [1.81, .064, .064]]);
+    b.cone(look.pants, [0, .99, 0], .175, .175, .15, undefined, .65);
+    const inner = ['player', 'scout', 'night_kaito'].includes(kind) ? '#22232e' : '#e9e3dd', dark = shade(color, .72), light = shade(color, 1.15);
     if (look.outfit === 'coat') {
-      b.cone(color, [0, 1.02, -.015], .205, .29, .42, undefined, .65);
-      b.box(dark, [0, 1.11, .182], [.025, .46, .018]);
-      b.box(inner, [0, 1.57, .164], [.15, .23, .025]);
-      for (const side of [-1, 1]) b.box(light, [side * .12, 1.49, .18], [.1, .26, .035], [0, 0, side * -.34]);
-      if (detailed) for (const y of [1.1, 1.26, 1.41]) b.ball('#dbc4ab', [.06, y, .19], [.022, .022, .012]);
-      b.box(dark, [0, 1.16, .005], [.43, .045, .32]);
+      b.loft(color, [[.80, .265, .17, -.015], [.9, .24, .16, -.015], [1.13, .18, .125, -.015], [1.2, .19, .13, -.015]]);
+      b.geometry(clothPanelGeometry(torsoRings, .07, 1.20, 1.59, detailed), inner);
+      for (const side of [-1, 1]) b.geometry(lapelGeometry(torsoRings, [[side * .05, 1.615], [side * .15, 1.51], [side * .065, 1.31], [side * .075, 1.52]]), light);
+      if (detailed) for (const y of [1.08, 1.25, 1.41]) b.ball('#bfa77e', [.055, y, loftFront(torsoRings, .055, y) + .009], [.009, .011, .004]);
+      b.loft(shade(color, .91), [[1.125, .179, .128], [1.15, .177, .128]]);
     } else if (['jacket', 'blazer', 'cardigan'].includes(look.outfit)) {
-      b.box(inner, [0, 1.35, .165], [.19, .51, .028]);
+      b.geometry(clothPanelGeometry(torsoRings, .075, 1.08, 1.60, detailed), inner);
       for (const side of [-1, 1]) {
-        b.box(light, [side * .115, 1.5, .181], [.085, .29, .036], [0, 0, side * -.27]);
-        if (detailed) b.box(dark, [side * .18, 1.19, .166], [.10, .025, .035]);
+        b.geometry(lapelGeometry(torsoRings, [[side * .05, 1.61], [side * .15, 1.535], [side * .065, 1.32], [side * .085, 1.52]]), light);
+        if (detailed) b.geometry(lapelGeometry(torsoRings, [[side * .10, 1.19], [side * .155, 1.19], [side * .15, 1.176], [side * .10, 1.176]]), dark);
       }
-      b.box(dark, [0, 1.05, .01], [.43, .05, .3]);
-      if (look.outfit === 'blazer') b.box('#839fb3', [0, 1.43, .19], [.04, .29, .02]);
+      b.loft(shade(color, .94), [[1.035, .185, .129], [1.06, .183, .128]]);
     } else if (look.outfit === 'hoodie') {
       b.ball(dark, [0, 1.65, -.055], [.21, .11, .19]);
-      b.box(dark, [0, 1.17, .17], [.26, .14, .035]);
-      for (const x of [-.075, .075]) b.box('#e0e4d8', [x, 1.46, .185], [.013, .22, .016]);
-      b.box(light, [0, 1.06, .01], [.43, .055, .31]);
+      b.geometry(clothPanelGeometry(torsoRings, .12, 1.12, 1.23, detailed), shade(color, .96));
+      for (const x of [-.055, .055]) b.strand('#dcd6ce', [[x, 1.61, .105], [x * .9, 1.52, .135], [x, 1.40, .15]], [.002, .002, .001], [.002, .002, .001]);
+      b.loft(shade(color, .94), [[1.035, .19, .129], [1.07, .192, .13]]);
     } else {
-      b.arc(dark, [0, 1.64, .01], .10, .025, [Math.PI / 2, 0, 0]);
+      b.loft(color, [[1.62, .077, .07], [1.70, .068, .064], [1.74, .068, .064]]);
       if (detailed) for (const y of [1.17, 1.29, 1.41]) b.box(shade(color, .88), [0, y, .172], [.38, .018, .02]);
     }
     if (look.skirt) {
-      b.cone(color, [0, .92, 0], .21, .32, .38, undefined, .8);
-      for (const x of [-.18, -.06, .06, .18]) b.box(light, [x, .82, .20], [.014, .16, .014]);
+      b.loft(color, [[.72, .29, .21], [.82, .26, .19], [1.02, .2, .14], [1.12, .178, .125]]);
+      if (detailed) for (const x of [-.16, -.06, .06, .16]) b.strand(shade(color, .92), [[x * .65, 1.06, .13], [x * .85, .89, .18], [x, .74, .19]], [.001, .002, .001], [.001, .001, .001]);
     }
     if (kind === 'player' || kind === 'scout' || kind === 'night_kaito') {
-      b.box('#1b1c29', [0, 1.4, .185], [.17, .36, .025]);
-      b.arc('#d5b575', [0, 1.61, .16], .08, .009, [Math.PI / 2, 0, 0], Math.PI);
-      b.box('#d3b474', [.16, 1.48, .19], [.035, .06, .025]);
-    }
-    if (detailed) for (const side of [-1, 1]) b.box(shade(look.pants, .75), [side * .17, .98, .05], [.06, .08, .15]);
-  });
-  const head = new THREE.Group(); head.name = 'head'; head.position.set(0, 1.94, 0); body.add(head);
-  add(head, 'face-and-hair', b => {
-    b.ball(look.skin, [0, 0, 0], [.235, .275, .219]);
-    b.ball(shade(look.skin, .94), [0, -.12, .05], [.175, .145, .17]);
-    for (const side of [-1, 1]) {
-      b.ball(look.skin, [side * .232, -.01, -.005], [.045, .065, .036]);
-      b.ball('#f4f0e9', [side * .087, .024, .203], [.051, .034, .018]);
-      b.ball(look.feminine ? '#59414b' : '#303445', [side * .087, .023, .219], [look.feminine ? .027 : .023, .030, .009]);
-      if (detailed) {
-        b.ball('#fff6e8', [side * .083 - .006, .033, .227], [.007, .009, .004]);
-        if (look.feminine) { b.box('#543d49', [side * .09, .053, .222], [.09, .009, .012], [0, 0, side * .12]); b.ball('#e0bf83', [side * .24, -.075, .025], [.018, .03, .018]); }
-        b.box(hairColor, [side * .086, .086, .205], [.072, .012, .019], [0, 0, side * -.1]);
-        b.ball('#d99889', [side * .135, -.065, .185], [.047, .022, .013]);
-      }
-    }
-    b.ball(shade(look.skin, .92), [0, -.025, .224], [.028, .043, .032]);
-    b.arc(look.feminine ? '#b56e7b' : '#995e5e', [0, -.118, .193], .034, .007, [0, 0, Math.PI], Math.PI);
-    b.scalp(hairColor, [0, .047, -.025], [.254, .275, .24]);
-    const hairLight = shade(hairColor, 1.38);
-    for (let i = 0; i < 5; i++) {
-      const x = -.17 + i * .078;
-      b.cone(i % 2 ? hairLight : hairColor, [x, .146 + (kind === 'busy' ? x * .4 : 0), .159], .075, .015, .19, [0, 0, -.18 + i * .08], .55);
-    }
-    if (look.feminine && detailed) b.ball(shade(hairColor, 1.2), [.16, .14, .115], [.09, .14, .09], [0, 0, -.25]);
-    if (look.hair === 'long' || look.hair === 'bob') {
-      b.ball(hairColor, [0, look.hair === 'long' ? -.2 : -.075, -.125], [.25, look.hair === 'long' ? .42 : .28, .15]);
-      for (const side of [-1, 1]) b.ball(side > 0 ? hairLight : hairColor, [side * .218, -.115, -.018], [.075, look.hair === 'long' ? .31 : .21, .12]);
-    } else if (look.hair === 'ponytail') {
-      b.ball(hairColor, [0, .08, -.26], [.12, .12, .13]);
-      b.ball(hairColor, [.025, -.15, -.31], [.105, .29, .1], [-.22, 0, -.13]);
-      b.arc('#dfb186', [0, .07, -.26], .085, .018, [Math.PI / 2, 0, 0]);
-    } else if (look.hair === 'wavy') {
-      for (let i = 0; i < 5; i++) { const a = i / 4 * Math.PI; b.ball(i % 2 ? hairLight : hairColor, [Math.cos(a) * .23, .05, -.035 - Math.sin(a) * .17], [.10, .27, .10]); }
-    } else {
-      b.ball(hairColor, [0, .17, -.15], [.23, .19, .14]);
-      b.ball(hairLight, [-.06, .26, -.035], [.17, .075, .16], [0, 0, -.18]);
-    }
-    if (look.glasses) {
-      for (const side of [-1, 1]) b.arc('#4c4750', [side * .089, .028, .231], .061, .009);
-      b.box('#4c4750', [0, .04, .232], [.045, .009, .01]);
-    }
-    if (look.accessory === 'headphones') {
-      b.arc('#d1bdcc', [0, .055, -.025], .29, .026, [0, 0, 0], Math.PI);
-      for (const side of [-1, 1]) { b.ball('#d1bdcc', [side * .26, -.01, -.01], [.053, .09, .075]); b.ball('#6d667f', [side * .292, -.01, -.01], [.025, .065, .055]); }
+      b.strand('#baa06b', [[-.052, 1.69, .06], [0, 1.545, .15], [.052, 1.69, .06]], [.002, .002, .002], [.002, .002, .002]);
+      b.box('#c7ac78', [0, 1.547, .157], [.012, .023, .006]);
     }
   });
+  const head = new THREE.Group(); head.name = 'head'; head.position.set(0, 1.98, 0); body.add(head);
+  add(head, 'face-and-hair', b => buildHead(b, look, hairColor, detailed));
   const arms = [], elbows = [], legs = [], knees = [], props = [];
   for (const side of [-1, 1]) {
     const arm = new THREE.Group(); arm.name = side < 0 ? 'arm-left' : 'arm-right'; arm.position.set(side * .29, 1.58, 0); body.add(arm); arms.push(arm);
-    add(arm, 'sleeve', b => { b.ball(color, [side * .025, -.10, 0], [.105, .18, .105]); b.cone(color, [side * .03, -.23, 0], .09, .078, .23); });
+    add(arm, 'sleeve', b => b.loft(color, [[-.34, .067, .068], [-.24, .077, .078], [-.08, look.feminine ? .084 : .095, .09], [.015, .080, .078], [.065, .042, .043], [.08, .001, .001]]));
     const elbow = new THREE.Group(); elbow.name = 'elbow'; elbow.position.set(side * .03, -.33, 0); arm.add(elbow); elbows.push(elbow);
     add(elbow, 'forearm-and-hand', b => {
-      b.cone(color, [0, -.13, 0], .079, .065, .28);
-      b.cone(shade(color, .8), [0, -.265, 0], .068, .068, .055);
-      b.ball(look.skin, [0, -.35, .015], [.061, .088, .055]);
-      b.ball(look.skin, [-side * .047, -.337, .04], [.025, .044, .026]);
+      b.loft(color, [[-.28, .049, .050], [-.24, .055, .057], [-.10, .065, .066], [0, .067, .068]]);
+      b.ball(look.skin, [0, -.33, .006], [.045, .059, .027]);
+      b.ball(look.skin, [-side * .037, -.32, .028], [.016, .034, .020]);
+      if (detailed) for (let finger = 0; finger < 4; finger++) b.ball(look.skin, [-.027 + finger * .018, -.375 + Math.abs(finger - 1.5) * .006, .010], [.009, .026, .014]);
     });
     const leg = new THREE.Group(); leg.name = side < 0 ? 'leg-left' : 'leg-right'; leg.position.set(side * .125, .95, 0); root.add(leg); legs.push(leg);
-    add(leg, 'trouser-thigh', b => b.cone(look.pants, [0, -.19, 0], .102, .078, .40, undefined, .9));
+    add(leg, 'trouser-thigh', b => b.loft(look.pants, [[-.42, .062, .062], [-.28, .075, .074], [-.08, .089, .085], [0, .086, .080]]));
     const knee = new THREE.Group(); knee.name = 'knee'; knee.position.y = -.40; leg.add(knee); knees.push(knee);
     add(knee, 'trouser-calf-and-shoe', b => {
-      b.cone(look.pants, [0, -.17, 0], .077, .06, .36, undefined, .9);
-      b.cone(shade(look.pants, 1.1), [0, -.325, 0], .064, .064, .05);
-      b.ball(look.shoes, [0, -.413, .065], [.091, .068, .17]);
-      b.box('#dddace', [0, -.454, .06], [.18, .035, .30]);
-      if (detailed) for (const z of [.04, .085, .13]) b.box('#f9f0df', [0, -.357, z], [.09, .009, .015]);
+      b.loft(look.pants, [[-.46, .045, .049], [-.34, .050, .054], [-.15, .068, .068], [.018, .063, .063]]);
+      b.ball(look.shoes, [0, -.48, .047], [.075, .063, .14]);
+      b.loft(look.outfit === 'blazer' ? '#35333b' : '#d3cec6', [[-.55, .069, .124, .049], [-.535, .077, .140, .049], [-.520, .076, .138, .049]]);
+      if (detailed && look.outfit !== 'blazer') for (const z of [.04, .075, .11]) b.box('#d9d2c9', [0, -.431, z], [.067, .004, .006]);
     });
   }
   if (look.accessory === 'watch') add(elbows[0], 'wrist-watch', b => { b.cone('#bfa46b', [0, -.26, 0], .075, .075, .055); b.ball('#e1cda1', [0, -.26, .068], [.045, .035, .015]); });

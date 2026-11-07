@@ -9,6 +9,7 @@
     "preview": "vite preview --host 0.0.0.0",
     "test": "node --test tests/*.test.js",
     "build:pages": "vite build --outDir docs",
+    "preview:model": "node scripts/render-model-review.mjs",
     "preview:characters": "node scripts/render-characters.mjs"
   },
   "dependencies": {

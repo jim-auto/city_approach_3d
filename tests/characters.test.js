@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { createCharacter, animateCharacter, isCharacterResource } from '../src/characters.js';
 import { STREET_PROFILES } from '../src/street-encounters.js';
+import { headGeometry, loftGeometry } from '../src/character-shapes.js';
 import { PROFILES } from '../src/game.js';
 
 test('every model has a bounded mobile budget, finite geometry and articulated joints', () => {
@@ -13,10 +14,10 @@ test('every model has a bounded mobile budget, finite geometry and articulated j
       if (!o.isMesh) return;
       meshes++; triangles += o.geometry.index ? o.geometry.index.count / 3 : o.geometry.attributes.position.count / 3;
       assert.ok(isCharacterResource(o.geometry)); assert.ok(isCharacterResource(o.material));
-      for (const value of o.geometry.attributes.position.array) assert.ok(Number.isFinite(value));
+      for (const attribute of ['position', 'normal']) for (const value of o.geometry.attributes[attribute].array) assert.ok(Number.isFinite(value));
     });
     assert.ok(meshes <= 12, `${profile.id}: ${meshes} draw parts`);
-    assert.ok(triangles <= 5200, `${profile.id}: ${triangles} triangles`);
+    assert.ok(triangles <= 8000, `${profile.id}: ${triangles} triangles`);
     assert.equal(person.userData.elbows.length, 2); assert.equal(person.userData.knees.length, 2);
     const bounds = new THREE.Box3().setFromObject(person);
     assert.ok(bounds.min.y >= -.04); assert.ok(bounds.max.y > 2.1 && bounds.max.y < 2.5);
@@ -48,10 +49,38 @@ test('reading and drinking poses retain props while walking', () => {
   }
 });
 test('background characters omit face detail while retaining individual silhouettes', () => {
-  for (const profile of PROFILES) {
+  for (const profile of [...PROFILES, ...STREET_PROFILES]) {
     const detailed = createCharacter(profile.color, profile.hair, profile.id);
     const background = createCharacter(profile.color, profile.hair, profile.id, { detailed: false });
     assert.ok(background.getObjectByName('face-and-hair').geometry.attributes.position.count < detailed.getObjectByName('face-and-hair').geometry.attributes.position.count);
     assert.equal(background.userData.appearance.hair, detailed.userData.appearance.hair);
+    let triangles = 0; background.traverse(o => { if (o.isMesh) triangles += (o.geometry.index?.count ?? o.geometry.attributes.position.count) / 3; });
+    assert.ok(triangles <= 3200, `${profile.id}: ${triangles} background triangles`);
   }
+});
+
+test('continuous face and clothing surfaces have no lighting seam along their front', () => {
+  for (const [g, segments] of [[headGeometry(true, true), 32], [headGeometry(false, true), 32], [loftGeometry([[0, .2, .1], [.3, .15, .15]]), 20]]) {
+    const normals = g.attributes.normal;
+    for (let row = 0; row < normals.count / (segments + 1); row++) {
+      const a = new THREE.Vector3().fromBufferAttribute(normals, row * (segments + 1));
+      const b = new THREE.Vector3().fromBufferAttribute(normals, row * (segments + 1) + segments);
+      assert.ok(a.distanceTo(b) < 1e-6); assert.ok(Math.abs(a.length() - 1) < 1e-5);
+    }
+    g.dispose();
+  }
+});
+test('layered shirts and coat tails cover the body beneath them', () => {
+  const model = createCharacter('#dc9aab', '#42293a', 'waiting'); model.updateMatrixWorld(true);
+  const outfit = model.getObjectByName('outfit'), ray = new THREE.Raycaster();
+  for (const y of [1.22, 1.35, 1.48, 1.56]) {
+    ray.set(new THREE.Vector3(0, y, 1), new THREE.Vector3(0, 0, -1));
+    const hit = ray.intersectObject(outfit)[0]; assert.ok(hit);
+    const colors = outfit.geometry.attributes.color;
+    const expected = new THREE.Color('#e9e3dd'), actual = new THREE.Color().fromBufferAttribute(colors, hit.face.a);
+    assert.ok(actual.equals(expected) || Math.abs(actual.r - expected.r) < 1e-6);
+  }
+  ray.set(new THREE.Vector3(0, .98, 1), new THREE.Vector3(0, 0, -1));
+  const hit = ray.intersectObject(outfit)[0];
+  assert.ok(hit.point.z > .12, 'coat covers the trouser waist');
 });
