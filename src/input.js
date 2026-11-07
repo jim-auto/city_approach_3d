@@ -29,8 +29,9 @@ export function bindWorldInput(world) {
     const rect = canvas.getBoundingClientRect();
     world.pointer.set(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1);
     world.ray.setFromCamera(world.pointer, world.camera);
-    const person = world.ray.intersectObjects(world.city.children, true).find(h => h.object.userData.npc);
-    if (person) { world.onSelect(person.object.userData.npc); return; }
+    const hits = world.ray.intersectObjects(world.city.children, true);
+    const person = hits.find(h => h.object.userData.npc);
+    if (person && !hits.some(h => !h.object.userData.npc && h.distance < person.distance - .1 && h.point?.y > .5)) { world.onSelect(person.object.userData.npc); return; }
     const pos = new THREE.Vector3();
     if (world.ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), pos)) { world.walkTo(pos); world.onMove(); }
   });

@@ -16,11 +16,11 @@ export function cylinder(parent, x, y, z, radius, height, color, sides = 10) {
   mesh.position.set(x, y, z); mesh.castShadow = true; mesh.receiveShadow = true; parent.add(mesh); return mesh;
 }
 export function textSign(parent, text, x, y, z, width, height, bg, fg, rotation = 0) {
-  const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = Math.round(512 * height / width);
+  const canvas = document.createElement('canvas'); canvas.width = width < 1.6 ? 128 : width < 4.5 ? 256 : 512; canvas.height = Math.max(32, Math.round(canvas.width * height / width));
   const ctx = canvas.getContext('2d'); ctx.fillStyle = bg; ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.strokeStyle = fg; ctx.lineWidth = 8; ctx.strokeRect(9, 9, 494, canvas.height - 18);
-  ctx.fillStyle = fg; ctx.font = `700 ${Math.min(canvas.height * .55, 440 / Math.max(text.length * .6, 1))}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, 256, canvas.height * .52, 460);
+  ctx.strokeStyle = fg; ctx.lineWidth = Math.max(2, canvas.width / 64); const inset = canvas.width * .018; ctx.strokeRect(inset, inset, canvas.width - inset * 2, canvas.height - inset * 2);
+  ctx.fillStyle = fg; ctx.font = `700 ${Math.min(canvas.height * .55, canvas.width * .86 / Math.max(text.length * .6, 1))}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, canvas.width / 2, canvas.height * .52, canvas.width * .90);
   const tex = new THREE.CanvasTexture(canvas); tex.colorSpace = THREE.SRGBColorSpace;
   const m = new THREE.Mesh(new THREE.PlaneGeometry(width, height), new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide }));
-  m.position.set(x, y, z); m.rotation.y = rotation; parent.add(m); return m;
+  m.userData.sign = { text, width, height, bg, fg }; m.position.set(x, y, z); m.rotation.y = rotation; parent.add(m); return m;
 }

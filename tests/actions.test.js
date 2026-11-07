@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { ACTIONS, animateAction } from '../src/actions.js';
 import { createCharacter, animateCharacter } from '../src/characters.js';
 import { CityWorld } from '../src/world.js';
+import { isWalkable } from '../src/navigation.js';
 import { MAP_LAYOUTS } from '../src/locations.js';
 
 const person = () => createCharacter('#a1d6c8', '#2c3038', 'player');
@@ -61,4 +62,22 @@ test('walking HUD labels only the nearest two people and preserves the selected 
   world.selected = world.npcs[2]; world.update(.05, .05);
   assert.equal(world.npcs[2].label.style.display, '');
   assert.equal(world.npcs[3].label.style.display, 'none');
+});
+
+test('a companion physically follows through the Kabukicho junctions to the chosen destination', () => {
+  for (const destination of MAP_LAYOUTS.kabukicho.destinations) {
+    const world = makeWorld(); world.layout = MAP_LAYOUTS.kabukicho; world.map = 'kabukicho';
+    world.player.position.set(0, 0, 20);
+    const npc = { mesh: person(), label: { style: {} }, profile: { speed: 0 }, phase: 0, cooldown: 0 };
+    npc.mesh.position.set(3, 0, 22); world.npcs = [npc]; world.companion = npc;
+    world.goal.copy(new THREE.Vector3(destination.x, 0, destination.z)); world.walkTo(world.goal);
+    for (let i = 0; i < 1700; i++) {
+      world.update(.05, i * .05);
+      assert.ok(isWalkable(world.player.position, world.layout), 'player stays on connected streets');
+      assert.ok(isWalkable(npc.mesh.position, world.layout), 'companion stays on connected streets');
+      if (world.player.position.distanceTo(world.goal) < 1.4 && world.distanceTo(npc) < 3.1) break;
+    }
+    assert.ok(world.player.position.distanceTo(world.goal) < 1.4, `player reached ${destination.id}`);
+    assert.ok(world.distanceTo(npc) < 3.1, `companion reached ${destination.id}`);
+  }
 });

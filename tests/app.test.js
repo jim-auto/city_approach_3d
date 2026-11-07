@@ -26,6 +26,7 @@ test('explore → observe → conversation → escort → arrival, help resume, 
     distanceTo(n) { return this.player.position.distanceTo(n.mesh.position); }
     walkTo(pos) { this.destination = pos.clone(); this.player.position.copy(pos); }
     setMap(map) { this.map = map; this.companion = null; }
+    setDestination(destination) { this.goal.set(destination.x, 0, destination.z); this.escortDestination = destination; }
     performAction(id) { this.action = id; return !this.paused; }
     cancelAction() { this.action = null; }
     resetCamera() {}
@@ -61,8 +62,15 @@ test('explore → observe → conversation → escort → arrival, help resume, 
     // A map change during conversation must not discard its state.
     doc.querySelector('[data-map="nagoya"]').click(); assert.equal(state.map, 'kabukicho');
     choose('listen'); choose('empathy'); choose('empathy'); choose('listen'); choose('proposal');
-    assert.equal(state.mode, 'result'); assert.equal(state.score, 120);
-    click('result-next'); assert.equal(state.mode, 'escort'); assert.equal(world.companion, npc);
+    assert.equal(state.mode, 'invite'); assert.equal(state.score, 0);
+    assert.equal(world.companion, null, 'a conversation alone does not start following');
+    doc.querySelector('[data-destination="lounge"]').click();
+    assert.equal(doc.getElementById('invite-confirm').hidden, true, 'waiting person declines a long lounge visit');
+    click('invite-confirm'); assert.equal(state.mode, 'invite');
+    doc.querySelector('[data-destination="plaza"]').click();
+    assert.equal(doc.getElementById('invite-confirm').hidden, false);
+    click('invite-confirm'); assert.equal(state.mode, 'escort'); assert.equal(state.score, 120); assert.equal(world.companion, npc);
+    assert.equal(world.escortDestination.id, 'plaza');
     click('menu-toggle'); assert.equal(state.mode, 'menu');
     click('menu-resume'); assert.equal(state.mode, 'escort'); assert.equal(world.companion, npc);
     click('menu-toggle'); click('help'); assert.equal(state.mode, 'help');
@@ -73,7 +81,7 @@ test('explore → observe → conversation → escort → arrival, help resume, 
     click('goal-walk'); assert.deepEqual(world.destination, world.goal);
     npc.mesh.position.copy(world.goal); nextFrame(performance.now() + 16);
     assert.equal(state.mode, 'result'); assert.equal(state.score, 220);
-    assert.match(doc.getElementById('result-body').textContent, /ラウンジに到着/);
+    assert.match(doc.getElementById('result-body').textContent, /シネシティ広場/);
     click('result-next'); assert.equal(state.mode, 'explore'); assert.equal(world.companion, null);
     doc.querySelector('[data-map="nagoya"]').click(); assert.equal(state.map, 'nagoya'); assert.equal(world.map, 'nagoya');
     assert.match(doc.getElementById('location-name').textContent, /名古屋駅/);
@@ -85,6 +93,12 @@ test('explore → observe → conversation → escort → arrival, help resume, 
     npc.cooldown = 0; world.onSelect(npc); doc.querySelector('[data-opener="empathy"]').click();
     doc.querySelector('[data-response="listen"]').click(); click('talk-exit');
     const afterAbort = state.score; t.mock.timers.tick(1500); assert.equal(state.mode, 'result'); assert.equal(state.score, afterAbort);
+    click('result-next'); npc.cooldown = 0; world.onSelect(npc); doc.querySelector('[data-opener="empathy"]').click();
+    choose('listen'); choose('empathy'); choose('empathy'); choose('listen'); choose('proposal');
+    assert.equal(state.mode, 'invite');
+    doc.querySelector('[data-destination="towers"]').click();
+    click('invite-cancel'); assert.equal(state.mode, 'explore'); assert.equal(state.score, afterAbort);
+    click('invite-confirm'); assert.equal(world.companion, null); assert.equal(state.score, afterAbort);
   } finally {
     t.mock.timers.reset(); window.happyDOM.abort();
     for (const [name, descriptor] of previous) { if (descriptor) Object.defineProperty(globalThis, name, descriptor); else delete globalThis[name]; }
