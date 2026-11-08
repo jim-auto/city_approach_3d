@@ -13,7 +13,7 @@ const fs=require('node:fs/promises');const path=require('node:path');const {exec
  add('声をかけて、返事を選ぶ。',m.approach,1.1);
  add('会話で、少しずつ距離が縮まる。',m.conversation+.7,1.1);
  if(m.decline)add('ホテルの誘い、普通に断られた。',m.decline,1.4);
- add('「少し座って話さない？」',m.accepted+.4,1.15);
+ add('「もう少し話したい。場所変えない？」',m.accepted+.4,1.15);
  add('ふたりで歩いて、会話コンボ。',Math.max(m.walking,m.cue1-.6),4.8,1.8);
  if(m.cue2)add('歩調を合わせて、コンボをつなぐ。',m.cue4||m.cue3||m.cue2,4.5,2);
  add('置いていかず、一緒にゴール。',Math.max(m.walking,m.goal-4.4),4.4,2.8);

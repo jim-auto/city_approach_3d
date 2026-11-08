@@ -19,7 +19,11 @@ const {chromium} = require('playwright');
     await page.goto(process.env.BASE_URL||'http://127.0.0.1:4188/',{waitUntil:'domcontentloaded'});
     await page.locator('#start').waitFor({state:'visible',timeout:90000});
     await page.locator('#start').click();await pause(4500);mark('street');await shot('street');await pause(1800);
-    await page.locator('#nearby-person').click();await page.locator('#inspect').waitFor({state:'visible'});
+    for(let attempt=0;attempt<30;attempt++){
+      await page.locator('#nearby-person').click();await pause(500);
+      if(await page.locator('#inspect').isVisible())break;
+    }
+    await page.locator('#inspect').waitFor({state:'visible'});
     console.log('partner',await page.locator('#person-name').innerText());
     await page.waitForFunction(()=>!document.getElementById('inspect').hidden&&!document.getElementById('approach-start').disabled,null,{timeout:30000});
     mark('approach');await shot('approach');await pause(1400);
