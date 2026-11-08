@@ -1,3 +1,4 @@
+import { reactionFor, REACTION_SECONDS } from './reactions.js';
 import { captureGoalPhoto } from './goal-photo.js';
 import { crowdSpawns, visibleCrowd, visibleCast } from './crowd.js';
 import { createChallengeEffects, updateChallengeEffects } from './challenge-effects.js';
@@ -155,13 +156,19 @@ export class CityWorld {
     this.challengeView = { focus, desired: cameraView(focus, view(angle), this.cameraBlockers, angle).position };
     this.player.rotation.y = angle; partner.mesh.rotation.y = angle;
   }
+  talkCue() { if(this.challengePartner){delete this.challengePartner.mesh.userData.reaction;this.partnerAction=null;} }
+  reactToTalk(grade,hand,combo) {
+    if(!this.talkActive||!this.challengePartner)return false;
+    this.partnerAction=null;
+    this.challengePartner.mesh.userData.reaction={id:reactionFor(grade,hand,combo),elapsed:0,duration:REACTION_SECONDS};return true;
+  }
   challengeCue(id) { if (this.challengePartner) this.partnerAction = { id, elapsed: 0 }; }
   endChallenge() {
     if(this.talkActive){this.player.visible=this.talkPlayerVisible;delete this.talkPlayerVisible;}
     this.talkActive = false; this.cancelAction(); this.challengeActive = false; this.challengeView = null;
     for (const n of this.npcs || []) if (n.challengeVisible !== undefined) { n.mesh.visible = n.challengeVisible; delete n.challengeVisible; }
     if (this.challengeRotation !== undefined) { this.player.rotation.y = this.challengeRotation; delete this.challengeRotation; }
-    if (this.challengePartner) { this.challengePartner.mesh.rotation.y = this.challengePartnerRotation; animateCharacter(this.challengePartner.mesh, false, 0); }
+    if (this.challengePartner) { delete this.challengePartner.mesh.userData.reaction; this.challengePartner.mesh.rotation.y = this.challengePartnerRotation; animateCharacter(this.challengePartner.mesh, false, 0); }
     this.challengePartner = null; this.partnerAction = null;
   }
   challengeFeedback(grade) {
@@ -277,6 +284,8 @@ export class CityWorld {
     if (this.socialAction && !this.paused) { this.socialAction.elapsed += dt; if (!animateAction(this.player,'wave',this.socialAction.elapsed)) this.socialAction = null; }
     updateChallengeEffects(this.challengeEffects, dt, time);
     if (this.challengeActive && this.challengeView) {
+      const reaction=this.challengePartner.mesh.userData.reaction;
+      if(reaction){reaction.elapsed+=dt;if(reaction.elapsed>=reaction.duration)delete this.challengePartner.mesh.userData.reaction;}
       animateCharacter(this.challengePartner.mesh, false, time);
       if (this.partnerAction) { this.partnerAction.elapsed += dt; if (!animateAction(this.challengePartner.mesh, this.partnerAction.id, this.partnerAction.elapsed)) this.partnerAction = null; }
       this.camera.position.lerp(this.challengeView.desired, 1 - Math.exp(-dt * 9)); this.camera.lookAt(this.challengeView.focus); this.camera.updateMatrixWorld();

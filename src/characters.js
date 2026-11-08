@@ -1,3 +1,4 @@
+import { sampleReaction } from './reactions.js';
 import { createAuthoredCharacter, animateAuthoredCharacter, setAuthoredOutfit } from './authored-characters.js';
 import { loftGeometry, buildHead, strandGeometry, clothPanelGeometry, lapelGeometry, loftFront } from './character-shapes.js';
 import * as THREE from 'three';
@@ -230,6 +231,10 @@ export function animateCharacter(model, moving, time, seed = 0) {
   if (kind === 'reader') { arms.forEach(a => a.rotation.x = -.22); elbows.forEach(a => a.rotation.x = -1.15); }
   if (kind === 'earphones' && !moving) head.rotation.z = Math.sin(time * 2 + seed) * .04;
   else head.rotation.z = 0;
+  const reaction=model.userData.reaction;
+  if(reaction){const r=sampleReaction(reaction.id,reaction.elapsed,reaction.duration);head.rotation.x=r.headX;head.rotation.y=r.headY;head.rotation.z=r.headZ;body.rotation.x=r.chestX;body.rotation.z=r.chestZ;body.position.y+=r.lift;
+    if(r.gesture!=='none'){arms[0].rotation.x=-.3*r.energy;elbows[0].rotation.x=-(r.gesture==='cheek'?1.8:1.2)*r.energy;}
+  }
 }
 
 export function isCharacterResource(resource) { return resource?.userData?.characterShared || resource === surface || resource === shadowMaterial; }

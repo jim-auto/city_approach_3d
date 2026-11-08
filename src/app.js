@@ -100,7 +100,7 @@ function showLine() {
   $('talk-clock').max=round.seconds; $('talk-clock').value=talk.remaining;
   $('talk-clock').setAttribute('aria-valuetext', `${Math.ceil(talk.remaining)}秒`);
   updateMeters(); $('responses').querySelectorAll('button').forEach(b => b.disabled = false);
-  world.challengeCue?.(round.hand==='rock'?'wave':round.hand==='scissors'?'dance':'wave');
+  world.talkCue?.(round.hand);
 }
 function updateMeters() { const t = state.talk; $('favor').value = t.favor; $('favor-value').textContent = t.favor; $('discomfort').value = t.discomfort; $('discomfort-value').textContent = t.discomfort; }
 function respond(key) {
@@ -114,7 +114,7 @@ function respond(key) {
   if(chosen)$('talk-line').textContent += ` → ${chosen.icon}`;
   $('responses').querySelectorAll('button').forEach(b => b.disabled = true);
   world.performAction?.(outcome.correct?'wave':'bow');
-  world.challengeCue?.(outcome.correct?'dance':outcome.grade==='draw'?'wave':'bow');
+  world.reactToTalk?.(outcome.grade,key,talk.chain);
   world.challengeFeedback?.(outcome.correct?'perfect':outcome.grade==='draw'?'good':'miss');
   tone(outcome.correct ? 'success' : 'miss');
   talkTimer = setTimeout(() => {
@@ -122,7 +122,7 @@ function respond(key) {
     if (outcome.accepted) { openInvitation(); return; }
     if (talk.discomfort >= 100) { endTalk(true); return; }
     talk.turn++; if (talk.turn >= talk.rounds.length) endTalk(false); else showLine();
-  }, 950);
+  }, 1650);
 }
 function endTalk(failed) {
   clearTimeout(talkTimer); world.endChallenge?.(); const t = state.talk; finishNpc(t?.npc); const points = 0;

@@ -33,14 +33,15 @@ const {chromium} = require('playwright');
       const signal=await page.locator('#talk-line').innerText();
       const key=signal.includes('グー')?'paper':signal.includes('チョキ')?'rock':'scissors';
       await page.locator(`[data-hand="${key}"]`).click();
-      await pause(1100);
+      if(round===0){await pause(300);mark('reaction');await shot('reaction');}
+      await pause(1800);
     }
     mark('invite');await pause(600);
     await page.locator('[data-destination="hotel-i"]').click();await pause(350);
     if(!(await page.locator('#invite-confirm').isVisible())){mark('decline');await shot('decline');await pause(1800);}
     await page.locator('[data-destination="customa"]').click();mark('accepted');await shot('accepted');await pause(1400);
     await page.locator('#invite-confirm').click();await pause(500);await page.locator('#goal-walk').click();mark('walking');
-    let cues=0;const deadline=Date.now()+150000;
+    let cues=0;const deadline=Date.now()+300000;
     while(Date.now()<deadline){
       const mode=await page.locator('#app').getAttribute('data-mode');if(mode==='result')break;
       const button=page.locator('#walk-response');

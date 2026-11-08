@@ -169,3 +169,26 @@ test('reward outfits change only the equipped player, preserve skin and reuse ca
   setCharacterOutfit(a, '#a95a70'); setCharacterOutfit(a, '#303544'); assert.equal(body(a).geometry, first);
   animateCharacter(a, true, .2); assert.ok(skinned(a).every(mesh => mesh.getVertexPosition(0, new THREE.Vector3()).toArray().every(Number.isFinite)));
 });
+
+test('real avatars smile and change pose for talk reactions without affecting another clone or leaving expressions behind', () => {
+  for(const kind of ['waiting','movie','eye','cafe']){
+    const a=createCharacter('#dc9aab','#42293a',kind), b=createCharacter('#dc9aab','#42293a',kind);
+    const face=model=>model.userData.morphs.map(([,mesh])=>mesh.morphTargetInfluences.slice());
+    const bones=model=>model.userData.pairs.map(([,bone])=>bone.quaternion.toArray());
+    animateCharacter(a,false,0);animateCharacter(b,false,0);
+    const idleFace=face(a), idleBones=bones(a), otherFace=face(b), otherBones=bones(b), origin=a.position.clone();
+    const poses=[];
+    for(const id of ['laugh','nod','shy','delight','curious','awkward']){
+      a.userData.reaction={id,elapsed:.55,duration:1.55};animateCharacter(a,false,0);
+      assert.notDeepEqual(bones(a),idleBones,`${kind}/${id}: actual bones change`);
+      if(id!=='awkward')assert.notDeepEqual(face(a),idleFace,`${kind}/${id}: actual face morphs change`);
+      assert.deepEqual(face(b),otherFace);assert.deepEqual(bones(b),otherBones);assert.deepEqual(a.position,origin);
+      poses.push(bones(a));
+      // Reusing the template for a bystander must reset its temporary expressions.
+      animateCharacter(b,false,0);assert.deepEqual(face(b),otherFace);
+    }
+    assert.equal(new Set(poses.map(p=>JSON.stringify(p))).size,6);
+    delete a.userData.reaction;animateCharacter(a,false,0);
+    assert.deepEqual(face(a),idleFace);assert.deepEqual(bones(a),idleBones);
+  }
+});

@@ -45,7 +45,7 @@ test('explore → observe → conversation → escort → arrival, help resume, 
   try {
     const { state, world } = startGame(WorldStub), doc = window.document;
     const click = id => doc.getElementById(id).click();
-    const choose = () => { doc.querySelector(`[data-hand="${winningHand(state.talk.rounds[state.talk.turn].hand)}"]`).click(); t.mock.timers.tick(960); };
+    const choose = () => { doc.querySelector(`[data-hand="${winningHand(state.talk.rounds[state.talk.turn].hand)}"]`).click(); t.mock.timers.tick(1660); };
     assert.equal(state.mode, 'intro'); assert.match(doc.getElementById('intro').textContent, /ナンパシミュレーター/);
     click('start-tour'); assert.equal(state.mode, 'explore'); assert.equal(world.lastTour.length, 6);
     click('start'); assert.equal(state.mode, 'explore');
@@ -128,7 +128,7 @@ test('explore → observe → conversation → escort → arrival, help resume, 
     // Aborting a line cancels its delayed callback rather than changing a later scene.
     npc.cooldown = 0; world.onSelect(npc); doc.querySelector('[data-opener="empathy"]').click();
     doc.querySelector('[data-hand="rock"]').click(); click('talk-exit');
-    const afterAbort = state.score; t.mock.timers.tick(1500); assert.equal(state.mode, 'result'); assert.equal(state.score, afterAbort);
+    const afterAbort = state.score; t.mock.timers.tick(2000); assert.equal(state.mode, 'result'); assert.equal(state.score, afterAbort);
     click('result-next'); npc.cooldown = 0; world.onSelect(npc); doc.querySelector('[data-opener="empathy"]').click();
     choose('listen'); choose('empathy'); choose('empathy'); choose('listen'); choose('proposal');
     assert.equal(state.mode, 'invite');
@@ -175,7 +175,7 @@ test('explore → observe → conversation → escort → arrival, help resume, 
     doc.querySelector(`[data-hand="${winningHand(state.talk.rounds[0].hand)}"]`).click();
     assert.equal(state.talk.wins,0);assert.equal(state.score,startingScore);
     assert.equal(doc.getElementById('conversation').dataset.grade,'draw');
-    t.mock.timers.tick(960);assert.equal(state.talk.turn,1);
+    t.mock.timers.tick(1660);assert.equal(state.talk.turn,1);
     Object.defineProperty(window.document,'hidden',{configurable:true,value:true});frame(frameClock+10000);Object.defineProperty(window.document,'hidden',{configurable:true,value:false});
     assert.equal(state.talk.remaining,4.5,'hidden tab does not consume reaction time');
     for(let i=0;i<95;i++)frame(frameClock+50);

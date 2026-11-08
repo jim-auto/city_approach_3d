@@ -1,3 +1,4 @@
+import { sampleReaction } from './reactions.js';
 import * as THREE from 'three';
 import { CAST, MODEL_FILES } from './cast.js';
 import { createAccessories, placeAccessories } from './avatar-accessories.js';
@@ -139,8 +140,26 @@ export function animateAuthoredCharacter(model, moving, time, seed = 0, action) 
     else if (id === 'jump') { lift = 1.15 * Math.sin(Math.PI * t); pose('leftUpperArm', 0, 0, -s * .7); pose('rightUpperArm', 0, 0, s * .7); pose('leftLowerLeg', .3 * f * Math.sin(Math.PI * t), 0, 0); pose('rightLowerLeg', .3 * f * Math.sin(Math.PI * t), 0, 0); }
     else { const beat = Math.sin(elapsed * 9); lift = Math.abs(beat) * .09 * e; pose('hips', 0, Math.sin(elapsed * 4.5) * .25 * e, beat * .09 * e); pose('leftUpperArm', 0, 0, -s * (.6 + beat * .4)); pose('rightUpperArm', 0, 0, s * (.6 - beat * .4)); pose('leftLowerArm', 0, -s * f * .7, 0); pose('rightLowerArm', 0, s * f * .7, 0); }
   }
+  const reaction=model.userData.reaction;
+  const r=reaction?sampleReaction(reaction.id,reaction.elapsed,reaction.duration):null;
+  if(r){
+    pose('head',r.headX*f,r.headY,r.headZ);pose('chest',r.chestX*f,0,r.chestZ);lift+=r.lift;
+    // Keep held objects steady; use the free hand for chest/cheek gestures.
+    if(r.gesture!=='none' && !items.has('book')){
+      const e=r.energy;
+      pose('leftUpperArm',-.18*f*e,0,-s*(1.35-.3*e));
+      pose('leftLowerArm',0,-s*f*(r.gesture==='cheek'?1.9:1.45)*e,-s*.22*e);
+      pose('leftHand',0,0,-s*.12*e);
+      if(r.gesture==='clap'&&!held){pose('rightUpperArm',-.18*f*e,0,s*(1.35-.3*e));pose('rightLowerArm',0,s*f*(1.45+Math.sin(reaction.elapsed*14)*.12)*e,s*.22*e);}
+    }
+  }
   const blinkPhase = (time + seed) % 4.7, blink = Math.max(0, 1 - Math.abs(blinkPhase - 4.5) / .09);
-  vrm.expressionManager?.setValue('blink', blink); vrm.expressionManager?.setValue('happy', style.smile || 0); vrm.update(0);
+  // The template is shared: reset every driven expression before copying into this clone.
+  const expression=vrm.expressionManager;
+  expression?.setValue('blink',Math.max(blink,r?.blink||0));
+  expression?.setValue('happy',Math.max(style.smile||0,r?.smile||0));
+  expression?.setValue('relaxed',r?.relaxed||0);expression?.setValue('surprised',r?.surprise||0);
+  expression?.setValue('aa',r?.mouth||0);vrm.update(0);
   for (const [a, b] of pairs) { b.position.copy(a.position); b.quaternion.copy(a.quaternion); b.scale.copy(a.scale); }
   for (const [a, b] of morphs) b.morphTargetInfluences = a.morphTargetInfluences.slice();
   placeAccessories(model, vrm.scene, h);

@@ -157,3 +157,15 @@ test('talk close-up hides the nearby player, frames the partner and restores the
     world.endChallenge();assert.equal(world.player.visible,true);assert.equal(bystander.mesh.visible,true);assert.equal(world.talkActive,false);assert.equal(partner.mesh.rotation.y,.2);
   }
 });
+
+test('talk reactions animate while navigation is paused, expire and clear on early exit', () => {
+ const world=makeWorld(), partner={mesh:person()};partner.mesh.position.z=-3;world.npcs=[partner];world.paused=true;
+ assert.equal(world.reactToTalk('win','paper',1),false);world.beginTalk(partner);
+ world.reactToTalk('win','paper',1);assert.equal(partner.mesh.userData.reaction.id,'nod');
+ const position=partner.mesh.position.clone();world.update(.2,.2);
+ assert.ok(partner.mesh.userData.head.rotation.x>0);assert.deepEqual(partner.mesh.position,position);
+ for(let i=0;i<35;i++)world.update(.05,.25+i*.05);
+ assert.equal(partner.mesh.userData.reaction,undefined);
+ world.reactToTalk('win','rock',3);assert.equal(partner.mesh.userData.reaction.id,'delight');
+ world.endChallenge();assert.equal(partner.mesh.userData.reaction,undefined);assert.equal(world.player.visible,true);
+});
