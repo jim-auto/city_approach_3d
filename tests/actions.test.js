@@ -131,3 +131,15 @@ test('duet frames both people in portrait and landscape without moving their nav
     assert.equal(partner.mesh.position.x, 2.1); assert.equal(world.player.position.length(), 0);
   }
 });
+
+test('companion closes the last gap when the player stops just short of a venue marker', () => {
+  for (const goal of MAP_LAYOUTS.kabukicho.destinations) {
+    const world=makeWorld();world.layout=MAP_LAYOUTS.kabukicho;world.map='kabukicho';
+    world.goal.set(goal.x,0,goal.z);world.player.position.copy(world.goal).add(new THREE.Vector3(.1,0,.1));
+    const npc={mesh:person(),label:{style:{}},profile:{speed:0},phase:0,cooldown:0};
+    npc.mesh.position.copy(world.goal).add(new THREE.Vector3(goal.type==='netcafe'?4:-2,0,4));
+    world.npcs=[npc];world.companion=npc;
+    for(let i=0;i<800;i++)world.update(.005,i*.005);
+    assert.ok(arrivedTogether(world.player.position,npc.mesh.position,world.goal),`${goal.id}: both must reach the entrance without moving the player again`);
+  }
+});

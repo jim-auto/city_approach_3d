@@ -1,5 +1,13 @@
 # CITY APPROACH 3D
 
+**歌舞伎町で、ナンパしてみた。声掛けから、ふたりでゴールするまで。**
+
+[![CITY APPROACH 3Dの実プレイ。声掛け、会話、同行コンボ、ゴール記念写真まで](media/hero-gameplay.gif)](https://jim-auto.github.io/city_approach_3d/)
+
+**[▶ 今すぐ遊ぶ](https://jim-auto.github.io/city_approach_3d/)** · [投稿用MP4](media/hero-gameplay.mp4?raw=true) · [GIFを開く](media/hero-gameplay.gif?raw=true)
+
+実際のゲーム画面を録画したハイライトです。カット・一部早送りを含みます。スマホ・PCのブラウザで遊べます。
+
 [city_approach](https://github.com/jim-auto/city_approach) の「相手のサインを観察 → 声かけ → 会話 → 同行」を、Three.jsの街で遊べるようにした3Dナンパシミュレーターです。女性キャラクターは全員20歳以上の架空の人物で、声掛け・会話・デートの誘い・同行までを遊べます。
 
 ## 公開版
@@ -203,3 +211,16 @@ Sは1000点以上、Aは850点以上、Bは700点以上、Cはそれ未満。ス
 ゴールすると、相手の3Dモデルと現在のプレイヤーの衣装、同じ施設の外観を使ったツーショットを撮影します。キャラクターを撮影用に並べた720×480の記念写真で、イラスト生成や追加の画像ダウンロードは行いません。「記念写真を保存」から端末へダウンロードでき、メニューの「ゴール記念写真」からも見返せます。端末には最大16件を保存し、同じ相手・同じ施設種別の写真はより高いスコアの結果で更新します。保存容量が足りない場合は画面に案内し、その場の写真ダウンロードを利用できます。開発時の画像案は採用していません。
 
 声掛けの窓は顔・名前・短い状況文と「声をかける」「離れる」が中心。「別の声かけ・一緒に遊ぶ」を開くと、台詞の選択とリズム遊びを使えます。
+
+## ヒーローGIFの撮影・編集
+
+`media/hero-gameplay.gif` と `media/hero-gameplay.mp4` は、独立した使い捨ての非表示ブラウザで実際のゲームを操作して録画したものです。ゲームの状態・点数・会話や結果を動画用に書き換えていません。字幕とカット・一部早送りだけを編集で加えています。録画中の進行・編集区間・結果は `media/hero-gameplay.json` に記録しています。
+
+撮り直す場合は、`npm run build` の後、`npm run preview -- --host 127.0.0.1 --port 4188 --strictPort` で録画専用の静的サーバーを起動し、別のターミナルで以下を実行します（録画用にPlaywrightとそのブラウザ、編集用にFFmpeg、日本語フォントが必要）。普段のブラウザやプロファイルへの接続は行いません。
+
+```bash
+node scripts/record-hero.cjs
+node scripts/edit-hero.cjs
+```
+
+`BASE_URL` でローカルURL、`PLAYWRIGHT_CHROMIUM_EXECUTABLE` で録画専用ブラウザの実行ファイル、`NODE_PATH` でPlaywrightの導入先、`HERO_FONT` で編集に使う日本語フォントを指定できます。元動画は無視対象の `artifacts/hero/` に保存し、README用GIF・投稿用MP4・共有プレビュー用JPEGだけを公開します。

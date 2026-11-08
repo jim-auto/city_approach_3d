@@ -282,7 +282,7 @@ export class CityWorld {
           const next = n.followPath?.[0];
           if (next) {
             const dir = new THREE.Vector3(next.x, 0, next.z).sub(n.mesh.position), distance = dir.length();
-            if (distance <= (n.followPath.length > 1 ? .16 : 1.0)) { if (n.followPath.length > 1) n.followPath.shift(); }
+            if (distance <= (n.followPath.length > 1 ? .16 : .6)) { if (n.followPath.length > 1) n.followPath.shift(); }
             else { const step = n.mesh.position.clone().addScaledVector(dir.normalize(), Math.min(distance, 3.8 * dt)); if (isWalkable(step, this.layout)) { n.mesh.position.copy(step); n.mesh.rotation.y = Math.atan2(dir.x, dir.z); moving = true; } else n.followTarget = null; }
           }
         } else if (n.ambient) {

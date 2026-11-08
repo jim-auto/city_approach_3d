@@ -1,0 +1,84 @@
+{
+  "capturedAt": "2026-11-08T10:02:56.301Z",
+  "source": "Actual local game, isolated headless browser; UI clicks and normal movement only.",
+  "viewport": {
+    "width": 960,
+    "height": 600
+  },
+  "edits": [
+    {
+      "label": "歌舞伎町で、ナンパしてみた。",
+      "start": 8.651,
+      "duration": 1.6,
+      "speed": 1
+    },
+    {
+      "label": "声をかけて、返事を選ぶ。",
+      "start": 13.69,
+      "duration": 1.1,
+      "speed": 1
+    },
+    {
+      "label": "会話で、少しずつ距離が縮まる。",
+      "start": 17.287,
+      "duration": 1.1,
+      "speed": 1
+    },
+    {
+      "label": "カスタマカフェへ、一緒に。",
+      "start": 29.387999999999998,
+      "duration": 1.15,
+      "speed": 1
+    },
+    {
+      "label": "ふたりで歩いて、会話コンボ。",
+      "start": 35.394,
+      "duration": 4.8,
+      "speed": 1.8
+    },
+    {
+      "label": "歩調を合わせて、コンボをつなぐ。",
+      "start": 70.369,
+      "duration": 4.5,
+      "speed": 2
+    },
+    {
+      "label": "置いていかず、一緒にゴール。",
+      "start": 91.963,
+      "duration": 4.4,
+      "speed": 2.8
+    },
+    {
+      "label": "ゴールで、ふたりの記念写真。",
+      "start": 96.963,
+      "duration": 1,
+      "speed": 1
+    },
+    {
+      "label": "スマホ・PCで、すぐ遊べる。",
+      "start": 99.198,
+      "duration": 1.5,
+      "speed": 1
+    }
+  ],
+  "result": {
+    "score": "1059 pt",
+    "rank": "RANK S",
+    "title": "GOAL CLEAR · デート成立！",
+    "walkingCues": 4
+  },
+  "gif": {
+    "programs": [],
+    "streams": [
+      {
+        "width": 720,
+        "height": 495,
+        "r_frame_rate": "10/1"
+      }
+    ],
+    "format": {
+      "duration": "14.000000",
+      "size": "6169344"
+    }
+  }
+}
