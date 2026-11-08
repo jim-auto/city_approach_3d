@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Vector3 } from 'three';
-import { crowdSpawns, visibleCrowd } from '../src/crowd.js';
+import { crowdSpawns, visibleCrowd, visibleCast, MOBILE_CAST_LIMIT } from '../src/crowd.js';
 import { MAP_LAYOUTS } from '../src/locations.js';
 import { isWalkable, resolveDestination } from '../src/navigation.js';
 
@@ -28,4 +28,11 @@ test('phones keep only eight nearby passersby visible and refresh them when walk
   const next = visibleCrowd(crowd, new Vector3(30, 0, 0), true);
   assert.equal(next.size, 8); assert.ok(next.has(crowd[15])); assert.ok(!next.has(crowd[0]));
   assert.equal(visibleCrowd(crowd, new Vector3(200, 0, 0), true).size, 0);
+});
+
+test('all expanded dating characters remain available while mobile drawing prioritizes the selected woman and companion', () => {
+  const cast = Array.from({length: 24}, (_, i) => ({mesh: {position: new Vector3(i * 2, 0, 0), visible: true}}));
+  const visible = visibleCast(cast, new Vector3(), true, cast[23], cast[22]);
+  assert.equal(visible.size, MOBILE_CAST_LIMIT); assert.ok(visible.has(cast[23])); assert.ok(visible.has(cast[22])); assert.ok(visible.has(cast[0]));
+  assert.equal(visibleCast(cast, new Vector3(), false).size, 24);
 });

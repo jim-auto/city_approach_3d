@@ -1,4 +1,4 @@
-import { crowdSpawns, visibleCrowd } from './crowd.js';
+import { crowdSpawns, visibleCrowd, visibleCast } from './crowd.js';
 import { createChallengeEffects, updateChallengeEffects } from './challenge-effects.js';
 import { REWARDS } from './challenge.js';
 import { disposeCharacterSkeletons } from './authored-characters.js';
@@ -86,8 +86,9 @@ export class CityWorld {
     this.updateCrowdVisibility();
   }
   updateCrowdVisibility() {
-    const visible = visibleCrowd(this.npcs, this.player.position, this.mobile);
-    for (const n of this.npcs) if (n.ambient) n.mesh.visible = visible.has(n);
+    const crowd = visibleCrowd(this.npcs, this.player.position, this.mobile);
+    const cast = visibleCast(this.npcs, this.player.position, this.mobile, this.selected, this.companion);
+    for (const n of this.npcs) n.mesh.visible = n.ambient ? crowd.has(n) : cast.has(n);
   }
   // Static scenery shares geometry/material draw calls; animated people stay separate.
   batchScenery() {
@@ -186,7 +187,7 @@ export class CityWorld {
     this.goalLabel.textContent = destination.label;
   }
   faceEachOther(n) { const dx = n.mesh.position.x - this.player.position.x, dz = n.mesh.position.z - this.player.position.z; this.player.rotation.y = Math.atan2(dx, dz); n.mesh.rotation.y = Math.atan2(-dx, -dz); }
-  select(n) { this.selected = n; this.npcs.filter(p => !p.ambient).forEach(p => p.label.classList.toggle('selected', p === n)); }
+  select(n) { this.selected = n; if (n) n.mesh.visible = true; this.npcs.filter(p => !p.ambient).forEach(p => p.label.classList.toggle('selected', p === n)); }
   resize() {
     const w = this.container.clientWidth, h = this.container.clientHeight;
     if (!w || !h) return;
@@ -291,10 +292,10 @@ export class CityWorld {
       }
       // Keep navigation responsive; sample distant authored poses less often on phones.
       const interval = this.mobile && this.distanceTo(n) > 14 && n !== this.companion && n !== this.selected ? .12 : 0;
-      if ((!n.ambient || n.mesh.visible) && (!n.lastAnimation || time - n.lastAnimation >= interval)) { animateCharacter(n.mesh, moving, time, n.phase); n.lastAnimation = time; }
+      if ((n.mesh.visible || n === this.selected || n === this.companion) && (!n.lastAnimation || time - n.lastAnimation >= interval)) { animateCharacter(n.mesh, moving, time, n.phase); n.lastAnimation = time; }
       if (!n.ambient) {
         n.label.style.opacity = n === this.companion || n.cooldown > time ? '.25' : '1';
-        if (!nearbyLabels.has(n) && n !== this.selected) n.label.style.display = 'none';
+        if (!n.mesh.visible || (!nearbyLabels.has(n) && n !== this.selected)) n.label.style.display = 'none';
         else this.placeLabel(n.label, n.mesh.position);
       }
     }

@@ -7,6 +7,14 @@ export const PROFILES = [
   { id: 'cafe', name: 'ナツキ', age: 27, gender: 'woman', traits: ['コーヒー', '立ち止まり', '目が合う'], cue: 'カップを持ってひと休み。少し時間がありそう。', open: ['item', 'empathy'], interest: 60, color: '#e58b74', hair: '#553931', speed: 0 },
   { id: 'reader', name: 'サヤ', age: 26, gender: 'woman', traits: ['読書', '立ち止まり'], cue: '本から顔を上げて、ひと息ついている。', open: ['item'], interest: 42, color: '#a998c2', hair: '#3d3437', speed: 0 },
   { id: 'friend', name: 'ハルカ', age: 24, gender: 'woman', traits: ['友達と一緒', 'もうすぐ出発'], cue: '友達と話しながら出発するところ。流れを止めずに離れよう。', open: [], interest: 22, color: '#80b6c1', hair: '#413226', speed: 0.6, guarded: true },
+  { id: 'movie', name: 'エマ', age: 24, gender: 'woman', traits: ["映画帰り", "パンフレット"], cue: '映画の話をしながらパンフレットを眺め、こちらに微笑んだ。', open: ["item", "situation"], interest: 55, color: '#b86d88', hair: '#573d43', speed: .15 },
+  { id: 'shopping', name: 'カナ', age: 25, gender: 'woman', traits: ["買い物帰り", "ひと休み"], cue: '買い物袋を持ってひと休み。目が合うと会釈してくれた。', open: ["item", "empathy"], interest: 54, color: '#c5a46d', hair: '#8c643d', speed: .15 },
+  { id: 'photo', name: 'ヒナ', age: 23, gender: 'woman', traits: ["写真好き", "街歩き"], cue: 'カメラを下ろして、撮れた写真をうれしそうに見せてくる。', open: ["item", "situation"], interest: 58, color: '#7cabc2', hair: '#4d3b33', speed: .15 },
+  { id: 'music', name: 'ルナ', age: 26, gender: 'woman', traits: ["ライブ帰り", "上機嫌"], cue: '音楽の余韻にひたりながら、イヤホンを外してひと息。', open: ["item", "joke"], interest: 56, color: '#8e80ba', hair: '#725466', speed: .15 },
+  { id: 'break', name: 'マナ', age: 27, gender: 'woman', traits: ["仕事帰り", "コーヒー"], cue: 'カップを片手に休憩中。通りを眺めながら穏やかに微笑んでいる。', open: ["empathy", "item"], interest: 57, color: '#a6b69a', hair: '#50352b', speed: .15 },
+  { id: 'explorer', name: 'ノア', age: 24, gender: 'woman', traits: ["街歩き", "道を探す"], cue: 'スマホの地図から顔を上げ、誰かに道を聞こうとしている。', open: ["situation", "empathy"], interest: 51, color: '#d8b2a3', hair: '#654642', speed: .15 },
+  { id: 'weekend', name: 'セナ', age: 28, gender: 'woman', traits: ["休日", "カフェ探し"], cue: 'スマホをしまい、よさそうなカフェを探して周囲を見ている。', open: ["situation", "joke"], interest: 59, color: '#748fa5', hair: '#312f3b', speed: .15 },
+  { id: 'stroll', name: 'アヤ', age: 25, gender: 'woman', traits: ["散歩中", "目が合う"], cue: 'ゆっくり歩きながら、目が合うと軽く手を振ってくれた。', open: ["empathy", "joke"], interest: 60, color: '#d398ac', hair: '#553348', speed: .15 },
 ];
 export const OPENERS = [
   { key: 'empathy', label: '自然に声をかける', text: '「今日は人が多いですね」' },
@@ -27,6 +35,14 @@ export function buildLines(profile, map) {
     eye: { text: '目、合っちゃいましたね。', cue: '偶然のきっかけ', correct: ['empathy', 'joke'] },
     tourist: { text: 'この辺、初めてで。道に迷っちゃって。', cue: '案内を求めている', correct: ['proposal', 'empathy'] },
     cafe: { text: 'このコーヒー、おいしくてつい休憩しちゃった。', cue: '好きなものの話', correct: ['empathy', 'joke'] },
+    movie: { text: 'さっき観た映画、ラストがすごくよかったんです。', cue: '映画の感想を聞こう', correct: ['listen', 'empathy'] },
+    shopping: { text: '欲しかったバッグが見つかって、今日は当たりの日です。', cue: 'うれしい気持ちへの共感', correct: ['empathy'] },
+    photo: { text: 'さっき、すごくいい写真が撮れたんです。見ます？', cue: '写真への関心を示そう', correct: ['listen', 'empathy'] },
+    music: { text: 'ライブが楽しすぎて、まだ帰るのがもったいなくて。', cue: '余韻への共感', correct: ['empathy', 'joke'] },
+    break: { text: 'やっと仕事が終わって、この一杯がごほうびです。', cue: 'ひと息つく気持ちへの共感', correct: ['empathy'] },
+    explorer: { text: map === 'kabukicho' ? 'TOHOの入口、どっちか分からなくなっちゃって。' : '金時計って、こっちの方向で合ってます？', cue: '道案内を求めている', correct: ['proposal', 'empathy'] },
+    weekend: { text: 'ゆっくりできるカフェを探してるんです。', cue: '一緒に探す提案', correct: ['proposal', 'listen'] },
+    stroll: { text: 'たまには目的を決めずに歩くのもいいですね。', cue: '街歩きの楽しさに共感', correct: ['empathy', 'joke'] },
     reader: { text: '続きが気になって、ずっと読んじゃいました。', cue: '好きなものの話', correct: ['empathy'] },
   };
   return [

@@ -1,4 +1,4 @@
-import { CROWD_LIMIT } from '../src/crowd.js';
+import { CROWD_LIMIT, MOBILE_CAST_LIMIT } from '../src/crowd.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -75,7 +75,7 @@ test('switching maps releases imported skeletons while keeping shared model surf
 test('all characters and background people use authored faces, retain props and stay within the combined crowd budget', () => {
   const kinds = ['player', ...PROFILES.map(p => p.id), ...STREET_PROFILES.map(p => p.id)];
   assert.deepEqual(new Set(Object.keys(CAST)), new Set(kinds));
-  let triangles = 0, draws = 0;
+  let triangles = 0, draws = 0; const costs = [];
   for (const id of kinds) {
     const model = createCharacter('#72778d', '#333333', id), background = createCharacter('#72778d', '#333333', id, { detailed: false });
     assert.equal(model.userData.authored, true, id); assert.equal(background.userData.authored, true, id);
@@ -84,11 +84,14 @@ test('all characters and background people use authored faces, retain props and 
     let count = 0, parts = 0;
     model.traverse(o => { if (o.isMesh) { count += (o.geometry.index?.count ?? o.geometry.attributes.position.count) / 3; parts++; assert.ok(isCharacterResource(o.geometry)); assert.ok(isCharacterResource(o.material)); } });
     assert.ok(count < 37_000, `${id}: ${count}`); assert.ok(parts <= 26, `${id}: ${parts}`);
-    triangles += count; draws += parts;
+    costs.push({ id, count, parts });
     const bounds = new THREE.Box3().setFromObject(model, true);
     assert.ok(bounds.min.y >= -.015, `${id}: ground ${bounds.min.y}`); assert.ok(bounds.max.y > 2 && bounds.max.y < 2.5, id);
     assert.ok(bounds.max.x - bounds.min.x < 1.3, `${id}: relaxed arms`);
   }
+  const playerCost = costs.find(c => c.id === 'player'), npcs = costs.filter(c => c.id !== 'player');
+  triangles = playerCost.count + [...npcs].sort((a,b) => b.count - a.count).slice(0, MOBILE_CAST_LIMIT).reduce((sum,c) => sum+c.count, 0);
+  draws = playerCost.parts + [...npcs].sort((a,b) => b.parts - a.parts).slice(0, MOBILE_CAST_LIMIT).reduce((sum,c) => sum+c.parts, 0);
   assert.ok(triangles < 400_000); assert.ok(draws < 320);
   for (let i = 0; i < CROWD_LIMIT.mobile; i++) {
     const model = createCharacter('#72778d', '#333333', i < 3 ? 'scout' : 'eye', { detailed: false });

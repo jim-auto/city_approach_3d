@@ -21,3 +21,13 @@ export function visibleCrowd(npcs, player, mobile) {
     .sort((a, b) => (distance(a) - (a.mesh.visible ? 3 : 0)) - (distance(b) - (b.mesh.visible ? 3 : 0)))
     .slice(0, mobile ? CROWD_LIMIT.mobile : CROWD_LIMIT.desktop));
 }
+
+export const MOBILE_CAST_LIMIT = 12;
+export function visibleCast(npcs, player, mobile, selected, companion) {
+  const cast = npcs.filter(n => !n.ambient);
+  if (!mobile) return new Set(cast);
+  return new Set(cast.sort((a, b) => {
+    const priority = n => n === selected || n === companion ? -10000 : n.mesh.position.distanceTo(player) - (n.mesh.visible ? 2 : 0);
+    return priority(a) - priority(b);
+  }).slice(0, MOBILE_CAST_LIMIT));
+}

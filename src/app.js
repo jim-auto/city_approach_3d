@@ -28,7 +28,7 @@ function mission(step, title, text, number = '01') { $('mission-step').textConte
 function setMode(mode) { closeActions(); world.cancelAction?.(); resetTouch(); $('app').dataset.mode = mode; state.mode = mode; world.paused = !['explore', 'escort'].includes(mode); if (world.paused) world.keys.clear(); $('touch-controls').style.visibility = ['explore', 'escort'].includes(mode) ? '' : 'hidden'; $('guide').hidden = mode !== 'explore'; $('labels').hidden = ['challenge', 'challenge-result'].includes(mode); }
 function openModal(id) { $(id).showModal(); }
 function closeInspect() { delete $('app').dataset.panel; $('inspect').hidden = true; state.selected = null; world.select(null); }
-function explore() { state.touring = false; $('guide-text').textContent = '女の子をタップして、一緒に遊ぶ・話す'; state.invitation = null; state.escort = null; closeInspect(); $('escort').hidden = true; world.companion = null; setMode('explore'); mission('OBSERVE', 'まずは、街を歩こう。', '近くの人を選んで、サインを観察。'); }
+function explore() { state.touring = false; $('guide-text').textContent = '女の子に声をかける → 会話 → デートに誘う'; state.invitation = null; state.escort = null; closeInspect(); $('escort').hidden = true; world.companion = null; setMode('explore'); mission('OBSERVE', 'まずは、街を歩こう。', '近くの人を選んで、サインを観察。'); }
 function result(title, body, points, button, action, good = false) {
   setMode('result'); $('conversation').close(); $('result-title').textContent = title; $('result-body').textContent = body; $('result-points').textContent = points ? `+${points} POINTS` : 'A MOMENT TO LEARN'; $('result-symbol').textContent = good ? '↗' : '◌'; $('result-eyebrow').textContent = good ? 'A NEW CONNECTION' : 'RESPECT THEIR PACE'; $('result-next').textContent = button; resultAction = action; if (points) score(points); tone(good ? 'success' : 'miss'); openModal('result');
 }
@@ -47,7 +47,7 @@ function selectNpc(n) {
   $('person-name').textContent = `${n.profile.name} · ${n.profile.age}歳`; $('person-icon').style.color = n.profile.color; $('person-icon').style.background = `${n.profile.color}20`;
   $('traits').replaceChildren(...n.profile.traits.map(t => { const span = document.createElement('span'); span.textContent = t; return span; }));
   $('person-cue').textContent = n.profile.cue; $('person-status').textContent = n.profile.guarded ? '今はそっとしておこう' : '相手のペースを大切に';
-  $('opener-choices').open = false; $('partner-play').disabled = !!n.profile.guarded || world.distanceTo(n) > 3.5; $('partner-play').textContent = n.profile.guarded ? '今は忙しそう' : world.distanceTo(n) > 3.5 ? '近くまで移動中…' : '一緒にリズム遊び · 15秒';
+  $('opener-choices').open = false; $('approach-start').disabled = world.distanceTo(n) > 3.5; $('partner-play').disabled = !!n.profile.guarded || world.distanceTo(n) > 3.5; $('partner-play').textContent = n.profile.guarded ? '今は忙しそう' : world.distanceTo(n) > 3.5 ? '近くまで移動中…' : '一緒にリズム遊び · 15秒';
   $('opener-actions').replaceChildren(...OPENERS.map(opener => { const button = document.createElement('button'); button.dataset.opener = opener.key; button.textContent = opener.text; const small = document.createElement('small'); small.textContent = opener.label; button.append(small); button.addEventListener('click', () => startTalk(opener.key)); return button; }));
   if (world.distanceTo(n) > 3.1) { const pos = n.mesh.position.clone(); pos.z += 2.1; world.walkTo(pos); toast('近くまで歩いて、相手のサインを見てみよう。'); }
   mission('READ THE SIGNS', '声をかける？ それとも離れる？', 'サインに合う、自然なきっかけを選ぼう。', '02'); tone();
@@ -79,7 +79,7 @@ function startTalk(key) {
   state.talk = { npc: n, ...opening, chain: 0, lines: buildLines(n.profile, state.map), turn: 0, locked: false };
   delete $('app').dataset.panel; $('inspect').hidden = true; $('talk-name').textContent = n.profile.name;
   $('responses').replaceChildren(...RESPONSES.map(r => { const b = document.createElement('button'); b.dataset.response = r.key; b.addEventListener('click', () => respond(r.key)); return b; }));
-  setMode('talk'); showLine(); openModal('conversation'); tone();
+  setMode('talk'); showLine(); $('talk-feedback').textContent = `あなた ${OPENERS.find(opener => opener.key === key).text}`; openModal('conversation'); tone();
 }
 function showLine() {
   const talk = state.talk; talk.locked = false;
@@ -158,6 +158,7 @@ const arcade = createChallengeUI({ world, storage, mode: () => state.mode,
   canStart: partner => ['explore', 'challenge-result'].includes(state.mode) && !world.companion && !!partner && world.npcs.includes(partner) && !partner.ambient && !partner.profile.role && partner.profile.gender === 'woman' && !partner.profile.guarded && partner.profile.age >= 20 && world.distanceTo(partner) <= 3.5 && (state.mode === 'challenge-result' || partner === state.selected),
   enter(mode) { state.touring = false; closeInspect(); setMode(mode); }, leave(partner) { explore(); if (partner) selectNpc(partner); }, award: score, tone,
 });
+$('approach-start').addEventListener('click', () => { const n = state.selected; if (n) startTalk(n.profile.open[0] || 'empathy'); });
 $('partner-play').addEventListener('click', () => arcade.start(state.selected));
 $('start-tour').addEventListener('click', startTour);
 $('menu-tour').addEventListener('click', startTour);
@@ -243,14 +244,14 @@ function frame(now) {
   lastRender = interval ? now - ((now - lastRender) % interval) : now;
   const dt = Math.min((now - previous) / 1000, .05); previous = now; state.elapsed += dt;
   arcade.update(dt); world.update(dt, state.elapsed); mapTick += dt;
-  if (state.touring && !world.destination) { state.touring = false; $('guide-text').textContent = '女の子をタップして、一緒に遊ぶ・話す'; }
+  if (state.touring && !world.destination) { state.touring = false; $('guide-text').textContent = '女の子に声をかける → 会話 → デートに誘う'; }
   if (state.mode === 'explore' && !state.selected && !state.touring) {
     const street = (world.npcs || []).find(n => n.profile?.autoApproach && n.cooldown <= state.elapsed && world.distanceTo(n) < 2.7);
     if (street) openStreet(street);
   }
   if (mapTick > .2) { if ($('game-menu').open) world.drawMinimap(ctx); mapTick = 0; }
   if (state.selected && state.mode === 'explore') {
-    const dist = world.distanceTo(state.selected); $('partner-play').disabled = dist > 3.5 || !!state.selected.profile.guarded; $('partner-play').textContent = state.selected.profile.guarded ? '今は忙しそう' : dist > 3.5 ? '近くまで移動中…' : '一緒にリズム遊び · 15秒'; $('approach-status').textContent = dist > 3.5 ? '近くまで移動中… 到着したら台詞を選ぼう。' : state.selected.profile.guarded ? '今は話す余裕がなさそう。会釈して次の出会いへ。' : '一緒に遊ぶ？ それとも会話する？'; $('person-distance').textContent = `${dist.toFixed(1)} m`; $('opener-actions').querySelectorAll('button').forEach(b => b.disabled = dist > 3.5);
+    const dist = world.distanceTo(state.selected); $('approach-start').disabled = dist > 3.5; $('partner-play').disabled = dist > 3.5 || !!state.selected.profile.guarded; $('partner-play').textContent = state.selected.profile.guarded ? '今は忙しそう' : dist > 3.5 ? '近くまで移動中…' : '一緒にリズム遊び · 15秒'; $('approach-status').textContent = dist > 3.5 ? '近くまで移動中… 到着したら台詞を選ぼう。' : state.selected.profile.guarded ? '今は話す余裕がなさそう。会釈して次の出会いへ。' : '一緒に遊ぶ？ それとも会話する？'; $('person-distance').textContent = `${dist.toFixed(1)} m`; $('opener-actions').querySelectorAll('button').forEach(b => b.disabled = dist > 3.5);
   }
   if (state.mode === 'escort') {
     state.escort.distance += state.escort.previous.distanceTo(world.player.position); state.escort.previous.copy(world.player.position);

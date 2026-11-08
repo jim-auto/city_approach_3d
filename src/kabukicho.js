@@ -8,7 +8,7 @@ const rect = (id, name, minX, maxX, minZ, maxZ) => ({ id, name, minX, maxX, minZ
 export const KABUKICHO_LAYOUT = {
   bounds: { minX: -65, maxX: 38, minZ: -59, maxZ: 49 },
   start: [0, 29], goal: [9.8, -25.8], goalLabel: 'ホテル入口', obstacles: [],
-  people: [[-3.8, 23], [3.5, -7], [-21, -20], [22, 4], [3.7, 0], [-34, -32], [-23, 18], [3, -19]],
+  people: [[-3.8, 23], [3.5, -7], [-21, -20], [22, 4], [3.7, 0], [-34, -32], [-23, 18], [3, -19], [-2.8, 30], [3.8, 20], [-4, 8], [4.5, -15], [-32, -20], [18.5, 10], [-21, 32], [-17, -40]],
   walkways: [
     rect('central-road', 'ゴジラロード', -6.5, 6.5, -22, 49),
     rect('cinema-front-road', '東宝ビル前', -50, 35, -22, -12),

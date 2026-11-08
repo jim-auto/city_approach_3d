@@ -6,7 +6,7 @@ import { Vector3 } from 'three';
 import { startGame } from '../src/app.js';
 import { MAP_LAYOUTS } from '../src/locations.js';
 import { STREET_PROFILES } from '../src/street-encounters.js';
-import { PROFILES } from '../src/game.js';
+import { PROFILES, buildLines } from '../src/game.js';
 
 // Test the real application controller and HTML without opening or controlling Chrome.
 test('explore → observe → conversation → escort → arrival, help resume, and map switch', async t => {
@@ -119,6 +119,26 @@ test('explore → observe → conversation → escort → arrival, help resume, 
     doc.querySelector('[data-destination="towers"]').click();
     click('invite-cancel'); assert.equal(state.mode, 'explore'); assert.equal(state.score, afterAbort);
     click('invite-confirm'); assert.equal(world.companion, null); assert.equal(state.score, afterAbort);
+    // Every added woman starts a real conversation from the primary button and can complete a date.
+    for (const profile of PROFILES.slice(8)) {
+      const added = { profile, mesh: { position: world.player.position.clone() }, cooldown: 0 };
+      world.npcs = [added]; world.onSelect(added);
+      assert.equal(doc.getElementById('opener-choices').open, false);
+      click('partner-play'); assert.equal(state.mode, 'challenge', `${profile.name}: duet`);
+      assert.match(doc.getElementById('challenge-partner').textContent, new RegExp(profile.name));
+      click('challenge-cancel'); world.onSelect(added);
+      click('approach-start'); assert.equal(state.mode, 'talk', profile.name);
+      assert.equal(doc.getElementById('talk-name').textContent, profile.name);
+      assert.match(doc.getElementById('talk-feedback').textContent, /あなた/);
+      for (const line of buildLines(profile, state.map)) choose(line.correct[0]);
+      assert.equal(state.mode, 'invite', profile.name);
+      doc.querySelector('[data-destination="gold"]').click(); click('invite-confirm');
+      assert.equal(state.mode, 'escort'); assert.equal(world.companion, added);
+      click('goal-walk'); added.mesh.position.copy(world.goal); nextFrame(performance.now() + 100);
+      assert.equal(state.mode, 'result', `${profile.name}: date arrival`);
+      assert.match(doc.getElementById('result-title').textContent, /デート成立/);
+      click('result-next');
+    }
   } finally {
     t.mock.timers.reset(); window.happyDOM.abort();
     for (const [name, descriptor] of previous) { if (descriptor) Object.defineProperty(globalThis, name, descriptor); else delete globalThis[name]; }

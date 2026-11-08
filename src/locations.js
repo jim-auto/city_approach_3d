@@ -10,7 +10,7 @@ export const MAP_LAYOUTS = {
     bounds: { minX: -6.7, maxX: 6.7, minZ: -25, maxZ: 27 },
     start: [-3.2, 24], goal: [6.1, 23], goalLabel: 'タワーズ入口 ↗',
     obstacles: [{ x: 0, z: 18, radius: 1.05 }, { x: 0, z: -20, radius: 1.1 }],
-    people: [[-2.8, 14], [3.3, 9], [-3.6, -16], [2, -4], [4.8, 1], [-5.4, 0], [5.3, -10], [3.4, -22]],
+    people: [[-2.8, 14], [3.3, 9], [-3.6, -16], [2, -4], [4.8, 1], [-5.4, 0], [5.3, -10], [3.4, -22], [3, 23], [-3, 20], [4.3, 15], [-3, 7], [3.3, -7], [-3.8, -11], [3, -17], [-3.4, -23]],
     landmarks: [{ id: 'gold-clock', name: '金時計 / 桜通口', x: 0, z: 18, color: '#d5b66b' }, { id: 'silver-clock', name: '銀時計 / 太閤通口', x: 0, z: -20, color: '#bfcdda' }, { id: 'central-gates', name: 'JR中央口', x: -8.4, z: 4, color: '#dd9759' }, { id: 'shinkansen-gates', name: '新幹線北口', x: 8.4, z: -17, color: '#79b5e4' }],
   },
   kabukicho: KABUKICHO_LAYOUT,

@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="ja">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#11151e"><meta name="description" content="歌舞伎町で女の子に声をかけ、会話からデートへ誘う3Dナンパシミュレーター。"><title>CITY APPROACH 3D — ナンパシミュレーター</title>  <script type="module" crossorigin src="./assets/index-BBmuEdU5.js"></script>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#11151e"><meta name="description" content="歌舞伎町で女の子に声をかけ、会話からデートへ誘う3Dナンパシミュレーター。"><title>CITY APPROACH 3D — ナンパシミュレーター</title>  <script type="module" crossorigin src="./assets/index-CF1kT0DV.js"></script>
   <link rel="modulepreload" crossorigin href="./assets/three-ziMQHK2h.js">
-  <link rel="stylesheet" crossorigin href="./assets/index-DPI7sUtS.css">
+  <link rel="stylesheet" crossorigin href="./assets/index-OFcUMK_g.css">
 </head>
 <body>
 <div id="world" aria-label="3Dの街"></div>
@@ -16,7 +16,7 @@
 
 
 
-  <section id="inspect" class="inspect glass" hidden aria-label="相手を観察"><div class="panel-heading"><span class="eyebrow">どう声をかける？</span><button id="inspect-close" class="close" aria-label="観察を閉じる">×</button></div><div class="person-heading"><span id="person-icon" class="person-icon">◎</span><div><h2 id="person-name"></h2><span id="person-status">サインをよく見てみよう</span></div><span id="person-distance"></span></div><div id="traits" class="traits"></div><p id="person-cue"></p><p id="approach-status">最初にかけるひと言を選ぼう。</p><button id="partner-play" class="primary">一緒にリズム遊び · 15秒</button><details id="opener-choices"><summary>声をかけて会話する</summary><div id="opener-actions" class="opener-actions"></div></details><button id="leave" class="leave">会釈して離れる <span>↗</span></button></section>
+  <section id="inspect" class="inspect glass" hidden aria-label="相手を観察"><div class="panel-heading"><span class="eyebrow">どう声をかける？</span><button id="inspect-close" class="close" aria-label="観察を閉じる">×</button></div><div class="person-heading"><span id="person-icon" class="person-icon">◎</span><div><h2 id="person-name"></h2><span id="person-status">サインをよく見てみよう</span></div><span id="person-distance"></span></div><div id="traits" class="traits"></div><p id="person-cue"></p><p id="approach-status">最初にかけるひと言を選ぼう。</p><button id="approach-start" class="primary">声をかける</button><button id="partner-play" class="tour-button">一緒にリズム遊び · 15秒</button><details id="opener-choices"><summary>声のかけ方を選ぶ</summary><div id="opener-actions" class="opener-actions"></div></details><button id="leave" class="leave">会釈して離れる <span>↗</span></button></section>
 
 
   <section id="challenge-panel" hidden aria-label="女の子とふたりでリズム遊び">
@@ -30,7 +30,7 @@
 
 <div class="play-actions">
 
-  <button id="nearby-person">近くの女の子</button>
+  <button id="nearby-person">ナンパする</button>
 </div>
 <div id="touch-controls"><div id="movement-stick" class="movement-stick" role="group" tabindex="0" aria-label="移動スティック" aria-describedby="stick-help"><span class="stick-guide" aria-hidden="true"></span><span id="stick-thumb" class="stick-thumb" aria-hidden="true"></span></div><span id="stick-help">倒して移動</span></div>
 </div>
@@ -49,7 +49,7 @@
   <details><summary>モデルのクレジット</summary><p>3Dモデル：VRM1_Constraint_Twist_Sample / VRoid AvatarSample A・B・C<br>pixiv Inc. / VRoid Project<br>各モデルの利用条件に基づき、色・形状の軽量化・描画設定を変更。<br><a href="./models/LICENSE.txt?v=cast1" target="_blank" rel="noopener">出典・利用条件</a></p></details>
   <button id="menu-resume" class="primary">街に戻る</button>
 </dialog>
-<dialog id="intro" class="modal intro"><button class="close" id="intro-close" aria-label="閉じる">×</button><h2>ナンパシミュレーター</h2><p>街で気になる女の子をタップ。<br>一緒に遊んだり、会話からデートに誘おう。</p><button id="start" class="primary">街へ出る</button><details><summary>遊び方</summary><p>左下の丸いスティックで移動。ドラッグで視点を回転、2本指でズーム。</p><p>女の子を選び「一緒にリズム遊び」。相手のポーズに合わせて青いゾーンでタップすると特典GET。</p><p>「声をかけて会話する」から返事を選び、会話が弾んだらデートへ。断られたら次の出会いを探そう。</p><button id="start-tour" class="tour-button">TOHOの周りを散策</button><small>PC：WASDで移動・ドラッグで回転。</small></details><small>登場する女性は全員20歳以上の架空の人物です。</small></dialog>
+<dialog id="intro" class="modal intro"><button class="close" id="intro-close" aria-label="閉じる">×</button><h2>ナンパシミュレーター</h2><p>街で気になる女の子をタップ。<br>一緒に遊んだり、会話からデートに誘おう。</p><button id="start" class="primary">街へ出る</button><details><summary>遊び方</summary><p>左下の丸いスティックで移動。ドラッグで視点を回転、2本指でズーム。</p><p>女の子を選び「一緒にリズム遊び」。相手のポーズに合わせて青いゾーンでタップすると特典GET。</p><p>「声をかける」から会話を始め、返事を選び、会話が弾んだらデートへ。断られたら次の出会いを探そう。</p><button id="start-tour" class="tour-button">TOHOの周りを散策</button><small>PC：WASDで移動・ドラッグで回転。</small></details><small>登場する女性は全員20歳以上の架空の人物です。</small></dialog>
 <dialog id="conversation" class="modal conversation"><div class="panel-heading"><span class="eyebrow">② 会話を楽しむ</span><button id="talk-exit" class="close" aria-label="会話を終える">×</button></div><div class="talk-top"><span id="talk-name"></span><span id="talk-turn"></span></div><div class="meters"><div><label for="favor">好感度 <b id="favor-value"></b></label><meter id="favor" min="0" max="100"></meter></div><div class="discomfort"><label for="discomfort">違和感 <b id="discomfort-value"></b></label><meter id="discomfort" min="0" max="100"></meter></div></div><div class="dialogue-mark">“</div><p id="talk-line"></p><span id="talk-cue" class="talk-cue"></span><p id="talk-feedback" role="status" aria-live="polite"></p><div id="responses" class="responses"></div><small>好感度68以上・違和感60未満で、文脈に合う提案を。</small></dialog>
 <dialog id="invitation" class="modal invitation" aria-labelledby="invite-title"><div class="panel-heading"><h2 id="invite-title">③ デートに誘う</h2><button id="invite-cancel" class="close" aria-label="誘いをやめて別れる">×</button></div><p id="invite-name"></p><p id="invite-line" aria-live="polite"></p><div id="invite-options"></div><button id="invite-confirm" class="primary" hidden>一緒に向かう</button></dialog>
 <dialog id="street-dialog" class="modal street-dialog" aria-labelledby="street-name"><div class="panel-heading"><h2 id="street-name"></h2><button id="street-close" class="close" aria-label="話を終えて街に戻る">×</button></div><p id="street-line"></p><div id="street-options"></div></dialog>

@@ -88,3 +88,6 @@
 .challenge-result details { text-align: left; margin-top: 12px; font-size: 12px; }
 .challenge-result summary { padding: 12px 0; cursor: pointer; }
 #challenge-return { margin-top: 16px; }
+
+#approach-start { width: 100%; min-height: 50px; font-size: 16px; }
+#partner-play { font-size: 12px; min-height: 44px; margin-top: 8px; }
