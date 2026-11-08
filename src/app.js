@@ -124,6 +124,7 @@ function openInvitation() {
       $('invite-options').querySelectorAll('button').forEach(b => b.classList.toggle('chosen', b === button));
       state.invitation = outcome.accepted ? destination : null;
       $('invite-confirm').hidden = !outcome.accepted;
+      $('invite-confirm').textContent = outcome.accepted ? `${destination.name || destination.label}へ一緒に向かう` : '一緒に向かう';
     }); return button;
   }));
   openModal('invitation');

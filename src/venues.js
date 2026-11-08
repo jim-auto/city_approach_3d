@@ -9,8 +9,8 @@ export const KABUKICHO_VENUES = [
     latitude: 35.695223, longitude: 139.701313,
     source: 'https://rakutama.com/shop/kabukicho.html', mapSource: 'https://goo.gl/maps/VKchcdvskwN2',
     building: {x: -32, z: -7, width: 8, depth: 12, height: 24, rotation: Math.PI / 2},
-    invitation: 'カスタマカフェで、ふたりでもう少し話しませんか？',
-    answer: 'いいですね。カスタマカフェに一緒に行きましょう。',
+    invitation: '近くのネットカフェで、少し座って話さない？',
+    answer: 'うん、もう少し話したい。行こう。',
     routeHint: 'TOHO前から西へ、一番街を南へ。第二東亜会館の1F入口（店舗は7F）。',
   },
   {
