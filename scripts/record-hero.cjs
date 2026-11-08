@@ -9,7 +9,7 @@ const {chromium} = require('playwright');
   const out=process.env.HERO_OUT||'artifacts/hero';await fs.mkdir(out,{recursive:true});
   await fs.rm(path.join(out,'recording.json'),{force:true});
   const browser=await chromium.launch({headless:true,...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE?{executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE}:{}),args:['--no-sandbox','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
-  const context=await browser.newContext({viewport:{width:960,height:600},deviceScaleFactor:1,isMobile:true,hasTouch:true,recordVideo:{dir:out,size:{width:960,height:600}}});
+  const context=await browser.newContext({viewport:{width:960,height:600},deviceScaleFactor:.75,isMobile:true,hasTouch:true,recordVideo:{dir:out,size:{width:960,height:600}}});
   const t0=Date.now(), marks={}, errors=[];let rawVideo;
   const mark=name=>{marks[name]=(Date.now()-t0)/1000;console.log(name,marks[name]);};
   let page;
@@ -29,15 +29,19 @@ const {chromium} = require('playwright');
     await page.waitForFunction(()=>!document.getElementById('inspect').hidden&&!document.getElementById('approach-start').disabled,null,{timeout:30000});
     mark('approach');await shot('approach');await pause(1400);
     await page.locator('#approach-start').click();mark('conversation');await shot('conversation');await pause(1200);
-    for(let round=0;round<5;round++){
-      await page.waitForFunction(()=>!document.querySelector('[data-hand]').disabled);
-      const signal=await page.locator('#talk-line').innerText();
-      const key=signal.includes('グー')?'paper':signal.includes('チョキ')?'rock':'scissors';
-      await page.locator(`[data-hand="${key}"]`).click();
-      await pause(300);mark(`reaction${round+1}`);
-      if(round===0)marks.reaction=marks.reaction1;
-      await pause(1800);
+    await page.locator('#rhythm-start').click();mark('rhythm');
+    const played=new Set();let hits=0;
+    const songDeadline=Date.now()+45000;
+    while(Date.now()<songDeadline && await page.locator('#app').getAttribute('data-mode')==='talk'){
+      const target=await page.evaluate(()=>[...document.querySelectorAll('#rhythm-notes i')].filter(n=>!n.hidden).map(n=>({id:n.dataset.note,y:parseFloat(n.style.top),lane:Math.round(parseFloat(n.style.left)*3/100-.5)})).find(n=>n.y>=89&&n.y<=106));
+      if(target&&!played.has(target.id)){
+        played.add(target.id);await page.keyboard.press(String(target.lane+1));hits++;
+        if(hits===1){mark('reaction1');marks.reaction=marks.reaction1;}
+        if(hits===7)mark('reaction3');
+      }
+      await pause(20);
     }
+    await page.locator('#invite-options').waitFor({state:'visible',timeout:10000});
     mark('invite');await pause(600);
     await page.locator('[data-destination="hotel-i"]').click();await pause(350);
     if(!(await page.locator('#invite-confirm').isVisible())){mark('decline');await shot('decline');await pause(1800);}

@@ -6,8 +6,8 @@ import { Vector3 } from 'three';
 import { startGame } from '../src/app.js';
 import { MAP_LAYOUTS } from '../src/locations.js';
 import { STREET_PROFILES } from '../src/street-encounters.js';
-import { winningHand } from '../src/talk-rps.js';
-import { PROFILES, buildLines } from '../src/game.js';
+import { RHYTHM, TALK_LANES } from '../src/talk-rhythm.js';
+import { PROFILES } from '../src/game.js';
 
 // Test the real application controller and HTML without opening or controlling Chrome.
 test('explore → observe → conversation → escort → arrival, help resume, and map switch', async t => {
@@ -43,9 +43,12 @@ test('explore → observe → conversation → escort → arrival, help resume, 
     drawMinimap() {}
   }
   try {
-    const { state, world } = startGame(WorldStub), doc = window.document;
+    const { state, world } = startGame(WorldStub,{now:()=>frameClock}), doc = window.document;
     const click = id => doc.getElementById(id).click();
-    const choose = () => { doc.querySelector(`[data-hand="${winningHand(state.talk.rounds[state.talk.turn].hand)}"]`).click(); t.mock.timers.tick(1660); };
+    const playStage = () => { click('rhythm-muted');
+      for(const n of state.talk.run.notes){frame(state.talk.startedAt+n.time*1000);doc.querySelector(`[data-lane="${TALK_LANES[n.lane].key}"]`).click();}
+      frame(state.talk.startedAt+(RHYTHM.duration+.05)*1000);t.mock.timers.tick(1210);
+    };
     assert.equal(state.mode, 'intro'); assert.match(doc.getElementById('intro').textContent, /ナンパシミュレーター/);
     click('start-tour'); assert.equal(state.mode, 'explore'); assert.equal(world.lastTour.length, 6);
     click('start'); assert.equal(state.mode, 'explore');
@@ -72,7 +75,7 @@ test('explore → observe → conversation → escort → arrival, help resume, 
     assert.equal(doc.getElementById('app').dataset.mode, 'talk');
     // A map change during conversation must not discard its state.
     doc.querySelector('[data-map="nagoya"]').click(); assert.equal(state.map, 'kabukicho');
-    choose('listen'); choose('empathy'); choose('empathy'); choose('listen'); choose('proposal');
+    playStage();
     assert.equal(state.mode, 'invite'); assert.equal(state.score, 400);
     assert.equal(world.companion, null, 'a conversation alone does not start following');
     doc.querySelector('[data-destination="hotel-i"]').click();
@@ -127,10 +130,10 @@ test('explore → observe → conversation → escort → arrival, help resume, 
     assert.equal(doc.getElementById('best').textContent, String(completedScore));
     // Aborting a line cancels its delayed callback rather than changing a later scene.
     npc.cooldown = 0; world.onSelect(npc); doc.querySelector('[data-opener="empathy"]').click();
-    doc.querySelector('[data-hand="rock"]').click(); click('talk-exit');
+    click('rhythm-muted'); click('talk-exit');
     const afterAbort = state.score; t.mock.timers.tick(2000); assert.equal(state.mode, 'result'); assert.equal(state.score, afterAbort);
     click('result-next'); npc.cooldown = 0; world.onSelect(npc); doc.querySelector('[data-opener="empathy"]').click();
-    choose('listen'); choose('empathy'); choose('empathy'); choose('listen'); choose('proposal');
+    playStage();
     assert.equal(state.mode, 'invite');
     doc.querySelector('[data-destination="towers"]').click();
     const beforeCancel=state.score;click('invite-cancel'); assert.equal(state.mode, 'explore'); assert.equal(state.score, beforeCancel);
@@ -139,7 +142,7 @@ test('explore → observe → conversation → escort → arrival, help resume, 
     // Nagoya remains a practice area: reaching a clock must not clear the game.
     const practice = {profile: PROFILES[8], mesh: {position: world.player.position.clone()}, cooldown: 0};
     world.npcs = [practice]; world.onSelect(practice); click('approach-start');
-    for (const line of buildLines(practice.profile, state.map)) choose(line.correct[0]);
+    playStage();
     doc.querySelector('[data-destination="gold"]').click(); click('invite-confirm');
     click('goal-walk'); practice.mesh.position.copy(world.goal); frame(performance.now() + 100);
     assert.equal(state.clears, 1); assert.doesNotMatch(doc.getElementById('result-title').textContent, /CLEAR|デート成立/); assert.equal(doc.getElementById('goal-memory').hidden,true); click('result-next');
@@ -155,7 +158,7 @@ test('explore → observe → conversation → escort → arrival, help resume, 
       click('approach-start'); assert.equal(state.mode, 'talk', profile.name);
       assert.equal(doc.getElementById('talk-name').textContent, profile.name);
       assert.match(doc.getElementById('talk-feedback').textContent, /あなた/);
-      for (const line of buildLines(profile, state.map)) choose(line.correct[0]);
+      playStage();
       assert.equal(state.mode, 'invite', profile.name);
       doc.querySelector('[data-destination="hotel-i"]').click(); click('invite-confirm');
       assert.equal(state.mode, 'escort'); assert.equal(world.companion, added);
@@ -167,22 +170,20 @@ test('explore → observe → conversation → escort → arrival, help resume, 
       click('result-next');
     }
     assert.equal(state.clears, 9, 'only eight actual hotel arrivals add to the cafe goal');
-    // Draws, rapid double taps and a timeout must not grant wins or duplicate points.
+    // Wrong lanes cannot be repaired by tapping every button; hiding the tab pauses the song.
     npc.cooldown=0;npc.mesh.position.copy(world.player.position);world.onSelect(npc);click('approach-start');
-    assert.equal(world.challengePartner,npc);
-    const startingScore=state.score;
-    doc.querySelector(`[data-hand="${state.talk.rounds[0].hand}"]`).click();
-    doc.querySelector(`[data-hand="${winningHand(state.talk.rounds[0].hand)}"]`).click();
-    assert.equal(state.talk.wins,0);assert.equal(state.score,startingScore);
-    assert.equal(doc.getElementById('conversation').dataset.grade,'draw');
-    t.mock.timers.tick(1660);assert.equal(state.talk.turn,1);
-    Object.defineProperty(window.document,'hidden',{configurable:true,value:true});frame(frameClock+10000);Object.defineProperty(window.document,'hidden',{configurable:true,value:false});
-    assert.equal(state.talk.remaining,4.5,'hidden tab does not consume reaction time');
-    for(let i=0;i<95;i++)frame(frameClock+50);
+    assert.equal(world.challengePartner,npc);click('rhythm-muted');
+    const startingScore=state.score, first=state.talk.run.notes[0];
+    frame(state.talk.startedAt+first.time*1000);
+    doc.querySelector(`[data-lane="${TALK_LANES[(first.lane+1)%3].key}"]`).click();
+    doc.querySelector(`[data-lane="${TALK_LANES[first.lane].key}"]`).click();
+    assert.equal(state.talk.run.hits,0);assert.equal(state.score,startingScore);
     assert.equal(doc.getElementById('conversation').dataset.grade,'miss');
-    assert.equal(state.talk.wins,0);assert.equal(state.score,startingScore);
-    click('talk-exit');assert.equal(world.challengePartner,null);
-    t.mock.timers.tick(2000);assert.equal(state.mode,'result');
+    const elapsed=state.talk.run.elapsed;
+    Object.defineProperty(window.document,'hidden',{configurable:true,value:true});doc.dispatchEvent(new window.Event('visibilitychange'));frame(frameClock+10000);
+    Object.defineProperty(window.document,'hidden',{configurable:true,value:false});doc.dispatchEvent(new window.Event('visibilitychange'));
+    frame(frameClock+50);assert.ok(state.talk.run.elapsed<elapsed+.1,'background tab does not consume song time');
+    click('talk-exit');assert.equal(world.challengePartner,null);t.mock.timers.tick(2000);assert.equal(state.mode,'result');
   } finally {
     t.mock.timers.reset(); window.happyDOM.abort();
     for (const [name, descriptor] of previous) { if (descriptor) Object.defineProperty(globalThis, name, descriptor); else delete globalThis[name]; }

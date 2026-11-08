@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-11-08T13:39:17.899Z",
+  "capturedAt": "2026-11-08T14:03:46.240Z",
   "source": "Actual local game, isolated headless browser; UI clicks and normal movement only.",
   "viewport": {
     "width": 960,
@@ -8,67 +8,67 @@
   "edits": [
     {
       "label": "歌舞伎町で、ナンパしてみた。",
-      "start": 15.182,
+      "start": 9.31,
       "duration": 1.6,
       "speed": 1
     },
     {
-      "label": "声をかけて、リアクションじゃんけん。",
-      "start": 24.789,
+      "label": "声をかけたら、リズムトーク。",
+      "start": 14.714,
       "duration": 1.1,
       "speed": 1
     },
     {
-      "label": "勝つ手に、笑顔でリアクション。",
-      "start": 35.48,
-      "duration": 1,
-      "speed": 0.65
+      "label": "音に合わせて、笑顔のリアクション。",
+      "start": 23.276,
+      "duration": 4,
+      "speed": 1
     },
     {
-      "label": "連勝すると、もっと喜んでくれる。",
-      "start": 42.532,
+      "label": "コンボで、もっと喜んでくれる。",
+      "start": 29.709999999999997,
       "duration": 1,
       "speed": 0.65
     },
     {
       "label": "「もう少し話したい。場所変えない？」",
-      "start": 53.397999999999996,
+      "start": 49.318,
       "duration": 1.15,
       "speed": 1
     },
     {
       "label": "ふたりで歩いて、会話コンボ。",
-      "start": 63.954,
-      "duration": 4.8,
+      "start": 55.847,
+      "duration": 3.6,
       "speed": 1.8
     },
     {
       "label": "歩調を合わせて、コンボをつなぐ。",
-      "start": 121.685,
-      "duration": 4.5,
+      "start": 94.694,
+      "duration": 3.6,
       "speed": 2
     },
     {
       "label": "置いていかず、一緒にゴール。",
-      "start": 159.351,
+      "start": 122.018,
       "duration": 4.4,
       "speed": 2.8
     },
     {
       "label": "ゴールで、ふたりの記念写真。",
-      "start": 164.351,
+      "start": 127.018,
       "duration": 1,
       "speed": 1
     },
     {
       "label": "スマホ・PCで、すぐ遊べる。",
-      "start": 167.246,
+      "start": 129.753,
       "duration": 1.5,
       "speed": 1
     }
   ],
   "result": {
-    "score": "1067 pt",
+    "score": "1013 pt",
     "rank": "RANK S",
     "title": "GOAL CLEAR · デート成立！",
     "walkingCues": 4
@@ -83,8 +83,8 @@
       }
     ],
     "format": {
-      "duration": "16.000000",
-      "size": "4125797"
+      "duration": "17.300000",
+      "size": "5925953"
     }
   }
 }

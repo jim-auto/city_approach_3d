@@ -10,13 +10,13 @@ const fs=require('node:fs/promises');const path=require('node:path');const {exec
  const raw=path.resolve(root,'gameplay-raw.webm'), clips=[];
  const add=(label,start,duration,speed=1)=>clips.push({label,start:Math.max(0,start),duration,speed});
  add('歌舞伎町で、ナンパしてみた。',m.street,1.6);
- add('声をかけて、リアクションじゃんけん。',m.approach,1.1);
- add('勝つ手に、笑顔でリアクション。',m.reaction1?m.reaction1-.35:m.conversation+.7,1.0,.65);
- if(m.reaction3)add('連勝すると、もっと喜んでくれる。',m.reaction3-.35,1.0,.65);
+ add('声をかけたら、リズムトーク。',m.approach,1.1);
+ add('音に合わせて、笑顔のリアクション。',m.rhythm?m.rhythm+2.7:m.conversation+.7,4.0,1);
+ if(m.reaction3)add('コンボで、もっと喜んでくれる。',m.reaction3-.35,1.0,.65);
  if(m.decline)add('ホテルの誘い、普通に断られた。',m.decline,1.4);
  add('「もう少し話したい。場所変えない？」',m.accepted+.4,1.15);
- add('ふたりで歩いて、会話コンボ。',Math.max(m.walking,m.cue1-.6),4.8,1.8);
- if(m.cue2)add('歩調を合わせて、コンボをつなぐ。',m.cue4||m.cue3||m.cue2,4.5,2);
+ add('ふたりで歩いて、会話コンボ。',Math.max(m.walking,m.cue1-.6),3.6,1.8);
+ if(m.cue2)add('歩調を合わせて、コンボをつなぐ。',m.cue4||m.cue3||m.cue2,3.6,2);
  add('置いていかず、一緒にゴール。',Math.max(m.walking,m.goal-4.4),4.4,2.8);
  add('ゴールで、ふたりの記念写真。',m.goal+.6,1.0);
  add('スマホ・PCで、すぐ遊べる。',m.score,1.5);
