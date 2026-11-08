@@ -1,3 +1,4 @@
+import { createAuthoredCharacter, animateAuthoredCharacter } from './authored-characters.js';
 import { loftGeometry, buildHead, strandGeometry, clothPanelGeometry, lapelGeometry, loftFront } from './character-shapes.js';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -183,6 +184,8 @@ function buildTemplate(color, hairColor, kind, detailed) {
 
 // Clone the hierarchy, share immutable geometry/materials, and rebind every joint.
 export function createCharacter(color, hair, kind = 'player', { detailed = true } = {}) {
+  const authored = createAuthoredCharacter(kind, detailed);
+  if (authored) return authored;
   const key = `${color}/${hair}/${kind}/${detailed}`;
   if (!templates.has(key)) {
     const root = buildTemplate(color, hair, kind, detailed), rig = root.userData;
@@ -199,6 +202,7 @@ export function createCharacter(color, hair, kind = 'player', { detailed = true 
 }
 
 export function animateCharacter(model, moving, time, seed = 0) {
+  if (animateAuthoredCharacter(model, moving, time, seed)) return;
   const { body, head, arms, elbows, legs, knees, kind, props } = model.userData;
   const wave = Math.sin(time * 8 + seed), swing = moving ? wave * .42 : 0;
   body.position.y = moving ? Math.abs(wave) * .025 : Math.sin(time * 1.8 + seed) * .009;

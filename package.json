@@ -9,14 +9,18 @@
     "preview": "vite preview --host 0.0.0.0",
     "test": "node --test tests/*.test.js",
     "build:pages": "vite build --outDir docs",
+    "preview:avatar": "node scripts/render-authored.mjs",
+    "prepare:avatar": "node scripts/prepare-avatar.mjs",
     "preview:model": "node scripts/render-model-review.mjs",
     "preview:characters": "node scripts/render-characters.mjs"
   },
   "dependencies": {
+    "@pixiv/three-vrm": "^3.5.5",
     "three": "^0.180.0"
   },
   "devDependencies": {
     "happy-dom": "^21.0.4",
+    "sharp": "^0.35.5",
     "vite": "^7.1.0"
   }
 }

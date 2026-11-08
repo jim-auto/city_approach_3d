@@ -8,15 +8,29 @@ export function renderGeometry(scene, camera, width, height) {
   scene.updateMatrixWorld(true); camera.updateMatrixWorld(true);
   const light = new THREE.Vector3(-3, 5, 6).normalize(), eye = camera.getWorldDirection(new THREE.Vector3()).negate(), half = light.clone().add(eye).normalize();
   const meshes = []; scene.traverse(o => { if (o.isMesh && o.visible) meshes.push(o); }); meshes.sort((a, b) => Number(a.material.transparent) - Number(b.material.transparent));
+  const linear = n => n <= .04045 ? n / 12.92 : ((n + .055) / 1.055) ** 2.4;
   const srgb = n => Math.max(0, Math.min(255, Math.round(255 * (n <= .0031308 ? n * 12.92 : 1.055 * n ** (1 / 2.4) - .055))));
   for (const mesh of meshes) {
     const g = mesh.geometry, positions = g.attributes.position, normals = g.attributes.normal, colors = g.attributes.color;
     const normalMatrix = new THREE.Matrix3().getNormalMatrix(mesh.matrixWorld), vertices = [];
-    const base = mesh.material.color || new THREE.Color('#ffffff');
+    const base = mesh.material.color || new THREE.Color('#ffffff'), uv = g.attributes.uv, texture = mesh.material.map?.image;
+    const boneMatrix = new THREE.Matrix4(), skinMatrix = new THREE.Matrix4(), skinNormal = new THREE.Matrix3();
     for (let i = 0; i < positions.count; i++) {
-      const p = new THREE.Vector3().fromBufferAttribute(positions, i).applyMatrix4(mesh.matrixWorld).project(camera);
-      const n = new THREE.Vector3().fromBufferAttribute(normals, i).applyMatrix3(normalMatrix).normalize();
-      vertices.push({ x: (p.x * .5 + .5) * width, y: (-p.y * .5 + .5) * height, z: p.z, nx: n.x, ny: n.y, nz: n.z, r: colors ? colors.getX(i) : base.r, g: colors ? colors.getY(i) : base.g, b: colors ? colors.getZ(i) : base.b });
+      const p = mesh.getVertexPosition(i, new THREE.Vector3()).applyMatrix4(mesh.matrixWorld).project(camera);
+      const n = new THREE.Vector3().fromBufferAttribute(normals, i);
+      if (mesh.isSkinnedMesh) {
+        skinMatrix.elements.fill(0);
+        const joints = g.attributes.skinIndex, weights = g.attributes.skinWeight;
+        for (let k = 0; k < 4; k++) {
+          const joint = joints.getComponent(i, k), weight = weights.getComponent(i, k);
+          boneMatrix.multiplyMatrices(mesh.skeleton.bones[joint].matrixWorld, mesh.skeleton.boneInverses[joint]);
+          for (let e = 0; e < 16; e++) skinMatrix.elements[e] += boneMatrix.elements[e] * weight;
+        }
+        skinMatrix.premultiply(mesh.bindMatrixInverse).multiply(mesh.bindMatrix);
+        n.applyMatrix3(skinNormal.getNormalMatrix(skinMatrix));
+      }
+      n.applyMatrix3(normalMatrix).normalize();
+      vertices.push({ x: (p.x * .5 + .5) * width, y: (-p.y * .5 + .5) * height, z: p.z, nx: n.x, ny: n.y, nz: n.z, tu: uv?.getX(i) || 0, tv: uv?.getY(i) || 0, r: colors ? colors.getX(i) : base.r, g: colors ? colors.getY(i) : base.g, b: colors ? colors.getZ(i) : base.b });
     }
     const count = g.index ? g.index.count : positions.count;
     for (let j = 0; j < count; j += 3) {
@@ -38,8 +52,15 @@ export function renderGeometry(scene, camera, width, height) {
         const length = Math.hypot(nx, ny, nz) || 1;
         const diffuse = .39 + .77 * Math.max(0, (nx * light.x + ny * light.y + nz * light.z) / length);
         const specular = .045 * Math.max(0, (nx * half.x + ny * half.y + nz * half.z) / length) ** 30;
-        const channels = ['r', 'g', 'b'].map(key => mesh.material.isMeshBasicMaterial ? a[key] * u + b[key] * v + c[key] * w : (a[key] * u + b[key] * v + c[key] * w) * diffuse + specular);
-        const alpha = mesh.material.opacity ?? 1;
+        let channels = ['r', 'g', 'b'].map(key => mesh.material.isMeshBasicMaterial ? a[key] * u + b[key] * v + c[key] * w : (a[key] * u + b[key] * v + c[key] * w) * diffuse + specular);
+        let alpha = mesh.material.opacity ?? 1;
+        if (texture?.data) {
+          const tu = Math.max(0, Math.min(.999999, a.tu * u + b.tu * v + c.tu * w)), tv = Math.max(0, Math.min(.999999, a.tv * u + b.tv * v + c.tv * w));
+          const ti = (Math.floor(tv * texture.height) * texture.width + Math.floor(tu * texture.width)) * 4;
+          alpha *= texture.data[ti + 3] / 255;
+          if (alpha < Math.max(.005, mesh.material.alphaTest || 0)) continue;
+          channels = channels.map((value, k) => value * linear(texture.data[ti + k] / 255));
+        }
         for (let k = 0; k < 3; k++) rgb[index * 3 + k] = Math.round(srgb(channels[k]) * alpha + rgb[index * 3 + k] * (1 - alpha));
         if (mesh.material.depthWrite !== false) depth[index] = z;
       }

@@ -1,3 +1,4 @@
+import { disposeCharacterSkeletons } from './authored-characters.js';
 import { cameraView } from './camera.js';
 import { STREET_PROFILES } from './street-encounters.js';
 import * as THREE from 'three';
@@ -36,10 +37,11 @@ export class CityWorld {
   setMap(map) {
     if (this.city) {
       this.scene.remove(this.city);
+      disposeCharacterSkeletons(this.city);
       const resources = new Set(), sharedMaterials = new Set(mats.values());
       this.city.traverse(o => {
         if (o.geometry && o.geometry !== boxGeo && !isCharacterResource(o.geometry)) resources.add(o.geometry);
-        if (o.material && !sharedMaterials.has(o.material) && !isCharacterResource(o.material)) { resources.add(o.material); if (o.material.map) resources.add(o.material.map); }
+        for (const material of [o.material].flat().filter(Boolean)) if (!sharedMaterials.has(material) && !isCharacterResource(material)) { resources.add(material); if (material.map) resources.add(material.map); }
         if (o.isInstancedMesh) resources.add(o);
         o.shadow?.dispose();
       });
@@ -152,7 +154,8 @@ export class CityWorld {
     scene.add(new THREE.HemisphereLight('#fff4e4', '#66768f', 2.5));
     const key = new THREE.DirectionalLight('#fff0dc', 3); key.position.set(-2, 4, 3); scene.add(key);
     const camera = new THREE.PerspectiveCamera(27, 1, .1, 12);
-    camera.position.set(.15, 2.03, 1.48); camera.lookAt(0, 1.96, 0);
+    const faceY = person.userData.authored ? 1.94 : 1.96;
+    camera.position.set(.15, faceY + .07, 1.48); camera.lookAt(0, faceY, 0);
     const previous = this.renderer.getRenderTarget();
     try {
       this.renderer.setRenderTarget(target); this.renderer.render(scene, camera);
@@ -162,7 +165,7 @@ export class CityWorld {
       for (let y = 0; y < size; y++) data.data.set(pixels.subarray((size - 1 - y) * size * 4, (size - y) * size * 4), y * size * 4);
       ctx.putImageData(data, 0, 0);
       const image = canvas.toDataURL('image/png'); this.portraits.set(profile.id, image); return image;
-    } finally { this.renderer.setRenderTarget(previous); target.dispose(); }
+    } finally { this.renderer.setRenderTarget(previous); target.dispose(); disposeCharacterSkeletons(person); }
   }
   distanceTo(n) { return this.player.position.distanceTo(n.mesh.position); }
   placeLabel(el, position, offset = 2.7) {

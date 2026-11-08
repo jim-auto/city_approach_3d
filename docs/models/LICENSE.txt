@@ -1,0 +1,31 @@
+VRM1_Constraint_Twist_Sample v1.0.1
+(c) 2022 pixiv Inc.
+
+Source:
+https://github.com/pixiv/three-vrm/blob/3caf7a21ee68f0d5dfa363ab3d577450bbf60136/packages/three-vrm/examples/models/VRM1_Constraint_Twist_Sample.vrm
+Upstream model documentation:
+https://github.com/vrm-c/vrm-specification/tree/master/samples/VRM1_Constraint_Twist_Sample
+
+License: VRM Public License 1.0
+https://vrm.dev/en/licenses/1.0/
+The model is provided AS IS without warranties. See the linked license, particularly Section 4.
+
+The embedded VRMC_vrm.meta settings remain in yui.vrm and form part of its license:
+- avatarPermission: everyone
+- commercialUsage: corporation
+- creditNotation: unnecessary
+- allowRedistribution: true
+- modification: allowModificationRedistribution
+- allowExcessivelySexualUsage: true
+- allowExcessivelyViolentUsage: true
+- allowPoliticalOrReligiousUsage: true
+- allowAntisocialOrHateUsage: false
+
+Modifications for this project: embedded PNG textures resized to a maximum of 512 pixels
+(1024 for face/iris), PNG palette compression, material outline passes disabled.
+Geometry, humanoid rig, morphs, UVs, node constraints and license metadata retained.
+Hair physics are disabled at runtime; the authored rest hairstyle is retained.
+The character role Yui (24) is fictional and belongs to this game. No affiliation with
+or endorsement by pixiv Inc. is claimed.
+
+Original SHA-256: 12c2b97e95e700783a6a550dc0eee2d7880aeedccef9ae67bc4c5a2f0f2631a2
