@@ -28,10 +28,12 @@ const {chromium} = require('playwright');
     await page.waitForFunction(()=>!document.getElementById('inspect').hidden&&!document.getElementById('approach-start').disabled,null,{timeout:30000});
     mark('approach');await shot('approach');await pause(1400);
     await page.locator('#approach-start').click();mark('conversation');await shot('conversation');await pause(1200);
-    for(const key of ['listen','empathy','empathy','listen','proposal']){
-      await page.locator(`[data-response="${key}"]`).click();
-      await page.waitForFunction(()=>document.getElementById('app').dataset.mode==='invite'||!document.querySelector('[data-response]').disabled,null,{timeout:15000});
-      await pause(250);
+    for(let round=0;round<5;round++){
+      await page.waitForFunction(()=>!document.querySelector('[data-hand]').disabled);
+      const signal=await page.locator('#talk-line').innerText();
+      const key=signal.includes('グー')?'paper':signal.includes('チョキ')?'rock':'scissors';
+      await page.locator(`[data-hand="${key}"]`).click();
+      await pause(1100);
     }
     mark('invite');await pause(600);
     await page.locator('[data-destination="hotel-i"]').click();await pause(350);

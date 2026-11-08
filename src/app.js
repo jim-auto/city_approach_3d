@@ -1,11 +1,12 @@
+import { TALK_HANDS, createTalkRps, playTalkHand } from './talk-rps.js';
 import { createDateRun, scoreReply, dateTotal, createWalkRun, advanceWalk, respondWalk, collectWalkPoints, finishDate, dateRank, loadAlbum, saveAlbum } from './date-run.js';
 import { arrivedTogether } from './venues.js';
 import { createChallengeUI } from './challenge-ui.js';
 import { streetLines } from './street-encounters.js';
-import { destinationsFor, evaluateInvitation, spokenReplies } from './encounters.js';
+import { destinationsFor, evaluateInvitation } from './encounters.js';
 import { ACTIONS } from './actions.js';
 import { bindVirtualStick } from './input.js';
-import { OPENERS, RESPONSES, evaluateOpener, buildLines, applyResponse } from './game.js';
+import { OPENERS, evaluateOpener } from './game.js';
 
 export function startGame(CityWorld) {
 const $ = id => document.getElementById(id);
@@ -28,7 +29,7 @@ function toast(text) { $('toast').textContent = text; $('toast').classList.add('
 function score(points) { state.score += points; updateScore(); }
 function updateScore() { $('run-score').textContent = `${dateTotal(state.attempt)} pt`; $('score').textContent = String(dateTotal(state.attempt)).padStart(3, '0'); $('best').textContent = String(album.best).padStart(3, '0'); $('rank').textContent = dateRank(state.attempt); $('score-progress').style.width = `${Math.min(100, dateTotal(state.attempt) / 11.2)}%`; $('clear-progress').textContent = state.clears ? `GOAL CLEAR · ${state.clears}回` : '相手とホテルかネットカフェの入口へ'; }
 function mission(step, title, text, number = '01') { $('mission-step').textContent = step; $('mission-title').textContent = title; $('mission-text').textContent = text; $('mission-number').textContent = number; }
-function setMode(mode) { if(mode!=='escort') $('walk-response').hidden=true; closeActions(); world.cancelAction?.(); resetTouch(); $('app').dataset.mode = mode; state.mode = mode; world.paused = !['explore', 'escort'].includes(mode); if (world.paused) world.keys.clear(); $('touch-controls').style.visibility = ['explore', 'escort'].includes(mode) ? '' : 'hidden'; $('guide').hidden = mode !== 'explore'; $('labels').hidden = ['challenge', 'challenge-result'].includes(mode); }
+function setMode(mode) { if(mode!=='escort') $('walk-response').hidden=true; closeActions(); world.cancelAction?.(); resetTouch(); $('app').dataset.mode = mode; state.mode = mode; world.paused = !['explore', 'escort'].includes(mode); if (world.paused) world.keys.clear(); $('touch-controls').style.visibility = ['explore', 'escort'].includes(mode) ? '' : 'hidden'; $('guide').hidden = mode !== 'explore'; $('labels').hidden = ['talk', 'challenge', 'challenge-result'].includes(mode); }
 function openModal(id) { $(id).showModal(); }
 function closeInspect() { delete $('app').dataset.panel; $('inspect').hidden = true; state.selected = null; world.select(null); }
 function explore() { state.touring = false; $('guide-text').textContent = state.map === 'nagoya' ? '名古屋駅は会話・同行の練習。ゴールは歌舞伎町で。' : '声をかける → 誘う → ホテル・ネカフェの入口へ'; state.invitation = null; state.escort = null; closeInspect(); $('escort').hidden = true; world.companion = null; setMode('explore'); mission('OBSERVE', 'まずは、街を歩こう。', '近くの人を選んで、サインを観察。'); }
@@ -82,35 +83,53 @@ function startTalk(key) {
   const opening = evaluateOpener(n.profile, key, state.map); world.destination = null; world.marker.visible = false;
   if (!opening.success) { finishNpc(n); closeInspect(); result('また、別のきっかけを。', opening.message, 0, '街に戻る ↗', explore); return; }
   state.attempt = createDateRun(); score(state.attempt.approach);
-  state.talk = { npc: n, ...opening, chain: 0, lines: buildLines(n.profile, state.map), turn: 0, locked: false };
+  state.talk = { npc: n, ...opening, chain: 0, wins: 0, rounds: createTalkRps(), turn: 0, locked: false };
+  if(world.beginTalk) world.beginTalk(n); else world.beginChallenge?.(n);
   delete $('app').dataset.panel; $('inspect').hidden = true; $('talk-name').textContent = n.profile.name;
-  $('responses').replaceChildren(...RESPONSES.map(r => { const b = document.createElement('button'); b.dataset.response = r.key; b.addEventListener('click', () => respond(r.key)); return b; }));
-  setMode('talk'); showLine(); $('talk-feedback').textContent = `あなた ${OPENERS.find(opener => opener.key === key).text}`; openModal('conversation'); tone();
+  $('responses').replaceChildren(...TALK_HANDS.map(r => { const b = document.createElement('button'); b.dataset.hand = r.key; b.setAttribute('aria-label', `${r.name}・${r.action}`); const icon=document.createElement('strong'), label=document.createElement('span'); icon.textContent=r.icon; label.textContent=r.action; b.append(icon,label); b.addEventListener('click', () => respond(r.key)); return b; }));
+  setMode('talk'); clearTimeout(toastTimer); $('toast').classList.remove('show'); showLine(); $('talk-feedback').textContent = `あなた ${OPENERS.find(opener => opener.key === key).text}`; openModal('conversation'); tone();
 }
 function showLine() {
-  const talk = state.talk; talk.locked = false;
-  const replies = spokenReplies(talk.turn, state.map);
-  $('responses').querySelectorAll('button').forEach((button, i) => { button.textContent = replies[i]; });
-  $('talk-line').textContent = talk.lines[talk.turn].text; $('talk-cue').textContent = `サイン：${talk.lines[talk.turn].cue}`; $('talk-turn').textContent = `0${talk.turn + 1} / 0${talk.lines.length}`;
-  $('talk-feedback').textContent = ''; updateMeters(); $('responses').querySelectorAll('button').forEach(b => b.disabled = false);
+  const talk = state.talk; talk.locked = false; talk.remaining = talk.rounds[talk.turn].seconds;
+  const round=talk.rounds[talk.turn], hand=TALK_HANDS.find(h=>h.key===round.hand);
+  $('conversation').dataset.grade = '';
+  $('talk-line').textContent = `${hand.icon} ${hand.name}`;
+  $('talk-cue').textContent = round.cue;
+  $('talk-turn').textContent = `${talk.turn + 1} / 5 · ${talk.wins}勝`;
+  $('talk-feedback').textContent = '相手の手に勝つ手をタップ！';
+  $('talk-clock').max=round.seconds; $('talk-clock').value=talk.remaining;
+  $('talk-clock').setAttribute('aria-valuetext', `${Math.ceil(talk.remaining)}秒`);
+  updateMeters(); $('responses').querySelectorAll('button').forEach(b => b.disabled = false);
+  world.challengeCue?.(round.hand==='rock'?'wave':round.hand==='scissors'?'dance':'wave');
 }
 function updateMeters() { const t = state.talk; $('favor').value = t.favor; $('favor-value').textContent = t.favor; $('discomfort').value = t.discomfort; $('discomfort-value').textContent = t.discomfort; }
 function respond(key) {
   const talk = state.talk; if (state.mode !== 'talk' || !talk || talk.locked) return;
-  talk.locked = true; const outcome = applyResponse(talk, talk.lines[talk.turn], key); Object.assign(talk, outcome); score(scoreReply(state.attempt,talk.turn,outcome.correct)); updateMeters();
-  $('talk-feedback').textContent = `あなた「${spokenReplies(talk.turn, state.map)[RESPONSES.findIndex(r => r.key === key)]}」 ${outcome.feedback}`; $('responses').querySelectorAll('button').forEach(b => b.disabled = true); tone(outcome.correct ? 'click' : 'miss');
+  const outcome = playTalkHand(talk,key); if(!outcome)return;
+  talk.locked = true; Object.assign(talk, outcome); score(scoreReply(state.attempt,talk.turn,outcome.correct)); updateMeters();
+  const chosen=TALK_HANDS.find(h=>h.key===key);
+  $('conversation').dataset.grade=outcome.grade;
+  $('talk-feedback').textContent = `${outcome.grade==='win'?`♥ ${talk.chain} COMBO`:outcome.grade==='draw'?'あいこ':outcome.grade==='miss'?'時間切れ':'すれ違い'} ${outcome.feedback}`;
+  $('talk-turn').textContent = `${talk.turn+1} / 5 · ${talk.wins}勝`;
+  if(chosen)$('talk-line').textContent += ` → ${chosen.icon}`;
+  $('responses').querySelectorAll('button').forEach(b => b.disabled = true);
+  world.performAction?.(outcome.correct?'wave':'bow');
+  world.challengeCue?.(outcome.correct?'dance':outcome.grade==='draw'?'wave':'bow');
+  world.challengeFeedback?.(outcome.correct?'perfect':outcome.grade==='draw'?'good':'miss');
+  tone(outcome.correct ? 'success' : 'miss');
   talkTimer = setTimeout(() => {
     if (state.mode !== 'talk') return;
     if (outcome.accepted) { openInvitation(); return; }
     if (talk.discomfort >= 100) { endTalk(true); return; }
-    talk.turn++; if (talk.turn >= talk.lines.length) endTalk(false); else showLine();
-  }, 700);
+    talk.turn++; if (talk.turn >= talk.rounds.length) endTalk(false); else showLine();
+  }, 950);
 }
 function endTalk(failed) {
-  clearTimeout(talkTimer); const t = state.talk; finishNpc(t?.npc); const points = 0;
-  closeInspect(); result(failed ? '相手のペースを大切に。' : 'ひとときの会話を、ありがとう。', failed ? '少し戸惑わせてしまったようだ。追わずに離れて、次は相手の話をゆっくり聞こう。' : '会話はここでおしまい。提案は好感度だけでなく、タイミングも大切。', points, '街に戻る ↗', explore, !failed);
+  clearTimeout(talkTimer); world.endChallenge?.(); const t = state.talk; finishNpc(t?.npc); const points = 0;
+  closeInspect(); result(failed ? '相手のペースを大切に。' : 'ひとときの会話を、ありがとう。', failed ? '少し戸惑わせてしまったようだ。追わずに離れて、次は相手の話をゆっくり聞こう。' : '今回はここでお別れ。相手の手に勝つ手を出して、5回中3勝を目指そう。', points, '街に戻る ↗', explore, !failed);
 }
 function openInvitation() {
+  world.endChallenge?.();
   $('conversation').close(); closeInspect(); setMode('invite');
   $('invite-name').textContent = state.talk.npc.profile.name;
   $('invite-line').textContent = 'いいですよ。どこに行きましょう？';
@@ -307,7 +326,7 @@ window.addEventListener('keydown', event => {
 $('nearby-person').addEventListener('click', () => { const n = nearestPerson(); if (n) selectNpc(n); else toast('地面をタップして移動し、女の子を探してみよう。'); });
 $('zoom-in').addEventListener('click', () => world.zoom(-3));
 $('zoom-out').addEventListener('click', () => world.zoom(3));
-window.addEventListener('keydown', e => { if(state.mode==='escort'&&e.key.toLowerCase()==='f'&&!e.repeat&&!e.ctrlKey&&!e.metaKey&&!e.altKey){e.preventDefault();$('walk-response').click();} if (state.mode === 'talk' && ['1', '2', '3', '4'].includes(e.key)) respond(RESPONSES[Number(e.key) - 1].key); if (e.key === 'Escape' && state.mode === 'explore') closeInspect(); });
+window.addEventListener('keydown', e => { if(state.mode==='escort'&&e.key.toLowerCase()==='f'&&!e.repeat&&!e.ctrlKey&&!e.metaKey&&!e.altKey){e.preventDefault();$('walk-response').click();} if (state.mode === 'talk' && !e.repeat && !e.ctrlKey && !e.metaKey && !e.altKey && ['1', '2', '3'].includes(e.key)) { e.preventDefault(); respond(TALK_HANDS[Number(e.key) - 1].key); } if (e.key === 'Escape' && state.mode === 'explore') closeInspect(); });
 renderAlbum(); updateScore(); setMode('intro'); openModal('intro');
 const ctx = $('minimap').getContext('2d'); let previous = performance.now(), lastRender = 0, mapTick = 0;
 function frame(now) {
@@ -316,6 +335,11 @@ function frame(now) {
   lastRender = interval ? now - ((now - lastRender) % interval) : now;
   const dt = Math.min((now - previous) / 1000, .05); previous = now; state.elapsed += dt;
   arcade.update(dt); world.update(dt, state.elapsed); mapTick += dt;
+  if(state.mode==='talk' && state.talk && !state.talk.locked){
+    state.talk.remaining=Math.max(0,state.talk.remaining-dt); $('talk-clock').value=state.talk.remaining;
+    $('talk-clock').setAttribute('aria-valuetext', `${Math.ceil(state.talk.remaining)}秒`);
+    if(state.talk.remaining<=0)respond('timeout');
+  }
   if (state.touring && !world.destination) { state.touring = false; $('guide-text').textContent = state.map === 'nagoya' ? '名古屋駅は会話・同行の練習。ゴールは歌舞伎町で。' : '声をかける → 誘う → ホテル・ネカフェの入口へ'; }
   if (state.mode === 'explore' && !state.selected && !state.touring) {
     const street = (world.npcs || []).find(n => n.profile?.autoApproach && n.cooldown <= state.elapsed && world.distanceTo(n) < 2.7);

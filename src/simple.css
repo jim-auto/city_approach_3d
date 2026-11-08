@@ -109,3 +109,30 @@
 .avatar-loading h1 { font-size: 22px; margin: 0; }
 .avatar-loading p { font-size: 14px; color: #bcc7d6; }
 .avatar-loading button { min-height: 48px; padding: 12px 20px; }
+
+/* Keep the pair visible; the three large reaction controls sit under the stage. */
+#conversation { position: fixed; inset: auto 0 max(12px, var(--safe-bottom)); margin: 0 auto; width: min(480px, calc(100% - 24px)); padding: 14px 18px; overflow: auto; max-height: calc(100dvh - 160px); background: #142130f5; }
+#conversation::backdrop { background: linear-gradient(transparent 20%, #080e1a44); backdrop-filter: none; }
+#conversation .panel-heading .eyebrow { font-size: 12px; }
+#conversation .talk-top { margin: 8px 0; font-size: 13px; }
+#conversation .meters { display: none; }
+#conversation .rps-rule { margin: 8px 0; color: #abc4c6; font-size: 11px; text-align: center; }
+#talk-clock { width: 100%; height: 5px; display: block; border: none; accent-color: #a6e3c9; }
+#conversation #talk-line { font-size: 32px; min-height: 0; text-align: center; line-height: 1.3; margin: 8px 0; letter-spacing: 0; }
+#conversation #talk-cue { display: block; padding: 0; background: transparent; text-align: center; font-size: 12px; }
+#conversation #talk-feedback { margin: 8px 0; min-height: 36px; height: auto; line-height: 1.5; text-align: center; font-size: 12px; }
+#conversation .responses { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; }
+#conversation .responses button { min-height: 72px; padding: 8px; text-align: center; border-radius: 18px; touch-action: manipulation; }
+#conversation .responses strong { display: block; font-size: 30px; line-height: 1.2; }
+#conversation .responses span { display: block; font-size: 12px; }
+#conversation[data-grade='win'] #talk-feedback { color: #ffb6d6; animation: rps-pop .3s ease-out; }
+#conversation[data-grade='win'] { border-color: #efadca; }
+#conversation[data-grade='lose'] #talk-feedback, #conversation[data-grade='miss'] #talk-feedback { color: #d8b6aa; }
+@keyframes rps-pop { 50% { transform: scale(1.07); } }
+@media (max-height: 500px) and (orientation: landscape) {
+  #conversation { left: auto; right: 12px; width: 330px; bottom: 8px; padding: 10px 14px; max-height: calc(100dvh - 16px); }
+  #conversation .rps-rule { margin: 4px 0; }
+  #conversation #talk-line { margin: 4px 0; font-size: 26px; }
+  #conversation .responses button { min-height: 58px; }
+}
+@media (prefers-reduced-motion: reduce) { #conversation[data-grade='win'] #talk-feedback { animation: none; } }

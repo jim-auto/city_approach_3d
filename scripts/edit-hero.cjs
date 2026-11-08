@@ -10,8 +10,8 @@ const fs=require('node:fs/promises');const path=require('node:path');const {exec
  const raw=path.resolve(root,'gameplay-raw.webm'), clips=[];
  const add=(label,start,duration,speed=1)=>clips.push({label,start:Math.max(0,start),duration,speed});
  add('歌舞伎町で、ナンパしてみた。',m.street,1.6);
- add('声をかけて、返事を選ぶ。',m.approach,1.1);
- add('会話で、少しずつ距離が縮まる。',m.conversation+.7,1.1);
+ add('声をかけて、リアクションじゃんけん。',m.approach,1.1);
+ add('勝つ手で返して、会話コンボ。',m.conversation+.7,3.5,1.4);
  if(m.decline)add('ホテルの誘い、普通に断られた。',m.decline,1.4);
  add('「もう少し話したい。場所変えない？」',m.accepted+.4,1.15);
  add('ふたりで歩いて、会話コンボ。',Math.max(m.walking,m.cue1-.6),4.8,1.8);

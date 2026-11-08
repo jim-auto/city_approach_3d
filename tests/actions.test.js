@@ -143,3 +143,17 @@ test('companion closes the last gap when the player stops just short of a venue 
     assert.ok(arrivedTogether(world.player.position,npc.mesh.position,world.goal),`${goal.id}: both must reach the entrance without moving the player again`);
   }
 });
+
+test('talk close-up hides the nearby player, frames the partner and restores the street', () => {
+  for(const aspect of [390/844,960/600]){
+    const world=makeWorld();world.camera.aspect=aspect;world.camera.updateProjectionMatrix();
+    const partner={mesh:person()}, bystander={mesh:person()};partner.mesh.position.set(0,0,-3);partner.mesh.rotation.y=.2;
+    world.npcs=[partner,bystander];const position=partner.mesh.position.clone();
+    assert.equal(world.beginTalk(null),false);assert.equal(world.player.visible,true);
+    world.beginTalk(partner);assert.equal(world.player.visible,false);assert.equal(bystander.mesh.visible,false);
+    world.camera.position.copy(world.challengeView.desired);world.camera.lookAt(world.challengeView.focus);world.camera.updateMatrixWorld();
+    const head=partner.mesh.position.clone().add(new THREE.Vector3(0,1.7,0)).project(world.camera);
+    assert.ok(Math.abs(head.x)<.8&&Math.abs(head.y)<.9);assert.deepEqual(partner.mesh.position,position);
+    world.endChallenge();assert.equal(world.player.visible,true);assert.equal(bystander.mesh.visible,true);assert.equal(world.talkActive,false);assert.equal(partner.mesh.rotation.y,.2);
+  }
+});

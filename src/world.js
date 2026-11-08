@@ -117,6 +117,11 @@ export class CityWorld {
     this.destination = null; this.waypoints = []; this.marker.visible = false; this.keys.clear();
     this.action = { id, elapsed: 0 }; return true;
   }
+  beginTalk(partner) {
+    if(!partner?.mesh)return false;
+    this.talkActive = true; this.talkPlayerVisible = this.player.visible; this.player.visible = false;
+    return this.beginChallenge(partner);
+  }
   beginChallenge(partner) {
     if (!partner?.mesh) return false;
     this.cancelAction(); this.destination = null; this.waypoints = []; this.marker.visible = false; this.keys.clear();
@@ -128,6 +133,14 @@ export class CityWorld {
   }
   updateChallengeView() {
     const partner = this.challengePartner; if (!partner) return;
+    if(this.talkActive){
+      const focus=partner.mesh.position.clone().add(new THREE.Vector3(0,this.camera.aspect<1?.85:1.35,0));
+      let angle=this.challengePartnerRotation;
+      const view=a=>focus.clone().add(new THREE.Vector3(Math.sin(a)*3.4,.2,Math.cos(a)*3.4));
+      for(const offset of [0,.6,-.6,Math.PI]){const a=this.challengePartnerRotation+offset;if(!cameraView(focus,view(a),this.cameraBlockers,a).obstructed){angle=a;break;}}
+      partner.mesh.rotation.y=angle;
+      this.challengeView={focus,desired:cameraView(focus,view(angle),this.cameraBlockers,angle).position};return;
+    }
     const focus = this.player.position.clone().add(partner.mesh.position).multiplyScalar(.5).add(new THREE.Vector3(0, 1.55, 0));
     // Look perpendicular to the pair so both silhouettes stay visible on narrow phones.
     const separation = partner.mesh.position.clone().sub(this.player.position);
@@ -144,7 +157,8 @@ export class CityWorld {
   }
   challengeCue(id) { if (this.challengePartner) this.partnerAction = { id, elapsed: 0 }; }
   endChallenge() {
-    this.cancelAction(); this.challengeActive = false; this.challengeView = null;
+    if(this.talkActive){this.player.visible=this.talkPlayerVisible;delete this.talkPlayerVisible;}
+    this.talkActive = false; this.cancelAction(); this.challengeActive = false; this.challengeView = null;
     for (const n of this.npcs || []) if (n.challengeVisible !== undefined) { n.mesh.visible = n.challengeVisible; delete n.challengeVisible; }
     if (this.challengeRotation !== undefined) { this.player.rotation.y = this.challengeRotation; delete this.challengeRotation; }
     if (this.challengePartner) { this.challengePartner.mesh.rotation.y = this.challengePartnerRotation; animateCharacter(this.challengePartner.mesh, false, 0); }
