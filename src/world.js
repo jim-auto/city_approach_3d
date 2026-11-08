@@ -1,3 +1,4 @@
+import { captureGoalPhoto } from './goal-photo.js';
 import { crowdSpawns, visibleCrowd, visibleCast } from './crowd.js';
 import { createChallengeEffects, updateChallengeEffects } from './challenge-effects.js';
 import { REWARDS } from './challenge.js';
@@ -153,7 +154,10 @@ export class CityWorld {
     this.challengeEffects ||= createChallengeEffects(this.player);
     this.challengeEffects.burstMaterial.color.set(grade === 'perfect' ? '#ffd27a' : grade === 'good' ? '#a6efd2' : '#f18ba0'); this.challengeEffects.life = .65;
   }
+  makeGoalPhoto(n, venue) { return captureGoalPhoto(this.renderer,n.profile,this.equippedRewards?.outfit || 'default',venue,this.city.getObjectByName(venue.id)); }
+  respondToCompanion() { if (this.companion) this.socialAction = {npc:this.companion,elapsed:0}; }
   applyRewards(rewards) {
+    this.equippedRewards = {...rewards};
     const outfit = REWARDS.find(r => r.id === rewards.outfit), aura = REWARDS.find(r => r.id === rewards.aura);
     if (outfit) setCharacterOutfit(this.player, outfit.color);
     this.challengeEffects ||= createChallengeEffects(this.player);
@@ -256,6 +260,7 @@ export class CityWorld {
       this.action.elapsed += dt;
       if (!animateAction(this.player, this.action.id, this.action.elapsed)) this.cancelAction();
     }
+    if (this.socialAction && !this.paused) { this.socialAction.elapsed += dt; if (!animateAction(this.player,'wave',this.socialAction.elapsed)) this.socialAction = null; }
     updateChallengeEffects(this.challengeEffects, dt, time);
     if (this.challengeActive && this.challengeView) {
       animateCharacter(this.challengePartner.mesh, false, time);
@@ -293,6 +298,7 @@ export class CityWorld {
       // Keep navigation responsive; sample distant authored poses less often on phones.
       const interval = this.mobile && this.distanceTo(n) > 14 && n !== this.companion && n !== this.selected ? .12 : 0;
       if ((n.mesh.visible || n === this.selected || n === this.companion) && (!n.lastAnimation || time - n.lastAnimation >= interval)) { animateCharacter(n.mesh, moving, time, n.phase); n.lastAnimation = time; }
+      if (this.socialAction?.npc === n) animateAction(n.mesh,'wave',this.socialAction.elapsed);
       if (!n.ambient) {
         n.label.style.opacity = n === this.companion || n.cooldown > time ? '.25' : '1';
         if (!n.mesh.visible || (!nearbyLabels.has(n) && n !== this.selected)) n.label.style.display = 'none';

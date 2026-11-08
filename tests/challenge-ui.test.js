@@ -18,7 +18,7 @@ test('girl selection → duet → combos → unlock and equip → replay/cancel 
   }
   try {
     const { state, world, arcade } = startGame(World), doc = window.document, click = id => doc.getElementById(id).click();
-    assert.equal(doc.querySelectorAll('.play-actions button').length, 1);
+    assert.equal(doc.querySelectorAll('.play-actions button:not([hidden])').length, 1);
     assert.ok(doc.querySelector('#game-menu .map-switch'));
     assert.ok(doc.querySelector('#game-menu #action-toggle'));
     assert.equal(doc.getElementById('intro-challenge'), null);

@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="ja">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#11151e"><meta name="description" content="歌舞伎町で女の子に声をかけ、会話からホテル・ネットカフェへ誘う3Dナンパシミュレーター。"><title>CITY APPROACH 3D — ナンパシミュレーター</title>  <script type="module" crossorigin src="./assets/index-BPBrO8JL.js"></script>
-  <link rel="modulepreload" crossorigin href="./assets/three-ziMQHK2h.js">
-  <link rel="stylesheet" crossorigin href="./assets/index-DEvDbZ2x.css">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#11151e"><meta name="description" content="歌舞伎町で女の子に声をかけ、会話からホテル・ネットカフェへ誘う3Dナンパシミュレーター。"><title>CITY APPROACH 3D — ナンパシミュレーター</title>  <script type="module" crossorigin src="./assets/index-CRmxyX6a.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/three-Cfqk88rX.js">
+  <link rel="stylesheet" crossorigin href="./assets/index-BSLuvg5h.css">
 </head>
 <body>
 <div id="world" aria-label="3Dの街"></div>
@@ -10,13 +10,18 @@
 <div id="app">
 <header class="topbar"><button id="menu-toggle" aria-label="メニューを開く" aria-haspopup="dialog">☰</button></header>
 <main>
-  <div id="guide" class="play-guide" hidden><strong>ナンパシミュレーター</strong><span id="guide-text">声をかける → 誘う → ホテル・ネカフェの入口へ</span></div>
+  <div id="guide" class="play-guide" hidden><strong>ナンパシミュレーター</strong><b id="run-score">0 pt</b><span id="guide-text">声をかける → 誘う → ホテル・ネカフェの入口へ</span></div>
 
 
 
 
 
-  <section id="inspect" class="inspect glass" hidden aria-label="相手を観察"><div class="panel-heading"><span class="eyebrow">どう声をかける？</span><button id="inspect-close" class="close" aria-label="観察を閉じる">×</button></div><div class="person-heading"><span id="person-icon" class="person-icon">◎</span><div><h2 id="person-name"></h2><span id="person-status">サインをよく見てみよう</span></div><span id="person-distance"></span></div><div id="traits" class="traits"></div><p id="person-cue"></p><p id="approach-status">最初にかけるひと言を選ぼう。</p><button id="approach-start" class="primary">声をかける</button><button id="partner-play" class="tour-button">一緒にリズム遊び · 15秒</button><details id="opener-choices"><summary>声のかけ方を選ぶ</summary><div id="opener-actions" class="opener-actions"></div></details><button id="leave" class="leave">会釈して離れる <span>↗</span></button></section>
+  <section id="inspect" class="inspect" hidden aria-label="声をかける相手">
+    <div class="approach-header"><span id="person-icon" class="person-icon"></span><div><h2 id="person-name"></h2><p id="person-cue"></p></div><button id="inspect-close" class="close" aria-label="閉じる">×</button></div>
+    <p id="approach-status" role="status" hidden></p>
+    <div class="approach-main"><button id="approach-start" class="primary">声をかける</button><button id="leave">離れる</button></div>
+    <details id="opener-choices"><summary>別の声かけ・一緒に遊ぶ</summary><div id="opener-actions" class="opener-actions"></div><button id="partner-play" class="tour-button">一緒にリズム遊び · 15秒</button></details>
+  </section>
 
 
   <section id="challenge-panel" hidden aria-label="女の子とふたりでリズム遊び">
@@ -25,35 +30,35 @@
   </section>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <section id="escort" class="escort glass" hidden><span class="eyebrow">同行中</span><h2>目的地まで一緒に。</h2><p id="escort-description">誘いがOKになった行き先へ。紫のマーカーが目印。</p><div class="escort-row"><span id="goal-distance"></span><button id="goal-walk">目的地へ歩く</button><button id="escort-cancel">同行を終える</button></div></section>
+  <section id="escort" class="escort glass" hidden><span class="eyebrow">同行中</span><h2>目的地まで一緒に。</h2><p id="escort-description">誘いがOKになった行き先へ。紫のマーカーが目印。</p><div class="escort-status"><b id="walk-score">0 pt</b><span id="walk-combo">近くで歩こう</span><meter id="walk-comfort" min="0" max="100" value="65" aria-label="ふたりの歩調"></meter></div><p id="walk-cue" aria-live="polite">近くで歩くとスコアUP</p><div class="escort-row"><span id="goal-distance"></span><button id="goal-walk">目的地へ歩く</button><button id="escort-cancel">同行を終える</button></div></section>
 </main>
 
 <div class="play-actions">
 
-  <button id="nearby-person">ナンパする</button>
+  <button id="nearby-person">ナンパする</button><button id="walk-response" hidden></button>
 </div>
 <div id="touch-controls"><div id="movement-stick" class="movement-stick" role="group" tabindex="0" aria-label="移動スティック" aria-describedby="stick-help"><span class="stick-guide" aria-hidden="true"></span><span id="stick-thumb" class="stick-thumb" aria-hidden="true"></span></div><span id="stick-help">倒して移動</span></div>
 </div>
 <dialog id="game-menu" class="modal game-menu" aria-labelledby="menu-title">
   <div class="panel-heading"><h2 id="menu-title">メニュー</h2><button id="menu-close" class="close" aria-label="メニューを閉じる">×</button></div>
   <section class="location"><div class="eyebrow"><i></i> EXPLORING THE CITY</div><h1 id="location-name">歌舞伎町<span> KABUKICHO</span></h1><p id="location-description">東宝ビル・一番街・シネシティ広場を歩く。</p><div class="weather" id="weather">◐ 21:30 <span>夜のにぎわい · 警戒度 高め</span></div></section>
-  <section class="scoreboard" aria-label="スコア"><div><span>スコア</span><strong id="score">000</strong></div><div class="best"><span>ベスト</span><strong id="best">000</strong></div><div class="rank"><span>ランク</span><strong id="rank">D</strong></div><div class="score-track"><i id="score-progress"></i></div><small id="clear-progress">相手とホテルかネットカフェの入口へ</small></section>
+  <section class="scoreboard" aria-label="スコア"><div><span>今回</span><strong id="score">000</strong></div><div class="best"><span>デートBEST</span><strong id="best">000</strong></div><div class="rank"><span>ランク</span><strong id="rank">D</strong></div><div class="score-track"><i id="score-progress"></i></div><small id="clear-progress">相手とホテルかネットカフェの入口へ</small></section>
   <details><summary>地図と目標</summary><aside class="minimap glass"><div class="minimap-header"><span>AREA MAP</span><span id="map-coord">新宿 / TOKYO</span></div><canvas id="minimap" width="180" height="180" aria-label="現在地と周辺の人の地図"></canvas><div class="map-legend"><span><i class="mint"></i> YOU</span><span><i class="peach"></i> PEOPLE</span><span><i class="purple"></i> GOAL</span></div></aside><aside class="mission glass"><span class="mission-number" id="mission-number">01</span><div><small id="mission-step">OBSERVE</small><h2 id="mission-title">まずは、街を歩こう。</h2><p id="mission-text">近くの人を選んで、サインを観察。</p></div></aside><div class="compass"><span>N</span><i>↑</i></div></details>
   <details><summary>視点・ポーズ</summary><div class="action-dock"><div id="action-menu" class="action-menu" role="group" aria-label="アクションを選ぶ" hidden></div><button id="action-toggle" aria-expanded="false" aria-controls="action-menu">⚡ あそぶ</button></div><div class="menu-tools"><button id="camera-reset">視点を戻す</button><button id="zoom-in" aria-label="視点を近づける">＋ ズーム</button><button id="zoom-out" aria-label="視点を遠ざける">− ズーム</button></div><p>ドラッグで回転、2本指・ホイールでズーム。</p></details>
   <div class="menu-tools"><button id="sound" aria-label="効果音をオンにする" aria-pressed="false">♪<span>OFF</span></button><button id="help">遊び方</button></div>
 
-  <details id="reward-closet"><summary>🎁 特典・着せ替え</summary><p id="reward-stars"></p><div id="reward-items"></div></details>
+  <details id="date-album"><summary>ゴール記念写真</summary><p id="album-record"></p><div id="album-items"></div></details><details id="reward-closet"><summary>🎁 特典・着せ替え</summary><p id="reward-stars"></p><div id="reward-items"></div></details>
   <details><summary>エリア・散策</summary><nav class="map-switch" aria-label="エリア切替"><button data-map="nagoya">名古屋駅</button><button data-map="kabukicho" class="active">歌舞伎町</button></nav><button id="menu-nightlife" class="tour-button">立ちんぼ・P活・ホストの通りへ（架空）</button>
   <button id="menu-plaza" class="tour-button">トー横の集まりへ歩く</button>
   <button id="menu-tour" class="tour-button">TOHOの周りを一周する</button></details>
   <details><summary>地図・施設の出典</summary><p>店舗所在地と公式アクセス地図を参照し、道路・外観はゲーム用に簡略化しています。</p><p><a href="https://rakutama.com/shop/kabukicho.html" target="_blank" rel="noopener">カスタマカフェ歌舞伎町店</a> · <a href="https://ssh-hotel-group.com/hotel_details/hotel-i/" target="_blank" rel="noopener">HOTEL i（ホテルアイ）</a></p></details><details><summary>モデルのクレジット</summary><p>3Dモデル：VRM1_Constraint_Twist_Sample / VRoid AvatarSample A・B・C<br>pixiv Inc. / VRoid Project<br>各モデルの利用条件に基づき、色・形状の軽量化・描画設定を変更。<br><a href="./models/LICENSE.txt?v=cast1" target="_blank" rel="noopener">出典・利用条件</a></p></details>
   <button id="menu-resume" class="primary">街に戻る</button>
 </dialog>
-<dialog id="intro" class="modal intro"><button class="close" id="intro-close" aria-label="閉じる">×</button><h2>ナンパシミュレーター</h2><p>街で気になる女の子をタップ。<br>会話からホテルかネットカフェへ誘い、<br>ふたりで入口まで歩けばクリア。</p><button id="start" class="primary">街へ出る</button><details><summary>遊び方</summary><p>左下の丸いスティックで移動。ドラッグで視点を回転、2本指でズーム。</p><p>女の子を選び「一緒にリズム遊び」。相手のポーズに合わせて青いゾーンでタップすると特典GET。</p><p>「声をかける」から会話を始め、返事を選び、会話が弾んだらホテルかネットカフェに誘い、入口まで一緒に歩こう。断られたら次の出会いを探そう。</p><button id="start-tour" class="tour-button">TOHOの周りを散策</button><small>PC：WASDで移動・ドラッグで回転。</small></details><small>登場する女性は全員20歳以上の架空の人物です。</small></dialog>
+<dialog id="intro" class="modal intro"><button class="close" id="intro-close" aria-label="閉じる">×</button><h2>ナンパシミュレーター</h2><p>街で気になる女の子をタップ。<br>会話からホテルかネットカフェへ誘い、<br>ふたりで入口まで歩けばクリア。</p><button id="start" class="primary">街へ出る</button><details><summary>遊び方</summary><p>左下の丸いスティックで移動。ドラッグで視点を回転、2本指でズーム。</p><p>女の子を選び「一緒にリズム遊び」。相手のポーズに合わせて青いゾーンでタップすると特典GET。</p><p>「声をかける」から会話を始め、返事を選び、会話が弾んだらホテルかネットカフェに誘い、入口まで一緒に歩こう。断られたら次の出会いを探そう。</p><p>同行中は相手の近くで歩こう。合図が出たら5秒以内に右下ボタンで応えるとコンボとスコアUP。ゴール後は記念写真を保存できます。</p><button id="start-tour" class="tour-button">TOHOの周りを散策</button><small>PC：WASDで移動・ドラッグで回転。</small></details><small>登場する女性は全員20歳以上の架空の人物です。</small></dialog>
 <dialog id="conversation" class="modal conversation"><div class="panel-heading"><span class="eyebrow">② 会話を楽しむ</span><button id="talk-exit" class="close" aria-label="会話を終える">×</button></div><div class="talk-top"><span id="talk-name"></span><span id="talk-turn"></span></div><div class="meters"><div><label for="favor">好感度 <b id="favor-value"></b></label><meter id="favor" min="0" max="100"></meter></div><div class="discomfort"><label for="discomfort">違和感 <b id="discomfort-value"></b></label><meter id="discomfort" min="0" max="100"></meter></div></div><div class="dialogue-mark">“</div><p id="talk-line"></p><span id="talk-cue" class="talk-cue"></span><p id="talk-feedback" role="status" aria-live="polite"></p><div id="responses" class="responses"></div><small>好感度68以上・違和感60未満で、文脈に合う提案を。</small></dialog>
 <dialog id="invitation" class="modal invitation" aria-labelledby="invite-title"><div class="panel-heading"><h2 id="invite-title">③ デートに誘う</h2><button id="invite-cancel" class="close" aria-label="誘いをやめて別れる">×</button></div><p id="invite-name"></p><p id="invite-line" aria-live="polite"></p><div id="invite-options"></div><button id="invite-confirm" class="primary" hidden>一緒に向かう</button></dialog>
 <dialog id="street-dialog" class="modal street-dialog" aria-labelledby="street-name"><div class="panel-heading"><h2 id="street-name"></h2><button id="street-close" class="close" aria-label="話を終えて街に戻る">×</button></div><p id="street-line"></p><div id="street-options"></div></dialog>
-<dialog id="result" class="modal result"><div class="eyebrow" id="result-eyebrow">A NEW CONNECTION</div><div class="result-symbol" id="result-symbol">↗</div><h2 id="result-title"></h2><p id="result-body"></p><div id="result-points" class="result-points"></div><button id="result-next" class="primary"></button></dialog>
+<dialog id="result" class="modal result"><div class="eyebrow" id="result-eyebrow">A NEW CONNECTION</div><div class="result-symbol" id="result-symbol">↗</div><h2 id="result-title"></h2><p id="result-body"></p><figure id="goal-memory" hidden><img id="goal-photo" alt=""><figcaption id="goal-photo-caption"></figcaption><a id="goal-photo-save" download="city-approach-memory.png">記念写真を保存</a></figure><div id="result-points" class="result-points"></div><section id="date-breakdown" hidden><strong id="date-rank"></strong><p id="date-best"></p><details><summary>スコア内訳</summary><dl id="date-score-lines"></dl></details></section><button id="result-next" class="primary"></button></dialog>
 <dialog id="challenge-result" class="modal challenge-result" aria-labelledby="challenge-result-title"><h2 id="challenge-result-title"></h2><p id="challenge-reaction"></p><p id="challenge-result-score"></p><strong id="challenge-earned"></strong><button id="challenge-return" class="primary">この子と話す</button><button id="challenge-retry" class="tour-button">もう一度いっしょに遊ぶ</button><details><summary>獲得した特典</summary><div id="challenge-unlocked"></div><p id="challenge-next"></p><button id="challenge-closet" class="tour-button">特典を着せ替える</button></details></dialog>
 <div id="fatal" hidden role="alert"><h1>3D表示を開始できませんでした</h1><p>WebGL 2対応のブラウザで、ハードウェアアクセラレーションを有効にして再読み込みしてください。</p></div>
 </body></html>

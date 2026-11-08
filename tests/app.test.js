@@ -12,7 +12,8 @@ import { PROFILES, buildLines } from '../src/game.js';
 test('explore → observe → conversation → escort → arrival, help resume, and map switch', async t => {
   const window = new Window({ url: 'http://localhost:5173/' });
   window.document.write(await readFile(new URL('../index.html', import.meta.url), 'utf8'));
-  let nextFrame;
+  let nextFrame, frameClock=performance.now();
+  const frame = now => { frameClock=Math.max(frameClock+50,now);nextFrame(frameClock); };
   const globals = { window, document: window.document, requestAnimationFrame: callback => { nextFrame = callback; } };
   const previous = new Map();
   for (const [name, value] of Object.entries(globals)) { previous.set(name, Object.getOwnPropertyDescriptor(globalThis, name)); Object.defineProperty(globalThis, name, { configurable: true, value }); }
@@ -32,6 +33,8 @@ test('explore → observe → conversation → escort → arrival, help resume, 
     setDestination(destination) { this.goal.set(destination.x, 0, destination.z); this.escortDestination = destination; }
     performAction(id) { this.action = id; return !this.paused; }
     cancelAction() { this.action = null; }
+    makeGoalPhoto(n, venue) { this.photoSubject=n; return 'data:image/webp;base64,dGVzdA=='; }
+    respondToCompanion() { this.gestures=(this.gestures||0)+1; }
     resetCamera() {}
     update() {}
     drawMinimap() {}
@@ -67,15 +70,21 @@ test('explore → observe → conversation → escort → arrival, help resume, 
     // A map change during conversation must not discard its state.
     doc.querySelector('[data-map="nagoya"]').click(); assert.equal(state.map, 'kabukicho');
     choose('listen'); choose('empathy'); choose('empathy'); choose('listen'); choose('proposal');
-    assert.equal(state.mode, 'invite'); assert.equal(state.score, 0);
+    assert.equal(state.mode, 'invite'); assert.equal(state.score, 400);
     assert.equal(world.companion, null, 'a conversation alone does not start following');
     doc.querySelector('[data-destination="hotel-i"]').click();
     assert.equal(doc.getElementById('invite-confirm').hidden, true, 'waiting person declines hotel invitation');
     click('invite-confirm'); assert.equal(state.mode, 'invite');
     doc.querySelector('[data-destination="customa"]').click();
     assert.equal(doc.getElementById('invite-confirm').hidden, false);
-    click('invite-confirm'); assert.equal(state.mode, 'escort'); assert.equal(state.score, 120); assert.equal(world.companion, npc);
+    click('invite-confirm'); assert.equal(state.mode, 'escort'); assert.equal(state.score, 520); assert.equal(world.companion, npc);
     assert.equal(world.escortDestination.id, 'customa');
+    const starting=world.player.position.clone(), direction=world.goal.clone().sub(starting).normalize();
+    for(let i=1;i<=9;i++){world.player.position.copy(starting).addScaledVector(direction,i*.2);npc.mesh.position.copy(world.player.position).add(new Vector3(0,0,1));frame(performance.now()+i*80);}
+    assert.equal(doc.getElementById('walk-response').hidden,false);
+    const walkClock=state.escort.walk.elapsed;click('menu-toggle');frame(performance.now()+1000);assert.equal(state.escort.walk.elapsed,walkClock,'menu pauses walk timer');click('menu-resume');
+    const beforeResponse=state.score;click('walk-response');assert.ok(state.score>=beforeResponse+40);assert.equal(world.gestures,1);
+    const afterResponse=state.score;click('walk-response');assert.equal(state.score,afterResponse,'double taps do not score');
     click('menu-toggle'); assert.equal(state.mode, 'menu');
     click('menu-resume'); assert.equal(state.mode, 'escort'); assert.equal(world.companion, npc);
     click('menu-toggle'); click('help'); assert.equal(state.mode, 'help');
@@ -84,13 +93,17 @@ test('explore → observe → conversation → escort → arrival, help resume, 
     assert.equal(state.mode, 'escort'); assert.equal(world.companion, npc, 'help must preserve the companion');
     assert.equal(doc.getElementById('escort').hidden, false);
     click('goal-walk'); assert.deepEqual(world.destination, world.goal);
-    npc.mesh.position.copy(world.goal); nextFrame(performance.now() + 16);
-    assert.equal(state.mode, 'result'); assert.equal(state.score, 220); assert.equal(state.clears, 1);
+    npc.mesh.position.copy(world.goal); frame(performance.now() + 16);
+    assert.equal(state.mode, 'result'); assert.ok(state.score>=860); assert.equal(state.clears, 1);
     assert.match(doc.getElementById('result-body').textContent, /カスタマカフェ/);
+    assert.equal(doc.getElementById('goal-memory').hidden,false);assert.equal(world.photoSubject,npc);
+    const completedScore=state.score;assert.equal(doc.getElementById('result-points').textContent,`${completedScore} pt`);
+    assert.equal(doc.getElementById('date-score-lines').children.length,6);
+    assert.equal(doc.querySelectorAll('#album-items figure').length,1);
     click('result-next'); assert.equal(state.mode, 'explore'); assert.equal(world.companion, null);
     for (const profile of STREET_PROFILES) {
       const streetNpc = { profile, mesh: { position: world.player.position.clone() }, cooldown: 0 };
-      if (profile.role === 'toyoko') { world.npcs = [streetNpc]; nextFrame(performance.now() + 32); assert.equal(state.mode, 'explore', 'plaza group does not interrupt passing players'); }
+      if (profile.role === 'toyoko') { world.npcs = [streetNpc]; frame(performance.now() + 32); assert.equal(state.mode, 'explore', 'plaza group does not interrupt passing players'); }
       world.onSelect(streetNpc); assert.equal(state.mode, 'street');
       assert.equal(doc.getElementById('street-name').textContent, `${profile.name}（${profile.age}歳）`);
       assert.equal(doc.getElementById('street-options').children.length, 3);
@@ -106,9 +119,9 @@ test('explore → observe → conversation → escort → arrival, help resume, 
     doc.querySelector('[data-map="nagoya"]').click(); assert.equal(state.map, 'nagoya'); assert.equal(world.map, 'nagoya');
     assert.match(doc.getElementById('location-name').textContent, /名古屋駅/);
     const busy = { profile: PROFILES[3], mesh: { position: world.player.position.clone() }, cooldown: 0 };
-    world.onSelect(busy); click('leave'); assert.equal(state.score, 240); assert.ok(busy.cooldown > state.elapsed);
+    world.onSelect(busy); click('leave'); assert.equal(state.score, completedScore); assert.ok(busy.cooldown > state.elapsed);
     world.onSelect(busy); assert.equal(state.selected, null, 'cooldown prevents immediate score farming');
-    assert.equal(doc.getElementById('best').textContent, '240');
+    assert.equal(doc.getElementById('best').textContent, String(completedScore));
     // Aborting a line cancels its delayed callback rather than changing a later scene.
     npc.cooldown = 0; world.onSelect(npc); doc.querySelector('[data-opener="empathy"]').click();
     doc.querySelector('[data-response="listen"]').click(); click('talk-exit');
@@ -117,16 +130,16 @@ test('explore → observe → conversation → escort → arrival, help resume, 
     choose('listen'); choose('empathy'); choose('empathy'); choose('listen'); choose('proposal');
     assert.equal(state.mode, 'invite');
     doc.querySelector('[data-destination="towers"]').click();
-    click('invite-cancel'); assert.equal(state.mode, 'explore'); assert.equal(state.score, afterAbort);
-    click('invite-confirm'); assert.equal(world.companion, null); assert.equal(state.score, afterAbort);
+    const beforeCancel=state.score;click('invite-cancel'); assert.equal(state.mode, 'explore'); assert.equal(state.score, beforeCancel);
+    click('invite-confirm'); assert.equal(world.companion, null); assert.equal(state.score, beforeCancel);
     assert.equal(state.clears, 1, 'points alone cannot produce another goal clear');
     // Nagoya remains a practice area: reaching a clock must not clear the game.
     const practice = {profile: PROFILES[8], mesh: {position: world.player.position.clone()}, cooldown: 0};
     world.npcs = [practice]; world.onSelect(practice); click('approach-start');
     for (const line of buildLines(practice.profile, state.map)) choose(line.correct[0]);
     doc.querySelector('[data-destination="gold"]').click(); click('invite-confirm');
-    click('goal-walk'); practice.mesh.position.copy(world.goal); nextFrame(performance.now() + 100);
-    assert.equal(state.clears, 1); assert.doesNotMatch(doc.getElementById('result-title').textContent, /CLEAR|デート成立/); click('result-next');
+    click('goal-walk'); practice.mesh.position.copy(world.goal); frame(performance.now() + 100);
+    assert.equal(state.clears, 1); assert.doesNotMatch(doc.getElementById('result-title').textContent, /CLEAR|デート成立/); assert.equal(doc.getElementById('goal-memory').hidden,true); click('result-next');
     doc.querySelector('[data-map="kabukicho"]').click();
     // Every added woman starts a real conversation from the primary button and can complete a date.
     for (const profile of PROFILES.slice(8)) {
@@ -143,9 +156,9 @@ test('explore → observe → conversation → escort → arrival, help resume, 
       assert.equal(state.mode, 'invite', profile.name);
       doc.querySelector('[data-destination="hotel-i"]').click(); click('invite-confirm');
       assert.equal(state.mode, 'escort'); assert.equal(world.companion, added);
-      click('goal-walk'); added.mesh.position.copy(world.goal).add(new Vector3(0,0,4)); nextFrame(performance.now() + 100);
+      click('goal-walk'); added.mesh.position.copy(world.goal).add(new Vector3(0,0,4)); frame(performance.now() + 100);
       assert.equal(state.mode, 'escort', 'player alone at the entrance does not clear');
-      added.mesh.position.copy(world.goal); nextFrame(performance.now() + 150);
+      added.mesh.position.copy(world.goal); frame(performance.now() + 150);
       assert.equal(state.mode, 'result', `${profile.name}: date arrival`);
       assert.match(doc.getElementById('result-title').textContent, /デート成立/);
       click('result-next');

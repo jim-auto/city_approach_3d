@@ -93,3 +93,47 @@
 #partner-play { font-size: 12px; min-height: 44px; margin-top: 8px; }
 
 #app .escort h2 { display: block; font-size: 13px; margin: 0 0 8px; line-height: 1.5; }
+/* Compact approach sheet: one main choice, optional actions stay folded. */
+#app .inspect { left: 50%; transform: translateX(-50%); right: auto; bottom: calc(12px + var(--safe-bottom)); width: min(360px, calc(100% - 24px)); max-width: none; max-height: calc(100dvh - 24px - var(--safe-top) - var(--safe-bottom)); overflow-y: auto; padding: 16px; background: #182230f5; border: 1px solid #ffffff20; border-radius: 18px; pointer-events: auto; }
+.approach-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.approach-header > div { flex: 1; min-width: 0; }
+#app .inspect #person-name { margin: 0 0 5px; font-size: 17px; line-height: 1.4; letter-spacing: 0; }
+#app .inspect #person-cue { margin: 0; font-size: 11px; line-height: 1.7; color: #b9c5d1; }
+#app .inspect .person-icon { display: block; flex: 0 0 56px; width: 56px; height: 56px; margin: 0; padding: 0; border-radius: 50%; overflow: hidden; }
+#app .inspect .person-icon img { width: 100%; height: 100%; object-fit: cover; }
+#app .inspect .close { position: static; flex: 0 0 40px; width: 40px; height: 40px; align-self: flex-start; padding: 0; }
+.approach-main { display: grid; grid-template-columns: 1fr 84px; gap: 8px; }
+#app .inspect #approach-start, #app .inspect #leave { margin: 0; padding: 12px; min-height: 48px; font-size: 14px; }
+#app .inspect #approach-status { display: block; margin: 0 0 10px; font-size: 12px; color: #a9d7c1; }
+#app .inspect #opener-choices { margin: 12px 0 0; border: 0; border-top: 1px solid #ffffff18; border-radius: 0; }
+#app .inspect #opener-choices summary { padding: 12px 0 0; min-height: 40px; font-size: 11px; color: #aab9c8; }
+#app .inspect #opener-actions { display: grid; grid-template-columns: 1fr; gap: 6px; padding: 10px 0 0; }
+#app .inspect #opener-actions button { padding: 10px 12px; min-height: 44px; font-size: 12px; text-align: left; }
+#app .inspect #opener-actions small { display: none; }
+#app .inspect #partner-play { margin: 8px 0 0; font-size: 12px; min-height: 44px; }
+#app .play-guide { display: flex; gap: 10px; align-items: center; }
+#run-score { color: #ffd790; font-size: 14px; white-space: nowrap; }
+#app .escort { width: min(340px, calc(100% - 32px)); padding: 12px; }
+.escort-status { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 12px; }
+#walk-score { color: #ffd790; } #walk-combo { color: #b7dfcf; flex: 1; }
+#walk-comfort { width: 64px; height: 8px; }
+#app .escort #walk-cue { display: block; font-size: 12px; line-height: 1.6; margin: 8px 0; }
+#walk-response { width: 100%; min-height: 46px; font-size: 13px; border-color: #a3d8c2; background: #a3d8c2; color: #173729; margin-bottom: 8px; font-weight: 700; }
+#app .escort-row { gap: 6px; } #app .escort-row button { min-height: 40px; padding: 8px; font-size: 11px; }
+#goal-memory { margin: 14px 0; padding: 8px 8px 12px; background: #f0e8da; color: #3a3540; border-radius: 5px; }
+#goal-photo, #album-items img { display: block; width: 100%; height: auto; aspect-ratio: 3/2; object-fit: cover; border-radius: 3px; }
+#goal-photo-caption { margin: 10px 0; font-size: 12px; }
+#goal-photo-save, #album-items a { color: inherit; display: inline-block; padding: 10px; font-size: 12px; text-decoration: underline; }
+#date-rank { font-size: 22px; color: #ffd790; } #date-best { font-size: 12px; color: #accfbd; }
+#date-score-lines { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin: 12px 0; }
+#date-score-lines div { background: #ffffff06; border-radius: 8px; padding: 8px; }
+#date-score-lines dt { font-size: 10px; color: #a8b7c6; } #date-score-lines dd { margin: 4px 0 0; font-size: 13px; }
+#album-items figure { margin: 12px 0; } #album-items figcaption { margin: 8px 0; font-size: 12px; }
+#app[data-mode='escort'] .topbar { display: flex; }
+@media(max-height:560px) and (orientation:landscape) { #app .escort { top: calc(8px + var(--safe-top)); width: 280px; } #app .escort #walk-cue { margin: 4px 0; font-size: 11px; } #app .escort h2 { margin-bottom: 4px; } #app .escort-status { margin-bottom: 4px; } }
+#app .play-actions #walk-response { width: 176px; min-height: 56px; padding: 12px; margin: 0; border-radius: 16px; box-shadow: 0 6px 24px #0003; }
+.result.has-memory #result-symbol, .result.has-memory #result-eyebrow { display: none; }
+.result.has-memory h2 { font-size: 20px; margin: 0 0 10px; }
+#date-breakdown details { font-size: 12px; text-align: left; margin-bottom: 14px; }
+#date-breakdown summary { padding: 12px 0; cursor: pointer; }
+#date-best { margin: 6px 0; }
