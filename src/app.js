@@ -1,3 +1,4 @@
+import { createChallengeUI } from './challenge-ui.js';
 import { streetLines } from './street-encounters.js';
 import { destinationsFor, evaluateInvitation, spokenReplies } from './encounters.js';
 import { ACTIONS } from './actions.js';
@@ -24,7 +25,7 @@ function toast(text) { $('toast').textContent = text; $('toast').classList.add('
 function score(points) { state.score += points; state.best = Math.max(state.best, state.score); saveBest(storage, state.best); updateScore(); }
 function updateScore() { $('score').textContent = String(state.score).padStart(3, '0'); $('best').textContent = String(state.best).padStart(3, '0'); $('rank').textContent = rank(state.score); $('score-progress').style.width = `${Math.min(100, state.score / 5)}%`; $('clear-progress').textContent = state.score >= 500 ? 'CITY CLEAR · 街のつながりが広がった！' : `CITY CLEAR まで ${500 - state.score} pt`; }
 function mission(step, title, text, number = '01') { $('mission-step').textContent = step; $('mission-title').textContent = title; $('mission-text').textContent = text; $('mission-number').textContent = number; }
-function setMode(mode) { closeActions(); world.cancelAction?.(); resetTouch(); $('app').dataset.mode = mode; state.mode = mode; world.paused = !['explore', 'escort'].includes(mode); if (world.paused) world.keys.clear(); $('touch-controls').style.visibility = ['explore', 'escort'].includes(mode) ? '' : 'hidden'; $('guide').hidden = mode !== 'explore'; }
+function setMode(mode) { closeActions(); world.cancelAction?.(); resetTouch(); $('app').dataset.mode = mode; state.mode = mode; world.paused = !['explore', 'escort'].includes(mode); if (world.paused) world.keys.clear(); $('touch-controls').style.visibility = ['explore', 'escort'].includes(mode) ? '' : 'hidden'; $('guide').hidden = mode !== 'explore'; $('labels').hidden = ['challenge', 'challenge-result'].includes(mode); }
 function openModal(id) { $(id).showModal(); }
 function closeInspect() { delete $('app').dataset.panel; $('inspect').hidden = true; state.selected = null; world.select(null); }
 function explore() { state.touring = false; $('guide-text').textContent = '女の子をタップ → 声掛け → 会話 → デートに誘う'; state.invitation = null; state.escort = null; closeInspect(); $('escort').hidden = true; world.companion = null; setMode('explore'); mission('OBSERVE', 'まずは、街を歩こう。', '近くの人を選んで、サインを観察。'); }
@@ -152,6 +153,10 @@ function changeMap(map) {
 }
 try { world = new CityWorld($('world'), $('labels'), selectNpc, () => {}); }
 catch (error) { console.error(error); $('fatal').hidden = false; throw error; }
+const arcade = createChallengeUI({ world, storage, mode: () => state.mode,
+  canStart: () => ['intro', 'help', 'explore', 'menu', 'challenge-result'].includes(state.mode) && !world.companion && !state.selected,
+  enter(mode) { state.touring = false; closeInspect(); setMode(mode); }, leave: explore, award: score, tone,
+});
 $('start-tour').addEventListener('click', startTour);
 $('menu-tour').addEventListener('click', startTour);
 $('menu-nightlife').addEventListener('click', () => {
@@ -178,6 +183,7 @@ $('menu-toggle').addEventListener('click', () => {
   if (!['explore', 'escort'].includes(state.mode) || state.selected) return;
   $('menu-nightlife').disabled = state.map !== 'kabukicho' || !!world.companion;
   $('menu-plaza').disabled = state.map !== 'kabukicho' || !!world.companion;
+  $('menu-challenge').disabled = !!world.companion; arcade.renderCloset();
   state.menuResume = state.mode; setMode('menu'); openModal('game-menu');
 });
 $('menu-close').addEventListener('click', resumeMenu);
@@ -207,10 +213,12 @@ function runAction(id) {
 }
 $('action-toggle').addEventListener('click', () => {
   if (!['explore', 'escort'].includes(state.mode) || state.selected) return;
+  challengeButton.disabled = !!world.companion;
   const open = $('action-menu').hidden;
   $('action-menu').hidden = !open; $('action-toggle').setAttribute('aria-expanded', String(open));
 });
-$('action-menu').replaceChildren(...ACTIONS.map(action => {
+const challengeButton = document.createElement('button'); challengeButton.textContent = '⚡ 15秒チャレンジ · 特典GET'; challengeButton.className = 'challenge-launch'; challengeButton.addEventListener('click', () => arcade.start());
+$('action-menu').replaceChildren(challengeButton, ...ACTIONS.map(action => {
   const button = document.createElement('button'); button.dataset.action = action.id;
   button.textContent = `${action.icon} ${action.label}`;
   const hint = document.createElement('kbd'); hint.textContent = action.key === ' ' ? 'SPACE' : action.key.toUpperCase(); button.append(hint);
@@ -233,7 +241,7 @@ function frame(now) {
   const interval = world.profile?.frameInterval || 0;
   lastRender = interval ? now - ((now - lastRender) % interval) : now;
   const dt = Math.min((now - previous) / 1000, .05); previous = now; state.elapsed += dt;
-  world.update(dt, state.elapsed); mapTick += dt;
+  arcade.update(dt); world.update(dt, state.elapsed); mapTick += dt;
   if (state.touring && !world.destination) { state.touring = false; $('guide-text').textContent = '女の子をタップ → 声掛け → 会話 → デートに誘う'; }
   if (state.mode === 'explore' && !state.selected && !state.touring) {
     const street = (world.npcs || []).find(n => n.profile?.autoApproach && n.cooldown <= state.elapsed && world.distanceTo(n) < 2.7);
@@ -250,5 +258,5 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
-return { state, world };
+return { state, world, arcade };
 }

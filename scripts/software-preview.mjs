@@ -7,7 +7,7 @@ export function renderGeometry(scene, camera, width, height) {
   for (let i = 0; i < rgb.length; i += 3) { rgb[i] = 39; rgb[i + 1] = 51; rgb[i + 2] = 69; }
   scene.updateMatrixWorld(true); camera.updateMatrixWorld(true);
   const light = new THREE.Vector3(-3, 5, 6).normalize(), eye = camera.getWorldDirection(new THREE.Vector3()).negate(), half = light.clone().add(eye).normalize();
-  const meshes = []; scene.traverse(o => { if (o.isMesh && o.visible) meshes.push(o); }); meshes.sort((a, b) => Number(a.material.transparent) - Number(b.material.transparent));
+  const meshes = []; scene.traverseVisible(o => { if (o.isMesh) meshes.push(o); }); meshes.sort((a, b) => Number(a.material.transparent) - Number(b.material.transparent));
   const linear = n => n <= .04045 ? n / 12.92 : ((n + .055) / 1.055) ** 2.4;
   const srgb = n => Math.max(0, Math.min(255, Math.round(255 * (n <= .0031308 ? n * 12.92 : 1.055 * n ** (1 / 2.4) - .055))));
   for (const mesh of meshes) {

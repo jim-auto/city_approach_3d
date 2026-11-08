@@ -98,3 +98,15 @@ test('the one-lap tour walks the player along every side of Toho and returns to 
   assert.equal(world.destination, null);
   assert.ok(world.player.position.distanceTo(new THREE.Vector3(0, 0, -17)) < .2);
 });
+
+test('the tap challenge freezes navigation, shows responsive poses and effects, then restores normal exploration', () => {
+  const world = makeWorld(), npc = { mesh: person(), ambient: true, phase: 1 };
+  world.npcs = [npc]; world.paused = true;
+  const original = world.player.position.clone(), angle = world.player.rotation.y;
+  world.beginChallenge(); assert.equal(npc.mesh.visible, false); world.keys.add('w');
+  assert.equal(world.performAction('jump'), true); world.challengeFeedback('perfect'); world.update(.2, .2);
+  assert.deepEqual(world.player.position, original); assert.ok(world.player.userData.legs.every(leg => leg.position.y > 1.5));
+  assert.equal(world.challengeEffects.burst.visible, true); world.applyRewards({ outfit: 'white', aura: 'gold' }); assert.equal(world.challengeEffects.aura.visible, true);
+  world.endChallenge(); assert.equal(world.action, null); assert.equal(world.challengeActive, false); assert.equal(npc.mesh.visible, true); assert.equal(world.player.rotation.y, angle);
+  assert.equal(world.performAction('jump'), false); world.applyRewards({ outfit: 'default', aura: 'none' }); assert.equal(world.challengeEffects.aura.visible, false);
+});

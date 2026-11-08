@@ -1,3 +1,5 @@
+import { createChallengeEffects, updateChallengeEffects } from './challenge-effects.js';
+import { REWARDS } from './challenge.js';
 import { disposeCharacterSkeletons } from './authored-characters.js';
 import { cameraView } from './camera.js';
 import { STREET_PROFILES } from './street-encounters.js';
@@ -5,7 +7,7 @@ import * as THREE from 'three';
 import { ACTIONS, animateAction } from './actions.js';
 import { PROFILES, clamp } from './game.js';
 import { bindWorldInput, renderProfile } from './input.js';
-import { createCharacter, animateCharacter, isCharacterResource } from './characters.js';
+import { createCharacter, animateCharacter, isCharacterResource, setCharacterOutfit } from './characters.js';
 import { mats, boxGeo } from './scenery.js';
 import { buildNagoyaConcourse, buildKabukichoLandmarks, MAP_LAYOUTS } from './locations.js';
 import { planPath, resolveDestination, isWalkable, segmentClear } from './navigation.js';
@@ -104,9 +106,39 @@ export class CityWorld {
   zoom(amount) { this.distance = clamp(this.distance + amount, 15, 43); }
   cancelAction() { this.action = null; }
   performAction(id) {
-    if (this.paused || !ACTIONS.some(action => action.id === id)) return false;
+    if ((this.paused && !this.challengeActive) || !ACTIONS.some(action => action.id === id)) return false;
     this.destination = null; this.waypoints = []; this.marker.visible = false; this.keys.clear();
     this.action = { id, elapsed: 0 }; return true;
+  }
+  beginChallenge() {
+    this.cancelAction(); this.destination = null; this.waypoints = []; this.marker.visible = false; this.keys.clear();
+    this.challengeActive = true;
+    for (const n of this.npcs || []) { n.challengeVisible = n.mesh.visible; n.mesh.visible = false; }
+    this.challengeRotation = this.player.rotation.y;
+    const focus = this.player.position.clone().add(new THREE.Vector3(0, 1.5, 0));
+    let angle = this.yaw;
+    for (let i = 0; i < 8; i++) {
+      const candidate = this.yaw + i * Math.PI / 4, desired = focus.clone().add(new THREE.Vector3(Math.sin(candidate) * 4.4, .6, Math.cos(candidate) * 4.4));
+      if (!cameraView(focus, desired, this.cameraBlockers, candidate).obstructed) { angle = candidate; break; }
+    }
+    this.challengeView = { focus, desired: focus.clone().add(new THREE.Vector3(Math.sin(angle) * 4.4, .6, Math.cos(angle) * 4.4)) };
+    this.player.rotation.y = angle;
+  }
+  endChallenge() {
+    this.cancelAction(); this.challengeActive = false; this.challengeView = null;
+    for (const n of this.npcs || []) if (n.challengeVisible !== undefined) { n.mesh.visible = n.challengeVisible; delete n.challengeVisible; }
+    if (this.challengeRotation !== undefined) this.player.rotation.y = this.challengeRotation;
+  }
+  challengeFeedback(grade) {
+    this.challengeEffects ||= createChallengeEffects(this.player);
+    this.challengeEffects.burstMaterial.color.set(grade === 'perfect' ? '#ffd27a' : grade === 'good' ? '#a6efd2' : '#f18ba0'); this.challengeEffects.life = .65;
+  }
+  applyRewards(rewards) {
+    const outfit = REWARDS.find(r => r.id === rewards.outfit), aura = REWARDS.find(r => r.id === rewards.aura);
+    if (outfit) setCharacterOutfit(this.player, outfit.color);
+    this.challengeEffects ||= createChallengeEffects(this.player);
+    this.challengeEffects.aura.visible = !!aura?.color;
+    if (aura?.color) this.challengeEffects.auraMaterial.color.set(aura.color);
   }
   walkRoute(points) {
     let from = this.player.position; const route = [];
@@ -200,9 +232,14 @@ export class CityWorld {
       }
     }
     animateCharacter(this.player, previous.distanceToSquared(this.player.position) > .00001, time);
-    if (this.action && !this.paused) {
+    if (this.action && (!this.paused || this.challengeActive)) {
       this.action.elapsed += dt;
       if (!animateAction(this.player, this.action.id, this.action.elapsed)) this.cancelAction();
+    }
+    updateChallengeEffects(this.challengeEffects, dt, time);
+    if (this.challengeActive && this.challengeView) {
+      this.camera.position.lerp(this.challengeView.desired, 1 - Math.exp(-dt * 9)); this.camera.lookAt(this.challengeView.focus); this.camera.updateMatrixWorld();
+      this.renderer.render(this.scene, this.camera); return;
     }
     const nearbyLabels = new Set(this.npcs.filter(n => !n.ambient && this.distanceTo(n) <= 9 && segmentClear(this.player.position, n.mesh.position, this.layout))
       .sort((a, b) => this.distanceTo(a) - this.distanceTo(b)).slice(0, 2));

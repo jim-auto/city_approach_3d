@@ -1,4 +1,4 @@
-import { createAuthoredCharacter, animateAuthoredCharacter } from './authored-characters.js';
+import { createAuthoredCharacter, animateAuthoredCharacter, setAuthoredOutfit } from './authored-characters.js';
 import { loftGeometry, buildHead, strandGeometry, clothPanelGeometry, lapelGeometry, loftFront } from './character-shapes.js';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -196,7 +196,7 @@ export function createCharacter(color, hair, kind = 'player', { detailed = true 
   const objects = new Map();
   const bind = (source, clone) => { objects.set(source, clone); source.children.forEach((child, i) => bind(child, clone.children[i])); };
   bind(template, model);
-  model.userData = { character: true, kind, detailed, resourceOwner: 'characters', appearance: { ...rig.appearance }, body: objects.get(rig.body), head: objects.get(rig.head), arms: rig.arms.map(o => objects.get(o)), elbows: rig.elbows.map(o => objects.get(o)), legs: rig.legs.map(o => objects.get(o)), knees: rig.knees.map(o => objects.get(o)), props: rig.props.map(o => objects.get(o)) };
+  model.userData = { baseColor: color, character: true, kind, detailed, resourceOwner: 'characters', appearance: { ...rig.appearance }, body: objects.get(rig.body), head: objects.get(rig.head), arms: rig.arms.map(o => objects.get(o)), elbows: rig.elbows.map(o => objects.get(o)), legs: rig.legs.map(o => objects.get(o)), knees: rig.knees.map(o => objects.get(o)), props: rig.props.map(o => objects.get(o)) };
   animateCharacter(model, false, 0);
   return model;
 }
@@ -225,3 +225,25 @@ export function animateCharacter(model, moving, time, seed = 0) {
 }
 
 export function isCharacterResource(resource) { return resource?.userData?.characterShared || resource === surface || resource === shadowMaterial; }
+
+export function setCharacterOutfit(model, color) {
+  if (setAuthoredOutfit(model, color)) return true;
+  if (!model.userData.character) return false;
+  if (!model.userData.outfitParts) {
+    const parts = []; model.traverse(mesh => { if (['outfit', 'sleeve', 'forearm-and-hand'].includes(mesh.name)) parts.push({ mesh, original: mesh.geometry, variants: new Map() }); });
+    model.userData.outfitParts = parts;
+  }
+  const base = new THREE.Color(model.userData.baseColor || '#303544'), tint = new THREE.Color(color);
+  for (const part of model.userData.outfitParts) {
+    if (!part.variants.has(color)) {
+      const g = part.original.clone(), colors = g.attributes.color;
+      for (let i = 0; i < colors.count; i++) {
+        const r = colors.getX(i), green = colors.getY(i), b = colors.getZ(i), scale = (r / base.r + green / base.g + b / base.b) / 3;
+        if (Math.max(Math.abs(r - base.r * scale), Math.abs(green - base.g * scale), Math.abs(b - base.b * scale)) < .012) colors.setXYZ(i, tint.r * scale, tint.g * scale, tint.b * scale);
+      }
+      g.userData.characterShared = true; part.variants.set(color, g);
+    }
+    part.mesh.geometry = part.variants.get(color);
+  }
+  return true;
+}

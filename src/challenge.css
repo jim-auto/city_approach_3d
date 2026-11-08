@@ -1,0 +1,42 @@
+.challenge-launch { border-color: #89bfff; color: #c2dcff; }
+#intro-challenge { background: linear-gradient(120deg, #acd9ff, #a6e3c9); color: #142d3b; margin-bottom: 10px; }
+.challenge-intro { color: #c2dcff; font-size: 12px; margin: 16px 0; }
+#challenge-panel { position: absolute; inset: 0; pointer-events: none; color: #edf3ff; }
+#challenge-panel[hidden] { display: none; }
+.challenge-top { position: absolute; top: calc(16px + var(--safe-top)); left: max(16px, var(--safe-left)); right: max(16px, var(--safe-right)); display: flex; align-items: center; gap: 14px; padding: 12px 14px; border-radius: 16px; background: #14212ee8; }
+.challenge-top > div { flex: 1; } .challenge-top strong { font-size: 14px; } .challenge-top span { margin-left: 12px; font-size: 12px; color: #9fb8d2; }
+#challenge-time { font-size: 24px; font-variant-numeric: tabular-nums; }
+#challenge-cancel { width: 44px; height: 44px; pointer-events: auto; border-radius: 50%; font-size: 22px; }
+.challenge-readout { position: absolute; top: calc(100px + var(--safe-top)); left: 50%; transform: translateX(-50%); text-align: center; text-shadow: 0 2px 8px #000; }
+#challenge-dots { display: flex; gap: 10px; font-size: 22px; justify-content: center; margin-bottom: 8px; }
+#challenge-dots span[data-grade='perfect'] { color: #ffd27a; } #challenge-dots span[data-grade='good'] { color: #a6efd2; } #challenge-dots span[data-grade='miss'] { color: #e6909f; }
+#challenge-combo { font-size: 18px; color: #ffd27a; }
+.challenge-bottom { position: absolute; bottom: calc(20px + var(--safe-bottom)); left: 50%; transform: translateX(-50%); width: min(380px, calc(100% - 32px)); text-align: center; padding: 16px; border-radius: 20px; background: #14212eec; }
+#challenge-cue { font-size: 19px; margin: 0 0 7px; }
+#challenge-feedback { margin: 0 0 16px; min-height: 20px; font-size: 13px; color: #a8c9ec; }
+#challenge-feedback[data-grade='perfect'] { color: #ffd27a; font-weight: 800; } #challenge-feedback[data-grade='good'] { color: #a6efd2; } #challenge-feedback[data-grade='miss'] { color: #f1a5b1; }
+.timing-track { position: relative; height: 26px; margin: 0 8px 15px; background: #303e53; border-radius: 10px; }
+.timing-good { position: absolute; top: 0; bottom: 0; left: 56%; width: 32%; background: #528ad9; border-radius: 8px; }
+.timing-perfect { position: absolute; top: 0; bottom: 0; left: 65.5%; width: 13%; background: #a6d5ff; }
+#challenge-cursor { position: absolute; top: -5px; bottom: -5px; width: 6px; transform: translateX(-50%); border-radius: 4px; background: #fff7d8; box-shadow: 0 0 8px #ffdfa0; }
+#challenge-tap { width: 100%; min-height: 68px; border-radius: 16px; font-size: 23px; font-weight: 800; color: #173047; border: 0; background: #a8d5ff; touch-action: manipulation; pointer-events: auto; }
+#challenge-tap:active:not(:disabled) { transform: scale(.97); background: #c5eaff; } #challenge-tap:disabled { opacity: .65; font-size: 16px; }
+.challenge-bottom small { display: block; font-size: 10px; color: #aabbd0; margin-top: 9px; }
+.challenge-result { text-align: center; } .challenge-result h2 { font-size: 26px; } #challenge-earned { color: #ffd27a; font-size: 28px; }
+#challenge-unlocked p { color: #a6efd2; padding: 10px; border-radius: 10px; background: #a6efd210; font-size: 13px; }
+#challenge-next { font-size: 12px; line-height: 1.8; color: #bccce0; }
+#reward-items { display: grid; gap: 8px; margin: 12px 0 16px; grid-template-columns: 1fr 1fr; }
+#reward-items button { min-height: 64px; padding: 10px; text-align: left; font-size: 11px; }
+#reward-items button small { display: block; margin-top: 5px; font-size: 10px; color: #aabbd0; }
+#reward-items button.equipped { border-color: #a6efd2; background: #a6efd215; } #reward-items button:disabled { opacity: .5; }
+#reward-stars { color: #ffd27a; }
+@media (max-height: 560px) and (orientation: landscape) {
+  .challenge-top { right: auto; width: 240px; top: calc(8px + var(--safe-top)); padding: 8px; }
+  .challenge-readout { top: 95px; left: 145px; }
+  .challenge-bottom { width: 240px; right: max(16px, var(--safe-right)); left: auto; transform: none; bottom: calc(12px + var(--safe-bottom)); padding: 12px; }
+  #challenge-tap { min-height: 58px; } .challenge-bottom small { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { #challenge-tap:active:not(:disabled) { transform: none; } }
+@media (max-height: 560px) and (orientation: landscape) {
+  #app .action-menu { max-height: calc(100dvh - 140px); overflow-y: auto; }
+}

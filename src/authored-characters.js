@@ -66,8 +66,9 @@ export function loadAuthoredCharacters(data, onProgress) {
   return loading;
 }
 function styleMesh(mesh, style, cacheKey) {
-  const original = mesh.material, hair = /HAIR/i.test(original.name), cloth = /CLOTH/i.test(original.name), maleCloth = style.base === 'male' && /Body_00_SKIN/i.test(original.name);
+  const original = mesh.userData.baseMaterial || mesh.material, baseGeometry = mesh.userData.baseGeometry || mesh.geometry, hair = /HAIR/i.test(original.name), cloth = /CLOTH/i.test(original.name), maleCloth = style.base === 'male' && /Body_00_SKIN/i.test(original.name);
   if (!(hair && style.hair || (cloth || maleCloth) && style.clothes)) return;
+  mesh.userData.baseMaterial = original; mesh.userData.baseGeometry = baseGeometry;
   const key = `${cacheKey}/${original.uuid}`;
   if (!styledMaterials.has(key)) {
     const material = original.clone(); shared(material); material.toneMapped = false;
@@ -81,9 +82,9 @@ function styleMesh(mesh, style, cacheKey) {
   }
   mesh.material = styledMaterials.get(key);
   if (maleCloth) {
-    const geometryKey = `${cacheKey}/${mesh.geometry.uuid}`;
+    const geometryKey = `${cacheKey}/${baseGeometry.uuid}`;
     if (!styledGeometry.has(geometryKey)) {
-      const originalGeometry = mesh.geometry, g = new THREE.BufferGeometry(), mask = clothMasks.get(originalGeometry), tint = new THREE.Color(style.clothes).multiplyScalar(30), colors = new Float32Array(mask.length * 3);
+      const originalGeometry = baseGeometry, g = new THREE.BufferGeometry(), mask = clothMasks.get(originalGeometry), tint = new THREE.Color(style.clothes).multiplyScalar(30), colors = new Float32Array(mask.length * 3);
       // Only dark clothing texels are tinted. Face, neck, hands and other skin stay intact.
       for (let i = 0; i < mask.length; i++) colors.set(mask[i] ? [tint.r, tint.g, tint.b] : [1, 1, 1], i * 3);
       for (const [name, attribute] of Object.entries(originalGeometry.attributes)) g.setAttribute(name, attribute);
@@ -153,4 +154,11 @@ export function animateAuthoredAction(model, action, elapsed) {
 }
 export function disposeCharacterSkeletons(model) {
   const skeletons = new Set(); model.traverse(o => { if (o.isSkinnedMesh) skeletons.add(o.skeleton); }); skeletons.forEach(skeleton => skeleton.dispose());
+}
+
+export function setAuthoredOutfit(model, color) {
+  if (!model.userData.authored) return false;
+  const style = { ...model.userData.style, clothes: color };
+  model.userData.avatar.traverse(o => { if (o.isSkinnedMesh) styleMesh(o, style, `${model.userData.kind}/${color}`); });
+  model.userData.style = style; return true;
 }

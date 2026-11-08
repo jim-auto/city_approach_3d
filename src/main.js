@@ -1,6 +1,7 @@
 import './style.css';
 import './mobile.css';
 import './simple.css';
+import './challenge.css';
 import { CityWorld } from './world.js';
 import { startGame } from './app.js';
 import { loadAuthoredCharacters } from './authored-characters.js';

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { createCharacter, animateCharacter, isCharacterResource } from '../src/characters.js';
+import { createCharacter, animateCharacter, isCharacterResource, setCharacterOutfit } from '../src/characters.js';
 import { STREET_PROFILES } from '../src/street-encounters.js';
 import { headGeometry, loftGeometry } from '../src/character-shapes.js';
 import { PROFILES } from '../src/game.js';
@@ -83,4 +83,11 @@ test('layered shirts and coat tails cover the body beneath them', () => {
   ray.set(new THREE.Vector3(0, .98, 1), new THREE.Vector3(0, 0, -1));
   const hit = ray.intersectObject(outfit)[0];
   assert.ok(hit.point.z > .12, 'coat covers the trouser waist');
+});
+
+test('fallback outfits remain visible without changing another instance or its face', () => {
+  const a = createCharacter('#303544', '#28232c', 'player'), b = createCharacter('#303544', '#28232c', 'player');
+  const shared = b.getObjectByName('outfit').geometry, before = shared.attributes.color.array.slice(), face = a.getObjectByName('face-and-hair').geometry;
+  assert.equal(setCharacterOutfit(a, '#e2dfd4'), true); assert.notDeepEqual(a.getObjectByName('outfit').geometry.attributes.color.array, before);
+  assert.deepEqual(shared.attributes.color.array, before); assert.equal(a.getObjectByName('face-and-hair').geometry, face);
 });

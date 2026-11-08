@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import * as THREE from 'three';
 import { loadOfflineAvatar } from '../scripts/load-avatar-offline.mjs';
-import { createCharacter, animateCharacter, isCharacterResource } from '../src/characters.js';
+import { createCharacter, animateCharacter, isCharacterResource, setCharacterOutfit } from '../src/characters.js';
 import { CAST, MODEL_FILES } from '../src/cast.js';
 import { PROFILES } from '../src/game.js';
 import { STREET_PROFILES } from '../src/street-encounters.js';
@@ -152,4 +152,16 @@ test('the mobile world runs actions on the imported player and throttles distant
     assert.ok(far && near); const sampled = far.mesh.userData.lastFrame.time;
     world.update(.033, 1.033); assert.equal(far.mesh.userData.lastFrame.time, sampled); assert.equal(near.mesh.userData.lastFrame.time, 1.033);
   } finally { globalThis.document = previous; }
+});
+
+test('reward outfits change only the equipped player, preserve skin and reuse cached geometry when switching back', () => {
+  const a = createCharacter('#303544', '#28232c', 'player'), b = createCharacter('#303544', '#28232c', 'player');
+  const body = model => skinned(model).find(mesh => /Body_00_SKIN/.test(mesh.material.name));
+  const first = body(a).geometry, original = body(b).geometry.attributes.color.array.slice();
+  assert.equal(setCharacterOutfit(a, '#e2dfd4'), true); assert.notEqual(body(a).geometry, first);
+  assert.deepEqual(body(b).geometry.attributes.color.array, original);
+  const colors = body(a).geometry.attributes.color.array;
+  for (let i = 0; i < original.length; i += 3) if (original[i] === 1 && original[i + 1] === 1 && original[i + 2] === 1) assert.deepEqual([...colors.slice(i, i + 3)], [1, 1, 1]);
+  setCharacterOutfit(a, '#a95a70'); setCharacterOutfit(a, '#303544'); assert.equal(body(a).geometry, first);
+  animateCharacter(a, true, .2); assert.ok(skinned(a).every(mesh => mesh.getVertexPosition(0, new THREE.Vector3()).toArray().every(Number.isFinite)));
 });
