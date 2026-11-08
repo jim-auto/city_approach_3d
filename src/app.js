@@ -1,3 +1,4 @@
+import { TALK_PARTS, createTalkProgress, clearTalkPart, nextTalkPart, createTalkQte, advanceTalkQte, inputTalkQte } from './talk-parts.js';
 import { RHYTHM, TALK_LANES, createTalkRhythm, rhythmPhrase, advanceTalkRhythm, tapTalkRhythm, rhythmOutcome } from './talk-rhythm.js';
 import { createRhythmMusic } from './rhythm-music.js';
 import { createDateRun, dateTotal, createWalkRun, advanceWalk, respondWalk, collectWalkPoints, finishDate, dateRank, loadAlbum, saveAlbum } from './date-run.js';
@@ -84,62 +85,105 @@ function startTalk(key) {
   const opening = evaluateOpener(n.profile, key, state.map); world.destination = null; world.marker.visible = false;
   if (!opening.success) { finishNpc(n); closeInspect(); result('また、別のきっかけを。', opening.message, 0, '街に戻る ↗', explore); return; }
   state.attempt = createDateRun(); score(state.attempt.approach);
-  state.talk = { npc:n, ...opening, opening, run:createTalkRhythm(n.profile.name.length%3), started:false, ending:false, music:null };
+  state.talk = { npc:n, ...opening, opening, run:createTalkRhythm(n.profile.name.length%3), progress:createTalkProgress(), phase:'ready', started:false, ending:false, music:null };
   if(world.beginTalk) world.beginTalk(n); else world.beginChallenge?.(n);
   delete $('app').dataset.panel; $('inspect').hidden = true; $('talk-name').textContent = n.profile.name;
   $('responses').replaceChildren(...TALK_LANES.map((lane,i)=>{const b=document.createElement('button');b.dataset.lane=lane.key;b.style.setProperty('--lane',lane.color);b.setAttribute('aria-label',`${lane.label}・${i+1}`);b.innerHTML=`<strong>${lane.icon}</strong><span>${lane.label}</span>`;b.addEventListener('pointerdown',e=>{e.preventDefault();respond(lane.key);});b.addEventListener('click',e=>{if(e.detail===0)respond(lane.key);});return b;}));
-  $('rhythm-notes').replaceChildren(...state.talk.run.notes.map(note=>{const el=document.createElement('i');el.dataset.note=note.id;el.style.setProperty('--lane',TALK_LANES[note.lane].color);el.style.left=`${(note.lane+.5)*100/3}%`;el.textContent=TALK_LANES[note.lane].icon;return el;}));
-  $('rhythm-start').hidden=false; $('rhythm-muted').hidden=false; $('rhythm-start').disabled=false;
+  prepareTalkPart();
   setMode('talk'); clearTimeout(toastTimer); $('toast').classList.remove('show'); renderRhythm(); $('talk-feedback').textContent = `あなた ${OPENERS.find(opener => opener.key === key).text}`; openModal('conversation'); tone();
 }
+function prepareTalkPart(){
+ const t=state.talk;stopTalkMusic();t.phase='ready';t.started=false;t.ending=false;t.qte=null;t.retryQte=false;
+ t.run=createTalkRhythm(t.npc.profile.name.length%3,t.progress.index);
+ $('rhythm-notes').replaceChildren(...t.run.notes.map(note=>{const el=document.createElement('i');el.dataset.note=note.id;el.style.setProperty('--lane',TALK_LANES[note.lane].color);el.style.left=`${(note.lane+.5)*100/3}%`;el.textContent=TALK_LANES[note.lane].icon;return el;}));
+ $('rhythm-start').hidden=false;$('rhythm-muted').hidden=false;$('rhythm-start').disabled=false;
+ world.talkPart?.(t.progress.index);renderRhythm();
+}
 function startRhythm(withSound) {
-  const t=state.talk;if(state.mode!=='talk'||!t||t.started)return;
-  t.started=true;t.startedAt=now();t.music=withSound?createRhythmMusic():null;
-  $('rhythm-start').hidden=true;$('rhythm-muted').hidden=true;
-  $('talk-feedback').textContent='ハートが下のラインに重なったらタップ';renderRhythm();
+ const t=state.talk;if(state.mode!=='talk'||!t||t.started)return;
+ t.phase='rhythm';t.withSound=withSound;t.started=true;t.startedAt=now();t.music=withSound?createRhythmMusic():null;
+ $('rhythm-start').hidden=true;$('rhythm-muted').hidden=true;
+ $('talk-feedback').textContent='6ノーツ中4ノーツでクリア';renderRhythm();
 }
 function rhythmTime(t) { return t.music?.now() ?? (now()-t.startedAt)/1000; }
 function stopTalkMusic(){state.talk?.music?.stop();if(state.talk)state.talk.music=null;}
 function renderRhythm(){
- const t=state.talk,run=t.run;
- $('talk-turn').textContent=`${run.combo} COMBO · ${run.hits}/${run.notes.length}`;
- $('talk-line').textContent=t.ending?(run.hits>=12?'♥ STAGE CLEAR':'また今度、話そう'):!t.started?'会話を、リズムに。':run.elapsed<RHYTHM.leadIn?`${Math.ceil(RHYTHM.leadIn-run.elapsed)}`:rhythmPhrase(run);
- $('talk-cue').textContent=t.ending?`${run.points} pt · MAX ${run.maxCombo} COMBO`:'光るノーツがラインに重なったら、下のボタンをタップ';
- $('talk-clock').max=RHYTHM.duration;$('talk-clock').value=run.elapsed;
- $('talk-clock').setAttribute('aria-valuetext',`残り${Math.ceil(RHYTHM.duration-run.elapsed)}秒`);
- $('responses').querySelectorAll('button').forEach(b=>b.disabled=!t.started||t.ending);
+ const t=state.talk,run=t.run,part=TALK_PARTS[t.progress.index],q=t.phase==='qte';
+ $('conversation').dataset.phase=t.phase;$('conversation').dataset.part=t.progress.index;
+ const stepsSignature=`${t.progress.index}:${t.progress.cleared.join(',')}`;
+ if(t.stepsSignature!==stepsSignature){t.stepsSignature=stepsSignature;$('talk-steps').replaceChildren(...TALK_PARTS.map((p,i)=>{const el=document.createElement('span');el.textContent=`${t.progress.cleared.includes(i)?'✓':i+1} ${p.title}`;el.className=i===t.progress.index?'current':'';el.setAttribute('aria-current',i===t.progress.index?'step':'false');return el;}));}
+ $('talk-turn').textContent=`PART ${t.progress.index+1} / 3 · ${run.combo} COMBO`;
+ $('talk-line').textContent=t.phase==='clear'?`♥ ${part.title} CLEAR`:t.phase==='retry'?'もう一度、相手のペースで':q?part.cue:!t.started?part.line:run.elapsed<RHYTHM.leadIn?`${Math.ceil(RHYTHM.leadIn-run.elapsed)}`:rhythmPhrase(run);
+ $('talk-cue').textContent=q?'QTE · PC：Space／右矢印':t.phase==='clear'?`次の場面へ · 合計 ${t.progress.points} pt`:'6ノーツ中4ノーツ成功 → QTEで次のパートへ';
+ $('talk-clock').max=q?4:RHYTHM.duration;$('talk-clock').value=q?t.qte.elapsed:run.elapsed;
+ $('talk-clock').setAttribute('aria-valuetext',q?`QTE残り${Math.ceil(4-t.qte.elapsed)}秒`:`PART ${t.progress.index+1}`);
+ $('rhythm-track').hidden=t.phase!=='rhythm';$('responses').hidden=!['rhythm','ready'].includes(t.phase);
+ $('responses').querySelectorAll('button').forEach(b=>b.disabled=t.phase!=='rhythm');
+ $('talk-qte').hidden=!q;$('part-next').hidden=t.phase!=='clear'||t.progress.index===2;$('part-retry').hidden=t.phase!=='retry';$('part-retry').textContent=t.retryQte?'QTEをもう一度':'このパートをもう一度';
  for(const el of $('rhythm-notes').children){const n=run.notes[Number(el.dataset.note)],distance=n.time-run.elapsed;el.hidden=!t.started||!!n.grade||distance>RHYTHM.travel||distance<-.24;el.style.top=`${(1-distance/RHYTHM.travel)*100}%`;}
+ if(q){
+  const qt=t.qte,ready=qt.kind!=='tap'||Math.abs(qt.elapsed-1.4)<=.5;
+  $('qte-button').dataset.kind=qt.kind;$('qte-button').dataset.ready=ready;
+  $('qte-label').textContent=part.action;$('qte-button').setAttribute('aria-label',`${part.action}。${part.cue}`);
+  $('qte-ring').style.transform=`scale(${qt.kind==='tap'?Math.max(.55,1.9-qt.elapsed/1.4*.9):1})`;
+  $('qte-fill').style.width=`${qt.kind==='hold'&&qt.holdAt!=null?Math.min(100,(qt.elapsed-qt.holdAt)/.7*100):qt.kind==='tap'?qt.elapsed/4*100:0}%`;
+ }
 }
 function rhythmFeedback(event){
  const t=state.talk,lane=TALK_LANES[event.lane],good=event.grade!=='miss';
  if(good)t.music?.hit(event.lane,event.grade==='perfect');
- const previous=state.attempt.conversation;state.attempt.conversation=t.run.points;score(t.run.points-previous);
- Object.assign(t,rhythmOutcome(t.run,t.opening));updateMeters();
+ const preview={finished:false,hits:t.progress.hits+t.run.hits,misses:t.progress.misses+t.run.misses,notes:{length:18}};
+ Object.assign(t,rhythmOutcome(preview,t.opening));updateMeters();
  $('conversation').dataset.grade=good?'win':'miss';
  $('talk-feedback').textContent=good?`${event.grade.toUpperCase()} · ${event.combo} COMBO　${lane.key==='joke'?'「ふふっ、おもしろい！」':lane.key==='groove'?'「なんか気が合うね！」':'「聞いてくれてうれしい」'}`:'MISS · 次のリズムに合わせよう';
- world.reactToTalk?.(good?'win':'miss',lane.hand,event.combo);
- world.challengeFeedback?.(good?(event.grade==='perfect'?'perfect':'good'):'miss');
+ world.reactToTalk?.(good?'win':'miss',lane.hand,event.combo);world.challengeFeedback?.(good?(event.grade==='perfect'?'perfect':'good'):'miss');
  const button=$('responses').children[event.lane];button.dataset.grade=event.grade;
  clearTimeout(button.flashTimer);button.flashTimer=setTimeout(()=>delete button.dataset.grade,180);
 }
 function finishRhythm(){
- const t=state.talk;if(t.ending)return;t.ending=true;Object.assign(t,rhythmOutcome(t.run,t.opening));
- renderRhythm();world.reactToTalk?.(t.accepted?'win':'miss','paper',t.accepted?3:0);
- talkTimer=setTimeout(()=>{if(state.mode!=='talk')return;if(t.accepted)openInvitation();else endTalk(false);},1200);
+ const t=state.talk;if(t.phase!=='rhythm')return;t.music?.pause();
+ if(t.run.hits<4){t.phase='retry';$('talk-feedback').textContent='4ノーツ成功を目指して、このパートをもう一度。';world.reactToTalk?.('miss','paper',0);}
+ else beginQte();renderRhythm();
+}
+function beginQte(){
+ const t=state.talk;t.phase='qte';t.qte=createTalkQte(TALK_PARTS[t.progress.index].qte);t.qteStartedAt=now();
+ $('talk-feedback').textContent='リズムクリア！ 次はアクション';world.talkScene?.(TALK_PARTS[t.progress.index].motion);
+}
+function finishQte(){
+ const t=state.talk;if(t.phase!=='qte'||t.qte.status==='active')return;
+ if(t.qte.status==='failed'){t.phase='retry';t.retryQte=true;$('talk-feedback').textContent='QTEをもう一度。リズムのクリアは残っています。';world.reactToTalk?.('miss','paper',0);renderRhythm();return;}
+ if(!clearTalkPart(t.progress,t.run,t.qte))return;
+ const delta=t.progress.points-state.attempt.conversation;state.attempt.conversation=t.progress.points;score(delta);
+ t.phase='clear';world.talkScene?.(TALK_PARTS[t.progress.index].motion,true);
+ $('talk-feedback').textContent=`PART ${t.progress.index+1} CLEAR！ 相手との距離が縮まった。`;
+ const music=t.music;t.music=null;if(music){music.resume();music.hit(2,true);setTimeout(()=>music.stop(),250);}
+ const summary={finished:t.progress.cleared.length===3,completedParts:t.progress.cleared.length,hits:t.progress.hits,misses:t.progress.misses,notes:{length:18}};
+ Object.assign(t,rhythmOutcome(summary,t.opening));renderRhythm();
+ if(t.progress.cleared.length===3){t.ending=true;talkTimer=setTimeout(()=>{if(state.mode==='talk'){if(t.accepted)openInvitation();else endTalk(false);}},1200);}
+}
+function qteInput(action,point){
+ const t=state.talk;if(state.mode!=='talk'||t?.phase!=='qte'||t.pausedAt!=null)return;
+ inputTalkQte(t.qte,action,(now()-t.qteStartedAt)/1000,point);renderRhythm();finishQte();
 }
 function respond(key){
- const t=state.talk;if(state.mode!=='talk'||!t?.started||t.ending||t.pausedAt!=null)return;
+ const t=state.talk;if(state.mode!=='talk'||t?.phase!=='rhythm'||t.pausedAt!=null)return;
  const result=tapTalkRhythm(t.run,key,rhythmTime(t));if(!result)return;
  for(const event of result.events)rhythmFeedback(event);if(result.hit)rhythmFeedback(result.hit);
  renderRhythm();if(t.run.finished)finishRhythm();
 }
+$('part-next').addEventListener('click',()=>{const t=state.talk;if(state.mode!=='talk'||t.phase!=='clear'||!nextTalkPart(t.progress))return;const sound=t.withSound;prepareTalkPart();startRhythm(sound);});
+$('part-retry').addEventListener('click',()=>{const t=state.talk;if(state.mode!=='talk'||t.phase!=='retry')return;if(t.retryQte){t.retryQte=false;beginQte();renderRhythm();}else{const sound=t.withSound;prepareTalkPart();startRhythm(sound);}});
+$('qte-button').addEventListener('click',()=>{if(state.talk?.qte?.kind==='tap')qteInput('tap');});
+$('qte-button').addEventListener('pointerdown',e=>{if(state.talk?.qte?.kind==='tap')return;e.preventDefault();e.currentTarget.setPointerCapture?.(e.pointerId);qteInput('down',{x:e.clientX,y:e.clientY});});
+$('qte-button').addEventListener('pointerup',e=>{if(state.talk?.qte?.kind!=='tap')qteInput('up',{x:e.clientX,y:e.clientY});});
+$('qte-button').addEventListener('pointercancel',()=>qteInput('cancel'));
 function updateMeters(){const t=state.talk;$('favor').value=t.favor;$('favor-value').textContent=t.favor;$('discomfort').value=t.discomfort;$('discomfort-value').textContent=t.discomfort;}
 $('rhythm-start').addEventListener('click',()=>startRhythm(true));
 $('rhythm-muted').addEventListener('click',()=>startRhythm(false));
 document.addEventListener('visibilitychange',()=>{
  const t=state.talk;if(state.mode!=='talk'||!t?.started||t.ending)return;
- if(document.hidden){t.pausedAt=now();t.music?.pause();}
- else if(t.pausedAt!=null){t.startedAt+=now()-t.pausedAt;t.pausedAt=null;t.music?.resume();}
+ if(document.hidden){t.pausedAt=now();t.music?.pause();if(t.qte)inputTalkQte(t.qte,'cancel',t.qte.elapsed);}
+ else if(t.pausedAt!=null){const pause=now()-t.pausedAt;t.startedAt+=pause;if(t.qteStartedAt!=null)t.qteStartedAt+=pause;t.pausedAt=null;if(t.phase==='rhythm')t.music?.resume();}
 });
 function endTalk(failed) {
   clearTimeout(talkTimer); stopTalkMusic(); world.endChallenge?.(); const t = state.talk; finishNpc(t?.npc); const points = 0;
@@ -344,18 +388,26 @@ $('nearby-person').addEventListener('click', () => { const n = nearestPerson(); 
 $('zoom-in').addEventListener('click', () => world.zoom(-3));
 $('zoom-out').addEventListener('click', () => world.zoom(3));
 window.addEventListener('keydown', e => { if(state.mode==='escort'&&e.key.toLowerCase()==='f'&&!e.repeat&&!e.ctrlKey&&!e.metaKey&&!e.altKey){e.preventDefault();$('walk-response').click();} if (state.mode === 'talk' && !e.repeat && !e.ctrlKey && !e.metaKey && !e.altKey && ['1', '2', '3'].includes(e.key)) { e.preventDefault(); respond(TALK_LANES[Number(e.key) - 1].key); } if (e.key === 'Escape' && state.mode === 'explore') closeInspect(); });
+window.addEventListener('keydown',e=>{
+ if(state.mode!=='talk'||state.talk?.phase!=='qte'||e.repeat||e.ctrlKey||e.altKey||e.metaKey)return;
+ const kind=state.talk.qte.kind;
+ if(e.key===' '){e.preventDefault();if(kind==='tap')qteInput('tap');else if(kind==='hold')qteInput('down');}
+ if(e.key==='ArrowRight'&&kind==='swipe'){e.preventDefault();qteInput('down',{x:0,y:0});qteInput('up',{x:100,y:0});}
+});
+window.addEventListener('keyup',e=>{if(e.key===' '&&state.mode==='talk'&&state.talk?.phase==='qte'&&state.talk.qte.kind==='hold'){e.preventDefault();qteInput('up');}});
 renderAlbum(); updateScore(); setMode('intro'); openModal('intro');
 const ctx = $('minimap').getContext('2d'); let previous = performance.now(), lastRender = 0, mapTick = 0;
-function frame(now) {
-  if (document.hidden || now - lastRender < (world.profile?.frameInterval || 0)) { requestAnimationFrame(frame); if (document.hidden) previous = now; return; }
+function frame(frameNow) {
+  if (document.hidden || frameNow - lastRender < (world.profile?.frameInterval || 0)) { requestAnimationFrame(frame); if (document.hidden) previous = frameNow; return; }
   const interval = world.profile?.frameInterval || 0;
-  lastRender = interval ? now - ((now - lastRender) % interval) : now;
-  const dt = Math.min((now - previous) / 1000, .05); previous = now; state.elapsed += dt;
+  lastRender = interval ? frameNow - ((frameNow - lastRender) % interval) : frameNow;
+  const dt = Math.min((frameNow - previous) / 1000, .05); previous = frameNow; state.elapsed += dt;
   arcade.update(dt); world.update(dt, state.elapsed); mapTick += dt;
-  if(state.mode==='talk' && state.talk?.started && !state.talk.ending && state.talk.pausedAt==null){
+  if(state.mode==='talk' && state.talk?.phase==='rhythm' && state.talk.pausedAt==null){
     for(const event of advanceTalkRhythm(state.talk.run,rhythmTime(state.talk)))rhythmFeedback(event);
     renderRhythm();if(state.talk.run.finished)finishRhythm();
   }
+  if(state.mode==='talk'&&state.talk?.phase==='qte'&&state.talk.pausedAt==null){advanceTalkQte(state.talk.qte,(now()-state.talk.qteStartedAt)/1000);renderRhythm();finishQte();}
   if (state.touring && !world.destination) { state.touring = false; $('guide-text').textContent = state.map === 'nagoya' ? '名古屋駅は会話・同行の練習。ゴールは歌舞伎町で。' : '声をかける → 誘う → ホテル・ネカフェの入口へ'; }
   if (state.mode === 'explore' && !state.selected && !state.touring) {
     const street = (world.npcs || []).find(n => n.profile?.autoApproach && n.cooldown <= state.elapsed && world.distanceTo(n) < 2.7);

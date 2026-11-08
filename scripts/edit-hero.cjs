@@ -8,18 +8,23 @@ const fs=require('node:fs/promises');const path=require('node:path');const {exec
  if(info.errors.length||!info.title.includes('GOAL CLEAR')||!info.cues)throw Error('Recording must finish a real goal with at least one walking cue');
  const font=process.env.HERO_FONT||'/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc';
  const raw=path.resolve(root,'gameplay-raw.webm'), clips=[];
- const add=(label,start,duration,speed=1)=>clips.push({label,start:Math.max(0,start),duration,speed});
- add('歌舞伎町で、ナンパしてみた。',m.street,1.6);
- add('声をかけたら、リズムトーク。',m.approach,1.1);
- add('音に合わせて、笑顔のリアクション。',m.rhythm?m.rhythm+2.7:m.conversation+.7,4.0,1);
- if(m.reaction3)add('コンボで、もっと喜んでくれる。',m.reaction3-.35,1.0,.65);
- if(m.decline)add('ホテルの誘い、普通に断られた。',m.decline,1.4);
- add('「もう少し話したい。場所変えない？」',m.accepted+.4,1.15);
+ // Video starts during page creation, slightly after the recorder's wall clock.
+ const rawSeconds=Number(execFileSync('ffprobe',['-v','error','-show_entries','format=duration','-of','default=nw=1:nk=1',raw],{encoding:'utf8'}));
+ const timingOffset=Math.max(0,m.end-rawSeconds);
+ const add=(label,start,duration,speed=1)=>clips.push({label,start:Math.max(0,start-timingOffset),duration,speed});
+ add('歌舞伎町で、ナンパしてみた。',m.street,1.2);
+ add('声かけ・打ち解ける・誘う、3パート。',m.approach,.8);
+ add('短いリズムをクリアして進む。',m.rhythm+1.2,2.5);
+ if(m.qte1)add('目が合ったら、タイミングタップ。',m.qte1+.2,1.3);
+ if(m.clear1)add('PART 1 CLEAR！次の場面へ。',m.clear1-.35,.5,.625);
+ if(m.qte2)add('次は長押し。笑顔でうなずこう。',m.qte2,1.1);
+ if(m.qte3)add('右へスワイプして、誘う。',m.qte3-.1,1.2);
+ add('「もう少し話したい。場所変えない？」',m.accepted+.4,1.0);
  add('ふたりで歩いて、会話コンボ。',Math.max(m.walking,m.cue1-.6),3.6,1.8);
- if(m.cue2)add('歩調を合わせて、コンボをつなぐ。',m.cue4||m.cue3||m.cue2,3.6,2);
+ if(m.cue2)add('歩調を合わせて、コンボをつなぐ。',m.cue4||m.cue3||m.cue2,3.0,2);
  add('置いていかず、一緒にゴール。',Math.max(m.walking,m.goal-4.4),4.4,2.8);
  add('ゴールで、ふたりの記念写真。',m.goal+.6,1.0);
- add('スマホ・PCで、すぐ遊べる。',m.score,1.5);
+ add('スマホ・PCで、すぐ遊べる。',m.score,1.3);
  const segments=[];
  for(const [i,c] of clips.entries()){
   const textfile=path.resolve(root,`caption-${i}.txt`), file=path.resolve(root,`clip-${i}.mp4`);await fs.writeFile(textfile,c.label);
@@ -33,7 +38,7 @@ const fs=require('node:fs/promises');const path=require('node:path');const {exec
  const poster='public/share/hero-gameplay.jpg';await fs.mkdir(path.dirname(poster),{recursive:true});
  execFileSync('ffmpeg',['-hide_banner','-loglevel','error','-y','-ss','0.6','-i',mp4,'-frames:v','1','-q:v','2',poster],{stdio:'inherit'});
  const probe=JSON.parse(execFileSync('ffprobe',['-v','error','-show_entries','format=duration,size:stream=width,height,r_frame_rate','-of','json',gif],{encoding:'utf8'}));
- const manifest={capturedAt:new Date().toISOString(),source:'Actual local game, isolated headless browser; UI clicks and normal movement only.',viewport:{width:960,height:600},edits:clips,result:{score:info.score,rank:info.rank,title:info.title,walkingCues:info.cues},gif:probe};
+ const manifest={capturedAt:new Date().toISOString(),source:'Actual local game, isolated headless browser; UI clicks and normal movement only.',viewport:{width:960,height:600},timingOffset,edits:clips,result:{score:info.score,rank:info.rank,title:info.title,walkingCues:info.cues},gif:probe};
  await fs.writeFile(path.join(output,'hero-gameplay.json'),JSON.stringify(manifest,null,2)+'\n');
  console.log(JSON.stringify({gif,mp4,poster,probe},null,2));
 })().catch(error=>{console.error(error);process.exitCode=1;});

@@ -169,3 +169,12 @@ test('talk reactions animate while navigation is paused, expire and clear on ear
  world.reactToTalk('win','rock',3);assert.equal(partner.mesh.userData.reaction.id,'delight');
  world.endChallenge();assert.equal(partner.mesh.userData.reaction,undefined);assert.equal(world.player.visible,true);
 });
+
+test('part transitions move the camera and animate the girl, while QTE bursts restore to the player on exit',()=>{
+ const world=makeWorld(),partner={mesh:person()};partner.mesh.position.z=-3;world.npcs=[partner];world.paused=true;
+ const origin=partner.mesh.position.clone();world.beginTalk(partner);const before=world.challengeView.desired.clone();
+ world.talkPart(1);assert.notDeepEqual(world.challengeView.desired,before);assert.equal(partner.mesh.userData.reaction.id,'sway');
+ world.talkScene('invite',true);assert.equal(world.challengeEffects.burst.parent,partner.mesh);world.update(.2,.2);
+ assert.equal(world.challengeEffects.burst.visible,true);assert.ok(world.camera.position.toArray().every(Number.isFinite));assert.deepEqual(partner.mesh.position,origin);
+ world.endChallenge();assert.equal(world.challengeEffects.burst.parent,world.player);assert.equal(world.challengeEffects.burst.visible,false);assert.equal(world.talkCameraPulse,null);assert.deepEqual(partner.mesh.position,origin);
+});

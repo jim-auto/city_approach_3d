@@ -107,7 +107,7 @@ export function createAuthoredCharacter(kind, detailed, color) {
   const scale = style.height / source.height; avatar.scale.setScalar(scale); root.add(avatar);
   const shadow = new THREE.Mesh(shadowGeometry, shadowMaterial); shadow.rotation.x = -Math.PI / 2; shadow.position.y = .016; root.add(shadow);
   root.name = `person-${kind}`;
-  root.userData = { character: true, kind, detailed, authored: true, style, source, avatar, pairs, morphs, items, faceY: source.eyeHeight * scale - .015, ground: source.ground * scale, resourceOwner: 'characters' };
+  root.userData = { character: true, kind, detailed, authored: true, style, source, avatar, pairs, morphs, items, faceY: source.eyeHeight * scale - .015, ground: source.ground * scale, avatarBaseX: avatar.position.x, resourceOwner: 'characters' };
   animateAuthoredCharacter(root, false, 0); return root;
 }
 const rotation = new THREE.Euler(), quaternion = new THREE.Quaternion();
@@ -143,13 +143,18 @@ export function animateAuthoredCharacter(model, moving, time, seed = 0, action) 
   const reaction=model.userData.reaction;
   const r=reaction?sampleReaction(reaction.id,reaction.elapsed,reaction.duration):null;
   if(r){
-    pose('head',r.headX*f,r.headY,r.headZ);pose('chest',r.chestX*f,0,r.chestZ);lift+=r.lift;
+    pose('head',r.headX*f,r.headY,r.headZ);pose('chest',r.chestX*f,0,r.chestZ);pose('hips',0,r.turnY,r.chestZ*.3);lift+=r.lift;
+    if(items.has('book')&&r.gesture!=='none'){
+      pose('leftUpperArm',(-.15-.18*r.energy)*f,0,-s*1.20);pose('rightUpperArm',(-.15-.18*r.energy)*f,0,s*1.20);
+    }
     // Keep held objects steady; use the free hand for chest/cheek gestures.
     if(r.gesture!=='none' && !items.has('book')){
       const e=r.energy;
       pose('leftUpperArm',-.18*f*e,0,-s*(1.35-.3*e));
       pose('leftLowerArm',0,-s*f*(r.gesture==='cheek'?1.9:1.45)*e,-s*.22*e);
       pose('leftHand',0,0,-s*.12*e);
+      if(r.gesture==='wave'){pose('leftUpperArm',0,0,-s*(1.35-2.2*e));pose('leftLowerArm',0,-s*f*.25,-s*Math.sin(reaction.elapsed*13)*.32*e);}
+      if(r.gesture==='invite'){pose('leftUpperArm',-.4*f*e,0,-s*(1.35-.9*e));pose('leftLowerArm',0,-s*f*.5*e,0);}
       if(r.gesture==='clap'&&!held){pose('rightUpperArm',-.18*f*e,0,s*(1.35-.3*e));pose('rightLowerArm',0,s*f*(1.45+Math.sin(reaction.elapsed*14)*.12)*e,s*.22*e);}
     }
   }
@@ -163,6 +168,7 @@ export function animateAuthoredCharacter(model, moving, time, seed = 0, action) 
   for (const [a, b] of pairs) { b.position.copy(a.position); b.quaternion.copy(a.quaternion); b.scale.copy(a.scale); }
   for (const [a, b] of morphs) b.morphTargetInfluences = a.morphTargetInfluences.slice();
   placeAccessories(model, vrm.scene, h);
+  avatar.position.x = (model.userData.avatarBaseX||0)+(r?.shiftX||0);
   avatar.position.y = model.userData.ground + lift + (moving ? Math.abs(wave) * .018 : Math.sin(time * 1.8 + seed) * .004);
   model.updateMatrixWorld(true); return true;
 }

@@ -18,7 +18,7 @@ export function createRhythmMusic(host=window){
    note(at+beat/2,1568,.035,'triangle',.12);
    if(i%2===0)note(at,melody[(i/2)%8],beat*.8,'triangle',.25);
   }
-  for(let i=0;i<3;i++)note(origin+i,880,.08,'sine',.25);
+  for(let i=0;i<Math.ceil(RHYTHM.leadIn);i++)note(origin+i,880,.08,'sine',.25);
   let failed=false;ctx.resume().catch(()=>{failed=true;});
   return {hit:(lane,perfect)=>{if(ctx.state!=='closed')note(ctx.currentTime+.005,[1046.5,1318.51,1567.98][lane],.06,'sine',perfect?.24:.15);},now:()=>failed?null:ctx.currentTime-origin,pause:()=>ctx.suspend().catch(()=>{}),resume:()=>ctx.resume().catch(()=>{failed=true;}),stop:()=>{output.gain.value=0;ctx.close().catch(()=>{});}};
  }catch{ctx?.close().catch(()=>{});return null;}

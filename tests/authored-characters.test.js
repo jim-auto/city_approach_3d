@@ -178,7 +178,7 @@ test('real avatars smile and change pose for talk reactions without affecting an
     animateCharacter(a,false,0);animateCharacter(b,false,0);
     const idleFace=face(a), idleBones=bones(a), otherFace=face(b), otherBones=bones(b), origin=a.position.clone();
     const poses=[];
-    for(const id of ['laugh','nod','shy','delight','curious','awkward']){
+    for(const id of ['laugh','nod','shy','delight','curious','awkward','greet','sway','invite']){
       a.userData.reaction={id,elapsed:.55,duration:1.55};animateCharacter(a,false,0);
       assert.notDeepEqual(bones(a),idleBones,`${kind}/${id}: actual bones change`);
       if(id!=='awkward')assert.notDeepEqual(face(a),idleFace,`${kind}/${id}: actual face morphs change`);
@@ -187,7 +187,7 @@ test('real avatars smile and change pose for talk reactions without affecting an
       // Reusing the template for a bystander must reset its temporary expressions.
       animateCharacter(b,false,0);assert.deepEqual(face(b),otherFace);
     }
-    assert.equal(new Set(poses.map(p=>JSON.stringify(p))).size,6);
+    assert.equal(new Set(poses.map(p=>JSON.stringify(p))).size,9);
     delete a.userData.reaction;animateCharacter(a,false,0);
     assert.deepEqual(face(a),idleFace);assert.deepEqual(bones(a),idleBones);
   }

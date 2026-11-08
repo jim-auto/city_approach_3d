@@ -46,8 +46,15 @@ test('explore → observe → conversation → escort → arrival, help resume, 
     const { state, world } = startGame(WorldStub,{now:()=>frameClock}), doc = window.document;
     const click = id => doc.getElementById(id).click();
     const playStage = () => { click('rhythm-muted');
-      for(const n of state.talk.run.notes){frame(state.talk.startedAt+n.time*1000);doc.querySelector(`[data-lane="${TALK_LANES[n.lane].key}"]`).click();}
-      frame(state.talk.startedAt+(RHYTHM.duration+.05)*1000);t.mock.timers.tick(1210);
+      for(let part=0;part<3;part++){
+        for(const n of state.talk.run.notes){frame(state.talk.startedAt+n.time*1000);doc.querySelector(`[data-lane="${TALK_LANES[n.lane].key}"]`).click();}
+        frame(state.talk.startedAt+(RHYTHM.duration+.05)*1000);assert.equal(state.talk.phase,'qte');
+        if(part===0){frame(state.talk.qteStartedAt+1400);click('qte-button');}
+        if(part===1){window.dispatchEvent(new window.KeyboardEvent('keydown',{key:' '}));frame(frameClock+800);window.dispatchEvent(new window.KeyboardEvent('keyup',{key:' '}));}
+        if(part===2)window.dispatchEvent(new window.KeyboardEvent('keydown',{key:'ArrowRight'}));
+        assert.equal(state.talk.phase,'clear');if(part<2)click('part-next');
+      }
+      t.mock.timers.tick(1210);
     };
     assert.equal(state.mode, 'intro'); assert.match(doc.getElementById('intro').textContent, /ナンパシミュレーター/);
     click('start-tour'); assert.equal(state.mode, 'explore'); assert.equal(world.lastTour.length, 6);
@@ -183,6 +190,17 @@ test('explore → observe → conversation → escort → arrival, help resume, 
     Object.defineProperty(window.document,'hidden',{configurable:true,value:true});doc.dispatchEvent(new window.Event('visibilitychange'));frame(frameClock+10000);
     Object.defineProperty(window.document,'hidden',{configurable:true,value:false});doc.dispatchEvent(new window.Event('visibilitychange'));
     frame(frameClock+50);assert.ok(state.talk.run.elapsed<elapsed+.1,'background tab does not consume song time');
+    frame(state.talk.startedAt+(RHYTHM.duration+.1)*1000);assert.equal(state.talk.phase,'retry');
+    click('part-next');assert.equal(state.talk.progress.index,0,'cannot skip failed part');
+    assert.equal(state.attempt.conversation,0,'failed attempts do not bank or farm points');
+    click('part-retry');assert.equal(state.talk.phase,'rhythm');assert.equal(state.talk.progress.index,0);
+    for(const n of state.talk.run.notes){frame(state.talk.startedAt+n.time*1000);doc.querySelector(`[data-lane="${TALK_LANES[n.lane].key}"]`).click();}
+    frame(state.talk.startedAt+(RHYTHM.duration+.1)*1000);assert.equal(state.talk.phase,'qte');
+    click('qte-button');assert.equal(state.talk.phase,'retry','early QTE must not progress');
+    click('part-next');assert.equal(state.talk.progress.index,0);click('part-retry');
+    frame(state.talk.qteStartedAt+1400);click('qte-button');assert.equal(state.talk.progress.cleared.length,1);
+    const paid=state.score;click('qte-button');assert.equal(state.score,paid,'QTE cannot pay twice');
+    click('part-next');assert.equal(state.talk.progress.index,1);assert.equal(state.talk.phase,'rhythm');
     click('talk-exit');assert.equal(world.challengePartner,null);t.mock.timers.tick(2000);assert.equal(state.mode,'result');
   } finally {
     t.mock.timers.reset(); window.happyDOM.abort();

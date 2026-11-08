@@ -9,17 +9,16 @@ const {chromium} = require('playwright');
   const out=process.env.HERO_OUT||'artifacts/hero';await fs.mkdir(out,{recursive:true});
   await fs.rm(path.join(out,'recording.json'),{force:true});
   const browser=await chromium.launch({headless:true,...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE?{executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE}:{}),args:['--no-sandbox','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
-  const context=await browser.newContext({viewport:{width:960,height:600},deviceScaleFactor:.75,isMobile:true,hasTouch:true,recordVideo:{dir:out,size:{width:960,height:600}}});
+  const context=await browser.newContext({viewport:{width:960,height:600},deviceScaleFactor:1,isMobile:true,hasTouch:true,recordVideo:{dir:out,size:{width:960,height:600}}});
   const t0=Date.now(), marks={}, errors=[];let rawVideo;
   const mark=name=>{marks[name]=(Date.now()-t0)/1000;console.log(name,marks[name]);};
   let page;
   try{
     page=await context.newPage();rawVideo=page.video();page.on('pageerror',e=>errors.push(e.message));
     const pause=ms=>page.waitForTimeout(ms);
-    const shot=name=>page.screenshot({path:path.join(out,name+'.png')});
     await page.goto(process.env.BASE_URL||'http://127.0.0.1:4188/',{waitUntil:'domcontentloaded'});
     await page.locator('#start').waitFor({state:'visible',timeout:90000});
-    await page.locator('#start').click();await pause(4500);mark('street');await shot('street');await pause(1800);
+    await page.locator('#start').click();await pause(4500);mark('street');await pause(1800);
     for(let attempt=0;attempt<30;attempt++){
       await page.locator('#nearby-person').click();await pause(500);
       if(await page.locator('#inspect').isVisible())break;
@@ -27,25 +26,13 @@ const {chromium} = require('playwright');
     await page.locator('#inspect').waitFor({state:'visible'});
     console.log('partner',await page.locator('#person-name').innerText());
     await page.waitForFunction(()=>!document.getElementById('inspect').hidden&&!document.getElementById('approach-start').disabled,null,{timeout:30000});
-    mark('approach');await shot('approach');await pause(1400);
-    await page.locator('#approach-start').click();mark('conversation');await shot('conversation');await pause(1200);
-    await page.locator('#rhythm-start').click();mark('rhythm');
-    const played=new Set();let hits=0;
-    const songDeadline=Date.now()+45000;
-    while(Date.now()<songDeadline && await page.locator('#app').getAttribute('data-mode')==='talk'){
-      const target=await page.evaluate(()=>[...document.querySelectorAll('#rhythm-notes i')].filter(n=>!n.hidden).map(n=>({id:n.dataset.note,y:parseFloat(n.style.top),lane:Math.round(parseFloat(n.style.left)*3/100-.5)})).find(n=>n.y>=89&&n.y<=106));
-      if(target&&!played.has(target.id)){
-        played.add(target.id);await page.keyboard.press(String(target.lane+1));hits++;
-        if(hits===1){mark('reaction1');marks.reaction=marks.reaction1;}
-        if(hits===7)mark('reaction3');
-      }
-      await pause(20);
-    }
-    await page.locator('#invite-options').waitFor({state:'visible',timeout:10000});
+    mark('approach');await pause(1400);
+    await page.locator('#approach-start').click();mark('conversation');await pause(1200);
+    console.log('parts',await require('./play-talk-ui.cjs')(page,{mark}));
     mark('invite');await pause(600);
     await page.locator('[data-destination="hotel-i"]').click();await pause(350);
-    if(!(await page.locator('#invite-confirm').isVisible())){mark('decline');await shot('decline');await pause(1800);}
-    await page.locator('[data-destination="customa"]').click();mark('accepted');await shot('accepted');await pause(1400);
+    if(!(await page.locator('#invite-confirm').isVisible())){mark('decline');await pause(1800);}
+    await page.locator('[data-destination="customa"]').click();mark('accepted');await pause(1400);
     await page.locator('#invite-confirm').click();await pause(500);await page.locator('#goal-walk').click();mark('walking');
     let cues=0;const deadline=Date.now()+300000;
     while(Date.now()<deadline){
@@ -59,7 +46,7 @@ const {chromium} = require('playwright');
     if(await page.locator('#app').getAttribute('data-mode')!=='result')throw Error('Goal was not reached');
     await page.locator('#goal-memory').waitFor({state:'visible',timeout:15000});
     await page.waitForFunction(()=>document.getElementById('goal-photo').complete&&document.getElementById('goal-photo').naturalWidth>0);
-    mark('goal');await pause(300);await shot('goal');await pause(1400);await page.locator('#date-rank').scrollIntoViewIfNeeded();mark('score');await shot('score');await pause(1700);mark('end');
+    mark('goal');await pause(300);await pause(1400);await page.locator('#date-rank').scrollIntoViewIfNeeded();mark('score');await pause(1700);mark('end');
     const result={marks,cues,errors,score:await page.locator('#result-points').innerText(),rank:await page.locator('#date-rank').innerText(),title:await page.locator('#result-title').innerText()};
     if(errors.length)throw Error(errors.join('\n'));
     await fs.writeFile(path.join(out,'recording.json'),JSON.stringify(result,null,2));

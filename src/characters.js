@@ -215,7 +215,7 @@ export function animateCharacter(model, moving, time, seed = 0) {
   const { body, head, arms, elbows, legs, knees, kind, props } = model.userData;
   const wave = Math.sin(time * 8 + seed), swing = moving ? wave * .42 : 0;
   body.position.y = moving ? Math.abs(wave) * .025 : Math.sin(time * 1.8 + seed) * .009;
-  body.rotation.x = body.rotation.y = 0; body.position.z = 0;
+  body.rotation.x = body.rotation.y = 0; body.position.x=0; body.position.z = 0;
   body.rotation.z = moving ? Math.sin(time * 4 + seed) * .025 : 0;
   head.rotation.y = moving ? 0 : Math.sin(time * .6 + seed) * .065;
   head.rotation.x = ['waiting', 'busy', 'reader'].includes(kind) ? .12 : 0;
@@ -232,7 +232,7 @@ export function animateCharacter(model, moving, time, seed = 0) {
   if (kind === 'earphones' && !moving) head.rotation.z = Math.sin(time * 2 + seed) * .04;
   else head.rotation.z = 0;
   const reaction=model.userData.reaction;
-  if(reaction){const r=sampleReaction(reaction.id,reaction.elapsed,reaction.duration);head.rotation.x=r.headX;head.rotation.y=r.headY;head.rotation.z=r.headZ;body.rotation.x=r.chestX;body.rotation.z=r.chestZ;body.position.y+=r.lift;
+  if(reaction){const r=sampleReaction(reaction.id,reaction.elapsed,reaction.duration);head.rotation.x=r.headX;head.rotation.y=r.headY;head.rotation.z=r.headZ;body.rotation.x=r.chestX;body.rotation.z=r.chestZ;body.position.y+=r.lift;body.position.x=r.shiftX;body.rotation.y=r.turnY;
     if(r.gesture!=='none'){arms[0].rotation.x=-.3*r.energy;elbows[0].rotation.x=-(r.gesture==='cheek'?1.8:1.2)*r.energy;}
   }
 }

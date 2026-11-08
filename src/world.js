@@ -120,7 +120,7 @@ export class CityWorld {
   }
   beginTalk(partner) {
     if(!partner?.mesh)return false;
-    this.talkActive = true; this.talkPlayerVisible = this.player.visible; this.player.visible = false;
+    this.talkPartIndex=0;this.talkActive = true; this.talkPlayerVisible = this.player.visible; this.player.visible = false;
     return this.beginChallenge(partner);
   }
   beginChallenge(partner) {
@@ -136,9 +136,10 @@ export class CityWorld {
     const partner = this.challengePartner; if (!partner) return;
     if(this.talkActive){
       const focus=partner.mesh.position.clone().add(new THREE.Vector3(0,this.camera.aspect<1?.85:1.35,0));
+      const shot=this.talkPartIndex||0,distance=3.4-shot*.15;
       let angle=this.challengePartnerRotation;
-      const view=a=>focus.clone().add(new THREE.Vector3(Math.sin(a)*3.4,.2,Math.cos(a)*3.4));
-      for(const offset of [0,.6,-.6,Math.PI]){const a=this.challengePartnerRotation+offset;if(!cameraView(focus,view(a),this.cameraBlockers,a).obstructed){angle=a;break;}}
+      const view=a=>focus.clone().add(new THREE.Vector3(Math.sin(a)*distance,.2,Math.cos(a)*distance));
+      for(const offset of [0,.6,-.6,Math.PI]){const a=this.challengePartnerRotation+offset+(shot-1)*.08;if(!cameraView(focus,view(a),this.cameraBlockers,a).obstructed){angle=a;break;}}
       partner.mesh.rotation.y=angle;
       this.challengeView={focus,desired:cameraView(focus,view(angle),this.cameraBlockers,angle).position};return;
     }
@@ -156,6 +157,13 @@ export class CityWorld {
     this.challengeView = { focus, desired: cameraView(focus, view(angle), this.cameraBlockers, angle).position };
     this.player.rotation.y = angle; partner.mesh.rotation.y = angle;
   }
+  talkPart(index){if(!this.talkActive)return;this.talkPartIndex=index;this.updateChallengeView();this.talkScene(['greet','sway','invite'][index]);}
+  talkScene(id,success=false){
+    if(!this.talkActive||!this.challengePartner)return;
+    this.partnerAction=null;this.challengePartner.mesh.userData.reaction={id,elapsed:0,duration:success?2.2:2.8};
+    this.talkCameraPulse={elapsed:0,strength:success?.25:.12};
+    if(success)this.challengeFeedback('perfect');
+  }
   talkCue() { if(this.challengePartner){delete this.challengePartner.mesh.userData.reaction;this.partnerAction=null;} }
   reactToTalk(grade,hand,combo) {
     if(!this.talkActive||!this.challengePartner)return false;
@@ -165,15 +173,18 @@ export class CityWorld {
   challengeCue(id) { if (this.challengePartner) this.partnerAction = { id, elapsed: 0 }; }
   endChallenge() {
     if(this.talkActive){this.player.visible=this.talkPlayerVisible;delete this.talkPlayerVisible;}
+    this.talkCameraPulse=null;this.talkPartIndex=0;
     this.talkActive = false; this.cancelAction(); this.challengeActive = false; this.challengeView = null;
     for (const n of this.npcs || []) if (n.challengeVisible !== undefined) { n.mesh.visible = n.challengeVisible; delete n.challengeVisible; }
     if (this.challengeRotation !== undefined) { this.player.rotation.y = this.challengeRotation; delete this.challengeRotation; }
     if (this.challengePartner) { delete this.challengePartner.mesh.userData.reaction; this.challengePartner.mesh.rotation.y = this.challengePartnerRotation; animateCharacter(this.challengePartner.mesh, false, 0); }
+    if(this.challengeEffects){this.player.add(this.challengeEffects.burst);this.challengeEffects.life=0;this.challengeEffects.burst.visible=false;}
     this.challengePartner = null; this.partnerAction = null;
   }
   challengeFeedback(grade) {
     this.challengeEffects ||= createChallengeEffects(this.player);
     this.challengeEffects.burstMaterial.color.set(grade === 'perfect' ? '#ffd27a' : grade === 'good' ? '#a6efd2' : '#f18ba0'); this.challengeEffects.life = .65;
+    if(this.talkActive&&this.challengePartner)this.challengePartner.mesh.add(this.challengeEffects.burst);else this.player.add(this.challengeEffects.burst);
   }
   makeGoalPhoto(n, venue) { return captureGoalPhoto(this.renderer,n.profile,this.equippedRewards?.outfit || 'default',venue,this.city.getObjectByName(venue.id)); }
   respondToCompanion() { if (this.companion) this.socialAction = {npc:this.companion,elapsed:0}; }
@@ -288,7 +299,9 @@ export class CityWorld {
       if(reaction){reaction.elapsed+=dt;if(reaction.elapsed>=reaction.duration)delete this.challengePartner.mesh.userData.reaction;}
       animateCharacter(this.challengePartner.mesh, false, time);
       if (this.partnerAction) { this.partnerAction.elapsed += dt; if (!animateAction(this.challengePartner.mesh, this.partnerAction.id, this.partnerAction.elapsed)) this.partnerAction = null; }
-      this.camera.position.lerp(this.challengeView.desired, 1 - Math.exp(-dt * 9)); this.camera.lookAt(this.challengeView.focus); this.camera.updateMatrixWorld();
+      const cameraPosition=this.challengeView.desired.clone();
+      if(this.talkCameraPulse){const p=this.talkCameraPulse;p.elapsed+=dt;cameraPosition.y+=Math.sin(Math.min(1,p.elapsed)*Math.PI)*p.strength;if(p.elapsed>=1)this.talkCameraPulse=null;}
+      this.camera.position.lerp(cameraPosition, 1 - Math.exp(-dt * 9)); this.camera.lookAt(this.challengeView.focus); this.camera.updateMatrixWorld();
       this.renderer.render(this.scene, this.camera); return;
     }
     this.updateCrowdVisibility();
