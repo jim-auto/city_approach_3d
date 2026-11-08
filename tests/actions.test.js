@@ -178,3 +178,25 @@ test('part transitions move the camera and animate the girl, while QTE bursts re
  assert.equal(world.challengeEffects.burst.visible,true);assert.ok(world.camera.position.toArray().every(Number.isFinite));assert.deepEqual(partner.mesh.position,origin);
  world.endChallenge();assert.equal(world.challengeEffects.burst.parent,world.player);assert.equal(world.challengeEffects.burst.visible,false);assert.equal(world.talkCameraPulse,null);assert.deepEqual(partner.mesh.position,origin);
 });
+
+
+test('rhythm travel uses real navigation, keeps both models moving, accepts reactions and cleans up the groove',()=>{
+ const world=makeWorld();world.player.position.set(3,0,8);world.goal.set(3,0,18);
+ const partner={mesh:person(),profile:{speed:0},label:{style:{}},phase:0,cooldown:0};partner.mesh.position.set(3,0,9);world.npcs=[partner];world.companion=partner;
+ world.beginRhythmTravel();world.paused=false;const before=world.player.position.clone();world.rhythmBeat(.1,1);world.reactToTalk('win','paper',2);world.update(.05,.1);
+ assert.ok(world.player.position.distanceTo(before)>0);assert.ok(world.player.userData.groove);assert.ok(partner.mesh.userData.groove);assert.equal(partner.mesh.userData.reaction.id,'nod');
+ assert.ok(world.camera.position.toArray().every(Number.isFinite));world.endRhythmTravel();assert.equal(world.rhythmTravelActive,false);assert.equal(world.player.userData.groove,undefined);assert.equal(partner.mesh.userData.groove,undefined);
+});
+
+test('portrait travel frames both people above the rhythm controls, including an obstructed street view',()=>{
+ for(const blocked of [false,true]){
+  const world=makeWorld();world.camera.aspect=390/844;world.camera.updateProjectionMatrix();world.paused=true;world.rhythmTravelActive=true;
+  world.player.position.set(-2,0,8);const partner={mesh:person(),profile:{speed:0},label:{style:{}},phase:0,cooldown:0};partner.mesh.position.set(2,0,8);world.npcs=[partner];world.companion=partner;
+  world.cameraBlockers=blocked?[new THREE.Box3(new THREE.Vector3(-8,0,0),new THREE.Vector3(8,5,16))]:[];
+  for(let i=0;i<100;i++)world.update(.05,i*.05);
+  for(const model of [world.player,partner.mesh])for(const dx of [-.5,.5]){
+   const head=model.position.clone().add(new THREE.Vector3(dx,2,0)).project(world.camera);
+   assert.ok(Math.abs(head.x)<.9&&head.y>0&&head.y<.95,`both heads visible above controls (blocked=${blocked}): ${head.toArray()}`);
+  }
+ }
+});

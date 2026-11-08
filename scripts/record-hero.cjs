@@ -31,19 +31,9 @@ const {chromium} = require('playwright');
     console.log('parts',await require('./play-talk-ui.cjs')(page,{mark}));
     mark('invite');await pause(600);
     await page.locator('[data-destination="hotel-i"]').click();await pause(350);
-    if(!(await page.locator('#invite-confirm').isVisible())){mark('decline');await pause(1800);}
-    await page.locator('[data-destination="customa"]').click();mark('accepted');await pause(1400);
-    await page.locator('#invite-confirm').click();await pause(500);await page.locator('#goal-walk').click();mark('walking');
-    let cues=0;const deadline=Date.now()+300000;
-    while(Date.now()<deadline){
-      const mode=await page.locator('#app').getAttribute('data-mode');if(mode==='result')break;
-      const button=page.locator('#walk-response');
-      if(await button.isVisible()&&await button.isEnabled()){
-        mark(`cue${++cues}`);await pause(650);await button.click();await pause(900);
-        if(await page.locator('#app').getAttribute('data-mode')==='escort')await page.locator('#goal-walk').click();
-      }else await pause(150);
-    }
-    if(await page.locator('#app').getAttribute('data-mode')!=='result')throw Error('Goal was not reached');
+    if(!(await page.locator('#invite-confirm').isVisible())){mark('decline');await pause(1000);await page.locator('[data-destination="customa"]').click();}
+    mark('accepted');await pause(1400);await page.locator('#invite-confirm').click();
+    const journey=await require('./play-talk-ui.cjs')(page,{mark,finish:'result'});console.log('journey',journey);const cues=journey.presses;
     await page.locator('#goal-memory').waitFor({state:'visible',timeout:15000});
     await page.waitForFunction(()=>document.getElementById('goal-photo').complete&&document.getElementById('goal-photo').naturalWidth>0);
     mark('goal');await pause(300);await pause(1400);await page.locator('#date-rank').scrollIntoViewIfNeeded();mark('score');await pause(1700);mark('end');

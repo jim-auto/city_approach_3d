@@ -6,7 +6,7 @@ test('each part has six notes, a bounded score and cannot unlock an invitation b
  for(let variant=0;variant<3;variant++){
   const run=createTalkRhythm(variant);assert.equal(run.notes.length,6);
   for(const n of run.notes){const hit=tapTalkRhythm(run,key(n),n.time).hit;assert.equal(hit.grade,'perfect');}
-  assert.equal(run.combo,6);assert.equal(run.points,110);assert.equal(rhythmOutcome(run,{favor:45,discomfort:24}).accepted,false);
+  assert.equal(run.combo,6);assert.equal(run.points,80);assert.equal(rhythmOutcome(run,{favor:45,discomfort:24}).accepted,false);
   advanceTalkRhythm(run,RHYTHM.duration);assert.equal(rhythmOutcome(run,{favor:45,discomfort:24}).accepted,false);
  }
 });
@@ -23,6 +23,6 @@ test('all unattended notes miss, elapsed cannot rewind and finished charts canno
  assert.equal(rhythmOutcome(run,{favor:60,discomfort:24}).accepted,false);assert.equal(tapTalkRhythm(run,'joke',3),null);assert.deepEqual(advanceTalkRhythm(run,0),[]);
  const another=createTalkRhythm();advanceTalkRhythm(another,5);advanceTalkRhythm(another,2);assert.equal(another.elapsed,5);
 });
-test('only completing all three parts with enough total hits unlocks the invitation',()=>{
- for(const completedParts of [0,1,2,3]){const summary={finished:true,completedParts,hits:12,misses:6,notes:{length:18}};assert.equal(rhythmOutcome(summary,{favor:45,discomfort:24}).accepted,completedParts===3);}
+test('only completing all four parts with enough total hits unlocks the invitation',()=>{
+ for(const completedParts of [0,1,2,3,4]){const summary={finished:true,completedParts,hits:16,misses:8,notes:{length:24}};assert.equal(rhythmOutcome(summary,{favor:45,discomfort:24}).accepted,completedParts===4);}
 });

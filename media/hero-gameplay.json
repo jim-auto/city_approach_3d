@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-11-08T14:49:05.537Z",
+  "capturedAt": "2026-11-08T15:21:36.109Z",
   "source": "Actual local game, isolated headless browser; UI clicks and normal movement only.",
   "viewport": {
     "width": 960,
@@ -9,88 +9,94 @@
   "edits": [
     {
       "label": "歌舞伎町で、ナンパしてみた。",
-      "start": 8.874,
+      "start": 10.568,
       "duration": 1.2,
       "speed": 1
     },
     {
-      "label": "声かけ・打ち解ける・誘う、3パート。",
-      "start": 12.872,
+      "label": "声かけ → 連れ出し → ホテ前 → ゴール！",
+      "start": 14.996,
       "duration": 0.8,
       "speed": 1
     },
     {
-      "label": "短いリズムをクリアして進む。",
-      "start": 17.517,
-      "duration": 2.5,
+      "label": "リズムに合わせて、ふたりが動く。",
+      "start": 20.923000000000002,
+      "duration": 2.2,
       "speed": 1
     },
     {
       "label": "目が合ったら、タイミングタップ。",
-      "start": 23.927,
-      "duration": 1.3,
-      "speed": 1
-    },
-    {
-      "label": "PART 1 CLEAR！次の場面へ。",
-      "start": 24.572,
-      "duration": 0.5,
-      "speed": 0.625
-    },
-    {
-      "label": "次は長押し。笑顔でうなずこう。",
-      "start": 33.135,
-      "duration": 1.1,
-      "speed": 1
-    },
-    {
-      "label": "右へスワイプして、誘う。",
-      "start": 42.314,
+      "start": 26.439,
       "duration": 1.2,
       "speed": 1
     },
     {
+      "label": "声かけ CLEAR！場所を変えて、もう少し。",
+      "start": 27.622,
+      "duration": 0.5,
+      "speed": 0.625
+    },
+    {
       "label": "「もう少し話したい。場所変えない？」",
-      "start": 46.782,
+      "start": 31.79,
+      "duration": 0.9,
+      "speed": 1
+    },
+    {
+      "label": "道中もリズム！歩調を合わせて進もう。",
+      "start": 39.257,
+      "duration": 3.6,
+      "speed": 1.5
+    },
+    {
+      "label": "ふたりで実際の道を歩いて、入口へ。",
+      "start": 46.025,
+      "duration": 3,
+      "speed": 1.8
+    },
+    {
+      "label": "ホテ前も、リズムで気持ちを確かめる。",
+      "start": 57.316,
+      "duration": 2.1,
+      "speed": 1
+    },
+    {
+      "label": "最後は、笑顔でうなずく長押し。",
+      "start": 62.22,
       "duration": 1,
       "speed": 1
     },
     {
-      "label": "ふたりで歩いて、会話コンボ。",
-      "start": 51.623999999999995,
-      "duration": 3.6,
-      "speed": 1.8
+      "label": "ゴールのステージで、喜びのステップ！",
+      "start": 66.903,
+      "duration": 2.2,
+      "speed": 1
     },
     {
-      "label": "歩調を合わせて、コンボをつなぐ。",
-      "start": 88.745,
-      "duration": 3,
-      "speed": 2
-    },
-    {
-      "label": "置いていかず、一緒にゴール。",
-      "start": 112.54799999999999,
-      "duration": 4.4,
-      "speed": 2.8
+      "label": "タイミングを合わせて、ふたりでゴール。",
+      "start": 72.391,
+      "duration": 1.2,
+      "speed": 1
     },
     {
       "label": "ゴールで、ふたりの記念写真。",
-      "start": 117.54799999999999,
+      "start": 78.47399999999999,
       "duration": 1,
       "speed": 1
     },
     {
       "label": "スマホ・PCで、すぐ遊べる。",
-      "start": 119.095,
+      "start": 82.737,
       "duration": 1.3,
       "speed": 1
     }
   ],
   "result": {
-    "score": "1014 pt",
-    "rank": "RANK S",
+    "score": "933 pt",
+    "rank": "RANK A",
     "title": "GOAL CLEAR · デート成立！",
-    "walkingCues": 4
+    "travelNotes": 22
   },
   "gif": {
     "programs": [],
@@ -102,8 +108,8 @@
       }
     ],
     "format": {
-      "duration": "17.400000",
-      "size": "7625063"
+      "duration": "20.100000",
+      "size": "7320964"
     }
   }
 }

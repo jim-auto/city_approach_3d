@@ -6,7 +6,7 @@ export const TALK_LANES = [
  {key:'listen',icon:'♡',label:'聞く',hand:'paper',color:'#a6e3c9'},
 ];
 export function createTalkRhythm(variant=0,part=0){
- const pattern=[[2,0,2,1,0,1],[1,2,0,1,2,0],[0,1,2,0,2,1]][part];
+ const pattern=[[2,0,2,1,0,1],[1,2,0,1,2,0],[0,1,2,0,2,1],[2,1,0,1,2,0]][part];
  const beats=[0,1.5,3,5,7,8.5];
  return {part,elapsed:0,combo:0,maxCombo:0,hits:0,misses:0,weight:0,points:0,finished:false,
   notes:pattern.map((lane,i)=>({id:i,lane:(lane+variant)%3,time:RHYTHM.leadIn+beats[i]*60/RHYTHM.bpm,grade:null}))};
@@ -34,7 +34,7 @@ export function tapTalkRhythm(run,key,elapsed){
  return {events:overdue,hit:note?resolve(run,note,note.lane!==lane?'miss':Math.abs(offset)<=RHYTHM.perfect?'perfect':'good',offset):null};
 }
 export function rhythmOutcome(run,opening){
- const favor=Math.max(0,Math.min(100,opening.favor+run.hits*3-run.misses));
+ const favor=Math.max(0,Math.min(100,opening.favor+run.hits*7-run.misses*2));
  const discomfort=Math.max(0,Math.min(100,opening.discomfort+run.misses*2-run.hits*1.5));
- return {favor,discomfort,accepted:run.finished&&run.completedParts===3&&run.hits>=12&&favor>=68&&discomfort<60};
+ return {favor,discomfort,accepted:run.finished&&run.completedParts===4&&run.hits>=16&&favor>=68&&discomfort<60};
 }

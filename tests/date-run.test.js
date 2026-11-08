@@ -50,3 +50,10 @@ test('photo album and date best survive reload and tolerate invalid or blocked s
  data.set('city-approach-album-v1','{"unlocked":{},"best":-1,"records":[{"image":"javascript:alert(1)"}]}');assert.deepEqual(loadAlbum(storage),{unlocked:[],best:0,records:[]});
  assert.equal(saveAlbum({setItem(){throw Error('quota');}},album),false);
 });
+
+
+test('rhythm walks do not open old five-second prompts or apply missed-prompt penalties',()=>{
+ const walk=createWalkRun({x:0,z:0},{x:0,z:50});walk.rhythmMode=true;
+ for(let i=1;i<=180;i++)advanceWalk(walk,.1,{x:0,z:i*.2},{x:0,z:i*.2+1},{x:0,z:50});
+ assert.equal(walk.prompt,null);assert.equal(walk.misses,0);assert.ok(walk.comfort>=65);
+});

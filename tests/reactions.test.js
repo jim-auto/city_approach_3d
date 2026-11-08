@@ -6,7 +6,7 @@ test('winning actions get distinct reactions; combos intensify wins but never tu
  assert.equal(reactionFor('win','paper',3),'delight');assert.equal(reactionFor('draw','paper',4),'curious');assert.equal(reactionFor('miss','rock',4),'awkward');assert.equal(reactionFor('lose','rock',1),'awkward');
 });
 test('expressions and pose offsets stay finite, bounded and fade to zero at the end',()=>{
- for(const id of ['laugh','nod','shy','delight','curious','awkward','greet','sway','invite'])for(const elapsed of [-.1,0,.12,.5,1.4,REACTION_SECONDS,2]){
+ for(const id of ['laugh','nod','shy','delight','curious','awkward','greet','sway','invite','celebrate'])for(const elapsed of [-.1,0,.12,.5,1.4,REACTION_SECONDS,2]){
   const p=sampleReaction(id,elapsed);
   for(const [key,value] of Object.entries(p)){if(key==='gesture')continue;assert.ok(Number.isFinite(value));if(elapsed<=0||elapsed>=REACTION_SECONDS)assert.equal(Math.abs(value),0,`${id}/${key} restores`);}
   for(const key of ['smile','relaxed','surprise','blink','mouth'])assert.ok(p[key]>=0&&p[key]<=1);

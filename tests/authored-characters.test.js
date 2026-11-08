@@ -178,7 +178,7 @@ test('real avatars smile and change pose for talk reactions without affecting an
     animateCharacter(a,false,0);animateCharacter(b,false,0);
     const idleFace=face(a), idleBones=bones(a), otherFace=face(b), otherBones=bones(b), origin=a.position.clone();
     const poses=[];
-    for(const id of ['laugh','nod','shy','delight','curious','awkward','greet','sway','invite']){
+    for(const id of ['laugh','nod','shy','delight','curious','awkward','greet','sway','invite','celebrate']){
       a.userData.reaction={id,elapsed:.55,duration:1.55};animateCharacter(a,false,0);
       assert.notDeepEqual(bones(a),idleBones,`${kind}/${id}: actual bones change`);
       if(id!=='awkward')assert.notDeepEqual(face(a),idleFace,`${kind}/${id}: actual face morphs change`);
@@ -187,8 +187,23 @@ test('real avatars smile and change pose for talk reactions without affecting an
       // Reusing the template for a bystander must reset its temporary expressions.
       animateCharacter(b,false,0);assert.deepEqual(face(b),otherFace);
     }
-    assert.equal(new Set(poses.map(p=>JSON.stringify(p))).size,9);
+    assert.equal(new Set(poses.map(p=>JSON.stringify(p))).size,10);
     delete a.userData.reaction;animateCharacter(a,false,0);
     assert.deepEqual(face(a),idleFace);assert.deepEqual(bones(a),idleBones);
   }
+});
+
+
+test('all four rhythm scenes keep the real rig moving between hits without leaking poses or expressions',()=>{
+ for(const kind of ['waiting','movie','eye']){
+  const a=createCharacter('#dc9aab','#42293a',kind),b=createCharacter('#dc9aab','#42293a',kind);
+  const bones=m=>m.userData.pairs.map(([,bone])=>bone.quaternion.toArray()),face=m=>m.userData.morphs.map(([,mesh])=>mesh.morphTargetInfluences.slice());
+  animateCharacter(a,false,0);animateCharacter(b,false,0);const idle=bones(a),idleFace=face(a),origin=a.position.clone();
+  for(let part=0;part<4;part++){
+   a.userData.groove={part,time:.1};animateCharacter(a,false,0);const first=bones(a);
+   a.userData.groove.time=.3;animateCharacter(a,false,0);assert.notDeepEqual(bones(a),first);assert.notDeepEqual(bones(a),idle);assert.deepEqual(a.position,origin);
+   assert.deepEqual(bones(b),idle);assert.deepEqual(face(b),idleFace);
+  }
+  delete a.userData.groove;animateCharacter(a,false,0);assert.deepEqual(bones(a),idle);assert.deepEqual(face(a),idleFace);
+ }
 });

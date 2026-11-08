@@ -157,21 +157,33 @@ export class CityWorld {
     this.challengeView = { focus, desired: cameraView(focus, view(angle), this.cameraBlockers, angle).position };
     this.player.rotation.y = angle; partner.mesh.rotation.y = angle;
   }
-  talkPart(index){if(!this.talkActive)return;this.talkPartIndex=index;this.updateChallengeView();this.talkScene(['greet','sway','invite'][index]);}
+  talkPart(index){if(!this.talkActive)return;this.talkPartIndex=index;this.updateChallengeView();this.talkScene(['greet','sway','invite','celebrate'][index]);}
+  beginRhythmTravel(){
+    this.endChallenge();this.rhythmTravelActive=true;this.keys.clear();this.walkTo(this.goal);
+  }
+  endRhythmTravel(){this.stopRhythmMotion();this.rhythmTravelActive=false;}
+  rhythmBeat(time,part){
+    const partner=this.talkActive?this.challengePartner:this.rhythmTravelActive?this.companion:null;
+    if(partner)partner.mesh.userData.groove={time,part};
+    if(this.rhythmTravelActive)this.player.userData.groove={time,part};
+  }
+  stopRhythmMotion(){
+    delete this.player.userData.groove;
+    for(const partner of [this.challengePartner,this.companion])if(partner)delete partner.mesh.userData.groove;
+  }
   talkScene(id,success=false){
-    if(!this.talkActive||!this.challengePartner)return;
-    this.partnerAction=null;this.challengePartner.mesh.userData.reaction={id,elapsed:0,duration:success?2.2:2.8};
-    this.talkCameraPulse={elapsed:0,strength:success?.25:.12};
-    if(success)this.challengeFeedback('perfect');
+    const partner=this.talkActive?this.challengePartner:this.rhythmTravelActive?this.companion:null;if(!partner)return;
+    this.partnerAction=null;partner.mesh.userData.reaction={id,elapsed:0,duration:success?2.2:2.8};
+    this.talkCameraPulse={elapsed:0,strength:success?.25:.12};if(success)this.challengeFeedback('perfect');
   }
   talkCue() { if(this.challengePartner){delete this.challengePartner.mesh.userData.reaction;this.partnerAction=null;} }
   reactToTalk(grade,hand,combo) {
-    if(!this.talkActive||!this.challengePartner)return false;
-    this.partnerAction=null;
-    this.challengePartner.mesh.userData.reaction={id:reactionFor(grade,hand,combo),elapsed:0,duration:REACTION_SECONDS};return true;
+    const partner=this.talkActive?this.challengePartner:this.rhythmTravelActive?this.companion:null;if(!partner)return false;
+    this.partnerAction=null;partner.mesh.userData.reaction={id:reactionFor(grade,hand,combo),elapsed:0,duration:REACTION_SECONDS};return true;
   }
   challengeCue(id) { if (this.challengePartner) this.partnerAction = { id, elapsed: 0 }; }
   endChallenge() {
+    this.stopRhythmMotion();
     if(this.talkActive){this.player.visible=this.talkPlayerVisible;delete this.talkPlayerVisible;}
     this.talkCameraPulse=null;this.talkPartIndex=0;
     this.talkActive = false; this.cancelAction(); this.challengeActive = false; this.challengeView = null;
@@ -184,7 +196,7 @@ export class CityWorld {
   challengeFeedback(grade) {
     this.challengeEffects ||= createChallengeEffects(this.player);
     this.challengeEffects.burstMaterial.color.set(grade === 'perfect' ? '#ffd27a' : grade === 'good' ? '#a6efd2' : '#f18ba0'); this.challengeEffects.life = .65;
-    if(this.talkActive&&this.challengePartner)this.challengePartner.mesh.add(this.challengeEffects.burst);else this.player.add(this.challengeEffects.burst);
+    const partner=this.talkActive?this.challengePartner:this.rhythmTravelActive?this.companion:null;if(partner)partner.mesh.add(this.challengeEffects.burst);else this.player.add(this.challengeEffects.burst);
   }
   makeGoalPhoto(n, venue) { return captureGoalPhoto(this.renderer,n.profile,this.equippedRewards?.outfit || 'default',venue,this.city.getObjectByName(venue.id)); }
   respondToCompanion() { if (this.companion) this.socialAction = {npc:this.companion,elapsed:0}; }
@@ -333,6 +345,7 @@ export class CityWorld {
       }
       // Keep navigation responsive; sample distant authored poses less often on phones.
       const interval = this.mobile && this.distanceTo(n) > 14 && n !== this.companion && n !== this.selected ? .12 : 0;
+      if(n===this.companion&&n.mesh.userData.reaction){const reaction=n.mesh.userData.reaction;reaction.elapsed+=dt;if(reaction.elapsed>=reaction.duration)delete n.mesh.userData.reaction;}
       if ((n.mesh.visible || n === this.selected || n === this.companion) && (!n.lastAnimation || time - n.lastAnimation >= interval)) { animateCharacter(n.mesh, moving, time, n.phase); n.lastAnimation = time; }
       if (this.socialAction?.npc === n) animateAction(n.mesh,'wave',this.socialAction.elapsed);
       if (!n.ambient) {
@@ -345,6 +358,18 @@ export class CityWorld {
     this.selectionRing.visible = !!this.selected; if (this.selected) { this.selectionRing.position.copy(this.selected.mesh.position); this.selectionRing.position.y = .04; }
     if (this.goalRing) this.goalRing.visible = !!this.companion;
     this.goalBeacon.visible = !!this.companion; this.goalLabel.style.opacity = this.companion ? '1' : '.7';
+    if(this.rhythmTravelActive&&this.companion){
+      const focus=this.player.position.clone().add(this.companion.mesh.position).multiplyScalar(.5).add(new THREE.Vector3(0,1.25,0));
+      const portrait=this.camera.aspect<1,separation=this.player.position.distanceTo(this.companion.mesh.position);
+      const distance=Math.max(6.5,(separation+2.4)/(2*Math.tan(THREE.MathUtils.degToRad(this.camera.fov/2))*Math.max(.3,this.camera.aspect))*1.15);
+      let desired;for(const offset of [.7,-.7,Math.PI+.7,Math.PI-.7,0,Math.PI/2,-Math.PI/2,Math.PI]){
+        const angle=this.player.rotation.y+offset,candidate=focus.clone().add(new THREE.Vector3(Math.sin(angle)*distance,2,Math.cos(angle)*distance));
+        const view=cameraView(focus,candidate,this.cameraBlockers,angle);desired=view.position;if(!view.obstructed)break;
+      }
+      if(desired.y-focus.y>10)desired.y=focus.y+Math.max(18,distance);
+      if(this.talkCameraPulse){const p=this.talkCameraPulse;p.elapsed+=dt;desired.y+=Math.sin(Math.min(1,p.elapsed)*Math.PI)*p.strength;if(p.elapsed>=1)this.talkCameraPulse=null;}
+      this.camera.position.lerp(desired,1-Math.exp(-dt*5));this.camera.lookAt(portrait?focus.clone().add(new THREE.Vector3(0,-distance*.18,0)):focus);this.camera.updateMatrixWorld();this.renderer.render(this.scene,this.camera);return;
+    }
     this.cameraTarget.lerp(this.player.position.clone().add(new THREE.Vector3(0, this.map === 'kabukicho' ? 4 : 1.1, this.map === 'kabukicho' ? -6 : -2)), 1 - Math.exp(-dt * 3));
     const night = this.map === 'kabukicho', horizontal = this.distance * (night ? .94 : .82);
     const desired = this.cameraTarget.clone().add(new THREE.Vector3(Math.sin(this.yaw) * horizontal, this.distance * (night ? .36 : .65), Math.cos(this.yaw) * horizontal));

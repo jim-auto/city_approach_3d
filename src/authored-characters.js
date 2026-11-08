@@ -1,4 +1,4 @@
-import { sampleReaction } from './reactions.js';
+import { sampleReaction, sampleGroove } from './reactions.js';
 import * as THREE from 'three';
 import { CAST, MODEL_FILES } from './cast.js';
 import { createAccessories, placeAccessories } from './avatar-accessories.js';
@@ -132,7 +132,14 @@ export function animateAuthoredCharacter(model, moving, time, seed = 0, action) 
   pose('leftUpperLeg', swing * f, 0, 0); pose('rightUpperLeg', -swing * f, 0, 0);
   pose('leftLowerLeg', Math.max(0, -swing) * .9 * f, 0, 0); pose('rightLowerLeg', Math.max(0, swing) * .9 * f, 0, 0);
   pose('head', 0, moving ? 0 : Math.sin(time * .6 + seed) * .06, 0); pose('chest', moving ? .025 * f : 0, 0, moving ? wave * .015 : 0);
-  let lift = 0;
+  const groove=model.userData.groove,g=groove?sampleGroove(groove.part,groove.time):null;
+  let lift = g&&!moving?g.lift:0;
+  if(g){
+    pose('head',g.headX*f,0,0);pose('chest',0,0,g.chestZ);pose('hips',0,g.turnY,0);
+    if(!moving){pose('leftUpperLeg',g.leg*f,0,0);pose('rightUpperLeg',-g.leg*f,0,0);pose('leftLowerLeg',Math.max(0,-g.leg)*1.2*f,0,0);pose('rightLowerLeg',Math.max(0,g.leg)*1.2*f,0,0);}
+    if(!items.has('book'))pose('leftUpperArm',0,0,-s*(1.35-g.arm));
+    else {pose('leftUpperArm',(-.15-g.arm*.25)*f,0,-s*1.2);pose('rightUpperArm',(-.15-g.arm*.25)*f,0,s*1.2);}
+  }
   if (action) {
     const { id, elapsed, duration } = action, t = elapsed / duration, e = Math.min(1, elapsed / .2, (duration - elapsed) / .2);
     if (id === 'wave') { pose('rightUpperArm', 0, 0, s * (1.35 - 2.4 * e)); pose('rightLowerArm', 0, s * f * .25, s * Math.sin(elapsed * 15) * .35 * e); pose('head', 0, 0, -.08 * e); }
@@ -143,7 +150,7 @@ export function animateAuthoredCharacter(model, moving, time, seed = 0, action) 
   const reaction=model.userData.reaction;
   const r=reaction?sampleReaction(reaction.id,reaction.elapsed,reaction.duration):null;
   if(r){
-    pose('head',r.headX*f,r.headY,r.headZ);pose('chest',r.chestX*f,0,r.chestZ);pose('hips',0,r.turnY,r.chestZ*.3);lift+=r.lift;
+    pose('head',(r.headX+(g?.headX||0))*f,r.headY,r.headZ);pose('chest',r.chestX*f,0,r.chestZ+(g?.chestZ||0));pose('hips',0,r.turnY+(g?.turnY||0),r.chestZ*.3);lift+=r.lift;
     if(items.has('book')&&r.gesture!=='none'){
       pose('leftUpperArm',(-.15-.18*r.energy)*f,0,-s*1.20);pose('rightUpperArm',(-.15-.18*r.energy)*f,0,s*1.20);
     }
@@ -162,13 +169,13 @@ export function animateAuthoredCharacter(model, moving, time, seed = 0, action) 
   // The template is shared: reset every driven expression before copying into this clone.
   const expression=vrm.expressionManager;
   expression?.setValue('blink',Math.max(blink,r?.blink||0));
-  expression?.setValue('happy',Math.max(style.smile||0,r?.smile||0));
+  expression?.setValue('happy',Math.max(style.smile||0,r?.smile||0,g?.smile||0));
   expression?.setValue('relaxed',r?.relaxed||0);expression?.setValue('surprised',r?.surprise||0);
   expression?.setValue('aa',r?.mouth||0);vrm.update(0);
   for (const [a, b] of pairs) { b.position.copy(a.position); b.quaternion.copy(a.quaternion); b.scale.copy(a.scale); }
   for (const [a, b] of morphs) b.morphTargetInfluences = a.morphTargetInfluences.slice();
   placeAccessories(model, vrm.scene, h);
-  avatar.position.x = (model.userData.avatarBaseX||0)+(r?.shiftX||0);
+  avatar.position.x = (model.userData.avatarBaseX||0)+(r?.shiftX||0)+(g&&!moving?g.shiftX:0);
   avatar.position.y = model.userData.ground + lift + (moving ? Math.abs(wave) * .018 : Math.sin(time * 1.8 + seed) * .004);
   model.updateMatrixWorld(true); return true;
 }

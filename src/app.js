@@ -94,6 +94,8 @@ function startTalk(key) {
 }
 function prepareTalkPart(){
  const t=state.talk;stopTalkMusic();t.phase='ready';t.started=false;t.ending=false;t.qte=null;t.retryQte=false;
+ if(t.progress.index===1){if(!world.rhythmTravelActive)world.beginRhythmTravel?.();world.paused=true;}else if(t.progress.index>=2){world.endRhythmTravel?.();if(!world.talkActive){world.faceEachOther?.(t.npc);if(world.beginTalk)world.beginTalk(t.npc);else world.beginChallenge?.(t.npc);}world.paused=true;}
+ [...$('responses').children].forEach((button,i)=>{button.querySelector('span').textContent=TALK_PARTS[t.progress.index].lanes[i];button.setAttribute('aria-label',`${TALK_PARTS[t.progress.index].lanes[i]}・${i+1}`);});
  t.run=createTalkRhythm(t.npc.profile.name.length%3,t.progress.index);
  $('rhythm-notes').replaceChildren(...t.run.notes.map(note=>{const el=document.createElement('i');el.dataset.note=note.id;el.style.setProperty('--lane',TALK_LANES[note.lane].color);el.style.left=`${(note.lane+.5)*100/3}%`;el.textContent=TALK_LANES[note.lane].icon;return el;}));
  $('rhythm-start').hidden=false;$('rhythm-muted').hidden=false;$('rhythm-start').disabled=false;
@@ -101,7 +103,7 @@ function prepareTalkPart(){
 }
 function startRhythm(withSound) {
  const t=state.talk;if(state.mode!=='talk'||!t||t.started)return;
- t.phase='rhythm';t.withSound=withSound;t.started=true;t.startedAt=now();t.music=withSound?createRhythmMusic():null;
+ t.phase='rhythm';t.withSound=withSound;t.started=true;t.startedAt=now();world.paused=t.progress.index!==1;world.rhythmBeat?.(0,t.progress.index);t.music=withSound?createRhythmMusic():null;
  $('rhythm-start').hidden=true;$('rhythm-muted').hidden=true;
  $('talk-feedback').textContent='6ノーツ中4ノーツでクリア';renderRhythm();
 }
@@ -109,17 +111,20 @@ function rhythmTime(t) { return t.music?.now() ?? (now()-t.startedAt)/1000; }
 function stopTalkMusic(){state.talk?.music?.stop();if(state.talk)state.talk.music=null;}
 function renderRhythm(){
  const t=state.talk,run=t.run,part=TALK_PARTS[t.progress.index],q=t.phase==='qte';
+ const title=t.progress.index===2&&t.destination&&t.destination.type!=='lovehotel'?(t.destination?.type==='netcafe'?'ネカフェ前':'目的地前'):part.title;
+ $('conversation').dataset.lap=t.travelLap||0;
  $('conversation').dataset.phase=t.phase;$('conversation').dataset.part=t.progress.index;
  const stepsSignature=`${t.progress.index}:${t.progress.cleared.join(',')}`;
- if(t.stepsSignature!==stepsSignature){t.stepsSignature=stepsSignature;$('talk-steps').replaceChildren(...TALK_PARTS.map((p,i)=>{const el=document.createElement('span');el.textContent=`${t.progress.cleared.includes(i)?'✓':i+1} ${p.title}`;el.className=i===t.progress.index?'current':'';el.setAttribute('aria-current',i===t.progress.index?'step':'false');return el;}));}
- $('talk-turn').textContent=`PART ${t.progress.index+1} / 3 · ${run.combo} COMBO`;
- $('talk-line').textContent=t.phase==='clear'?`♥ ${part.title} CLEAR`:t.phase==='retry'?'もう一度、相手のペースで':q?part.cue:!t.started?part.line:run.elapsed<RHYTHM.leadIn?`${Math.ceil(RHYTHM.leadIn-run.elapsed)}`:rhythmPhrase(run);
+ if(t.stepsSignature!==stepsSignature){t.stepsSignature=stepsSignature;$('talk-steps').replaceChildren(...TALK_PARTS.map((p,i)=>{const el=document.createElement('span');el.textContent=`${t.progress.cleared.includes(i)?'✓':i+1} ${i===2&&t.destination&&t.destination.type!=='lovehotel'?(t.destination?.type==='netcafe'?'ネカフェ前':'目的地前'):p.title}`;el.className=i===t.progress.index?'current':'';el.setAttribute('aria-current',i===t.progress.index?'step':'false');return el;}));}
+ $('talk-turn').textContent=`PART ${t.progress.index+1} / 4 · ${run.combo} COMBO`;
+ $('talk-line').textContent=t.phase==='clear'?`♥ ${title} CLEAR`:t.phase==='retry'?'もう一度、相手のペースで':q?part.cue:!t.started?part.line:run.elapsed<RHYTHM.leadIn?`${Math.ceil(RHYTHM.leadIn-run.elapsed)}`:rhythmPhrase(run);
  $('talk-cue').textContent=q?'QTE · PC：Space／右矢印':t.phase==='clear'?`次の場面へ · 合計 ${t.progress.points} pt`:'6ノーツ中4ノーツ成功 → QTEで次のパートへ';
+ if(t.progress.index===1&&t.phase==='rhythm')$('talk-cue').textContent=`入口まで ${Math.ceil(world.player.position.distanceTo(world.goal))} m · フレーズ ${(t.travelLap||0)+1} · 歩きながらリズム！`;
  $('talk-clock').max=q?4:RHYTHM.duration;$('talk-clock').value=q?t.qte.elapsed:run.elapsed;
  $('talk-clock').setAttribute('aria-valuetext',q?`QTE残り${Math.ceil(4-t.qte.elapsed)}秒`:`PART ${t.progress.index+1}`);
  $('rhythm-track').hidden=t.phase!=='rhythm';$('responses').hidden=!['rhythm','ready'].includes(t.phase);
  $('responses').querySelectorAll('button').forEach(b=>b.disabled=t.phase!=='rhythm');
- $('talk-qte').hidden=!q;$('part-next').hidden=t.phase!=='clear'||t.progress.index===2;$('part-retry').hidden=t.phase!=='retry';$('part-retry').textContent=t.retryQte?'QTEをもう一度':'このパートをもう一度';
+ $('talk-qte').hidden=!q;$('part-next').hidden=t.phase!=='clear'||(t.progress.index===0||t.progress.index===3);$('part-retry').hidden=t.phase!=='retry';$('part-retry').textContent=t.retryQte?'QTEをもう一度':'このパートをもう一度';
  for(const el of $('rhythm-notes').children){const n=run.notes[Number(el.dataset.note)],distance=n.time-run.elapsed;el.hidden=!t.started||!!n.grade||distance>RHYTHM.travel||distance<-.24;el.style.top=`${(1-distance/RHYTHM.travel)*100}%`;}
  if(q){
   const qt=t.qte,ready=qt.kind!=='tap'||Math.abs(qt.elapsed-1.4)<=.5;
@@ -132,16 +137,26 @@ function renderRhythm(){
 function rhythmFeedback(event){
  const t=state.talk,lane=TALK_LANES[event.lane],good=event.grade!=='miss';
  if(good)t.music?.hit(event.lane,event.grade==='perfect');
- const preview={finished:false,hits:t.progress.hits+t.run.hits,misses:t.progress.misses+t.run.misses,notes:{length:18}};
+ if(t.progress.index===1&&good&&state.escort){const walk=state.escort.walk;walk.eventPoints=Math.min(200,walk.eventPoints+(event.grade==='perfect'?18:12));walk.hits++;walk.maxCombo=Math.max(walk.maxCombo,event.combo);}
+ const preview={finished:false,hits:t.progress.hits+t.run.hits,misses:t.progress.misses+t.run.misses,notes:{length:24}};
  Object.assign(t,rhythmOutcome(preview,t.opening));updateMeters();
  $('conversation').dataset.grade=good?'win':'miss';
  $('talk-feedback').textContent=good?`${event.grade.toUpperCase()} · ${event.combo} COMBO　${lane.key==='joke'?'「ふふっ、おもしろい！」':lane.key==='groove'?'「なんか気が合うね！」':'「聞いてくれてうれしい」'}`:'MISS · 次のリズムに合わせよう';
+ if(good&&t.progress.index===1)$('talk-feedback').textContent=`${event.grade.toUpperCase()} · ${event.combo} COMBO 「${['このペースがいいね','目が合うと、うれしいね','一緒に歩くの楽しい！'][event.lane]}」`;
  world.reactToTalk?.(good?'win':'miss',lane.hand,event.combo);world.challengeFeedback?.(good?(event.grade==='perfect'?'perfect':'good'):'miss');
  const button=$('responses').children[event.lane];button.dataset.grade=event.grade;
  clearTimeout(button.flashTimer);button.flashTimer=setTimeout(()=>delete button.dataset.grade,180);
 }
 function finishRhythm(){
- const t=state.talk;if(t.phase!=='rhythm')return;t.music?.pause();
+ const t=state.talk;if(t.phase!=='rhythm')return;world.stopRhythmMotion?.();t.music?.pause();world.paused=true;
+ if(t.progress.index===1){
+  if(t.run.hits>=4&&(!t.bestTravel||t.run.points>t.bestTravel.points))t.bestTravel=t.run;
+  if(!arrivedTogether(world.player.position,world.companion?.mesh.position,world.goal)){
+   const sound=t.withSound;t.travelLap=(t.travelLap||0)+1;prepareTalkPart();startRhythm(sound);
+   $('talk-feedback').textContent='歩調を合わせて、次のフレーズ！';return;
+  }
+  if(t.bestTravel&&t.bestTravel.points>t.run.points)t.run=t.bestTravel;
+ }
  if(t.run.hits<4){t.phase='retry';$('talk-feedback').textContent='4ノーツ成功を目指して、このパートをもう一度。';world.reactToTalk?.('miss','paper',0);}
  else beginQte();renderRhythm();
 }
@@ -154,12 +169,13 @@ function finishQte(){
  if(t.qte.status==='failed'){t.phase='retry';t.retryQte=true;$('talk-feedback').textContent='QTEをもう一度。リズムのクリアは残っています。';world.reactToTalk?.('miss','paper',0);renderRhythm();return;}
  if(!clearTalkPart(t.progress,t.run,t.qte))return;
  const delta=t.progress.points-state.attempt.conversation;state.attempt.conversation=t.progress.points;score(delta);
- t.phase='clear';world.talkScene?.(TALK_PARTS[t.progress.index].motion,true);
+ t.phase='clear';world.stopRhythmMotion?.();world.talkScene?.(TALK_PARTS[t.progress.index].motion,true);
  $('talk-feedback').textContent=`PART ${t.progress.index+1} CLEAR！ 相手との距離が縮まった。`;
  const music=t.music;t.music=null;if(music){music.resume();music.hit(2,true);setTimeout(()=>music.stop(),250);}
- const summary={finished:t.progress.cleared.length===3,completedParts:t.progress.cleared.length,hits:t.progress.hits,misses:t.progress.misses,notes:{length:18}};
+ const summary={finished:t.progress.cleared.length===4,completedParts:t.progress.cleared.length,hits:t.progress.hits,misses:t.progress.misses,notes:{length:24}};
  Object.assign(t,rhythmOutcome(summary,t.opening));renderRhythm();
- if(t.progress.cleared.length===3){t.ending=true;talkTimer=setTimeout(()=>{if(state.mode==='talk'){if(t.accepted)openInvitation();else endTalk(false);}},1200);}
+ if(t.progress.index===0){t.ending=true;talkTimer=setTimeout(()=>{if(state.mode==='talk')openInvitation();},1200);}
+ if(t.progress.cleared.length===4){t.ending=true;talkTimer=setTimeout(()=>{if(state.mode==='talk')completeEscort();},1200);}
 }
 function qteInput(action,point){
  const t=state.talk;if(state.mode!=='talk'||t?.phase!=='qte'||t.pausedAt!=null)return;
@@ -171,7 +187,7 @@ function respond(key){
  for(const event of result.events)rhythmFeedback(event);if(result.hit)rhythmFeedback(result.hit);
  renderRhythm();if(t.run.finished)finishRhythm();
 }
-$('part-next').addEventListener('click',()=>{const t=state.talk;if(state.mode!=='talk'||t.phase!=='clear'||!nextTalkPart(t.progress))return;const sound=t.withSound;prepareTalkPart();startRhythm(sound);});
+$('part-next').addEventListener('click',()=>{const t=state.talk;if(state.mode!=='talk'||t.phase!=='clear'||t.progress.index===0||!nextTalkPart(t.progress))return;const sound=t.withSound;prepareTalkPart();startRhythm(sound);});
 $('part-retry').addEventListener('click',()=>{const t=state.talk;if(state.mode!=='talk'||t.phase!=='retry')return;if(t.retryQte){t.retryQte=false;beginQte();renderRhythm();}else{const sound=t.withSound;prepareTalkPart();startRhythm(sound);}});
 $('qte-button').addEventListener('click',()=>{if(state.talk?.qte?.kind==='tap')qteInput('tap');});
 $('qte-button').addEventListener('pointerdown',e=>{if(state.talk?.qte?.kind==='tap')return;e.preventDefault();e.currentTarget.setPointerCapture?.(e.pointerId);qteInput('down',{x:e.clientX,y:e.clientY});});
@@ -182,11 +198,12 @@ $('rhythm-start').addEventListener('click',()=>startRhythm(true));
 $('rhythm-muted').addEventListener('click',()=>startRhythm(false));
 document.addEventListener('visibilitychange',()=>{
  const t=state.talk;if(state.mode!=='talk'||!t?.started||t.ending)return;
- if(document.hidden){t.pausedAt=now();t.music?.pause();if(t.qte)inputTalkQte(t.qte,'cancel',t.qte.elapsed);}
- else if(t.pausedAt!=null){const pause=now()-t.pausedAt;t.startedAt+=pause;if(t.qteStartedAt!=null)t.qteStartedAt+=pause;t.pausedAt=null;if(t.phase==='rhythm')t.music?.resume();}
+ if(document.hidden){world.paused=true;t.pausedAt=now();t.music?.pause();if(t.qte)inputTalkQte(t.qte,'cancel',t.qte.elapsed);}
+ else if(t.pausedAt!=null){const pause=now()-t.pausedAt;t.startedAt+=pause;if(t.qteStartedAt!=null)t.qteStartedAt+=pause;t.pausedAt=null;if(t.phase==='rhythm'){t.music?.resume();world.paused=t.progress.index!==1;}}
 });
 function endTalk(failed) {
-  clearTimeout(talkTimer); stopTalkMusic(); world.endChallenge?.(); const t = state.talk; finishNpc(t?.npc); const points = 0;
+  clearTimeout(talkTimer); stopTalkMusic();world.stopRhythmMotion?.();world.endRhythmTravel?.();world.endChallenge?.();
+  if(state.escort){state.escort=null;world.companion=null;world.destination=null;world.waypoints=[];world.marker.visible=false;} const t = state.talk; finishNpc(t?.npc); const points = 0;
   closeInspect(); result(failed ? '相手のペースを大切に。' : 'ひとときの会話を、ありがとう。', failed ? '少し戸惑わせてしまったようだ。追わずに離れて、次は相手の話をゆっくり聞こう。' : '今回はここでお別れ。流れるノーツが下のラインに重なるタイミングでタップしてみよう。', points, '街に戻る ↗', explore, !failed);
 }
 function openInvitation() {
@@ -214,18 +231,14 @@ function cancelInvitation() {
   finishNpc(state.talk?.npc); state.talk = null; $('invitation').close(); explore(); toast('またね、と挨拶して別れた。');
 }
 function beginEscort() {
-  if (state.mode !== 'invite' || !state.invitation || !state.talk) return;
-  const destination = state.invitation, npc = state.talk.npc;
-  $('invitation').close(); closeInspect(); world.setDestination(destination);
-  world.companion = npc; npc.followTarget = null; state.talk = null; state.invitation = null;
-  state.escort = { destination, walk: createWalkRun(world.player.position,world.goal) };
-  state.attempt.consent = 120; score(120); setMode('escort'); $('escort').hidden = false;
-  document.querySelector('#escort h2').textContent = destination.name || destination.label;
-  $('goal-walk').textContent = destination.clearsGoal ? '入口まで歩く' : '目的地へ歩く';
-  $('escort-description').textContent = destination.routeHint || `${destination.label}まで、一緒に歩こう。`;
-  mission('WALK TOGETHER', `${destination.label}へ、一緒に。`, destination.routeHint || '紫のマーカーへ、ふたりのペースで歩こう。', '03');
-  renderWalk();
-  toast(`デートOK！「一緒に行きましょう」 ${destination.label}へ。`); tone('success');
+ if(state.mode!=='invite'||!state.invitation||!state.talk)return;
+ const destination=state.invitation,t=state.talk,npc=t.npc;
+ $('invitation').close();closeInspect();world.setDestination(destination);world.companion=npc;npc.followTarget=null;
+ t.destination=destination;state.invitation=null;state.escort={destination,walk:createWalkRun(world.player.position,world.goal)};state.escort.walk.rhythmMode=true;
+ state.attempt.consent=120;score(120);$('escort').hidden=true;
+ if(!nextTalkPart(t.progress))return;
+ prepareTalkPart();setMode('talk');openModal('conversation');
+ $('talk-feedback').textContent='連れ出しパート！リズムに合わせて、ふたりで入口へ。';
 }
 function renderAlbum() {
   $('album-record').textContent = `デート BEST ${album.best} pt · 記念写真 ${album.records.length}枚`;
@@ -251,6 +264,8 @@ function collectWalkingScore() {
   const delta=collectWalkPoints(walk); if(delta){state.attempt.walk+=delta;score(delta);}
 }
 function completeEscort() {
+  if(!state.escort||state.talk?.progress.cleared.length!==4||!arrivedTogether(world.player.position,world.companion?.mesh.position,world.goal))return false;
+  stopTalkMusic();world.stopRhythmMotion?.();world.endRhythmTravel?.();world.endChallenge?.();$('conversation').close();state.talk=null;
   const n = world.companion, destination = state.escort.destination, walk=state.escort.walk;
   const clear = destination.clearsGoal === true && ['netcafe', 'lovehotel'].includes(destination.type);
   let photo=null;
@@ -402,7 +417,9 @@ function frame(frameNow) {
   const interval = world.profile?.frameInterval || 0;
   lastRender = interval ? frameNow - ((frameNow - lastRender) % interval) : frameNow;
   const dt = Math.min((frameNow - previous) / 1000, .05); previous = frameNow; state.elapsed += dt;
+  if(state.mode==='talk'&&state.talk?.phase==='rhythm'){world.rhythmBeat?.(state.talk.run.elapsed,state.talk.progress.index);if(state.talk.progress.index===1)world.keys.clear();}
   arcade.update(dt); world.update(dt, state.elapsed); mapTick += dt;
+  if(state.mode==='talk'&&state.talk?.progress.index===1&&state.talk.phase==='rhythm'&&state.escort){advanceWalk(state.escort.walk,dt,world.player.position,world.companion.mesh.position,world.goal);collectWalkingScore();}
   if(state.mode==='talk' && state.talk?.phase==='rhythm' && state.talk.pausedAt==null){
     for(const event of advanceTalkRhythm(state.talk.run,rhythmTime(state.talk)))rhythmFeedback(event);
     renderRhythm();if(state.talk.run.finished)finishRhythm();

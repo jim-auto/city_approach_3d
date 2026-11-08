@@ -38,6 +38,8 @@ test('explore → observe → conversation → escort → arrival, help resume, 
     respondToCompanion() { this.gestures=(this.gestures||0)+1; }
     beginChallenge(n) { this.challengePartner=n; }
     endChallenge() { this.challengePartner=null; }
+    beginRhythmTravel() { this.rhythmTravelActive=true;this.destination=this.goal.clone(); }
+    endRhythmTravel() { this.rhythmTravelActive=false; }
     resetCamera() {}
     update() {}
     drawMinimap() {}
@@ -45,15 +47,20 @@ test('explore → observe → conversation → escort → arrival, help resume, 
   try {
     const { state, world } = startGame(WorldStub,{now:()=>frameClock}), doc = window.document;
     const click = id => doc.getElementById(id).click();
-    const playStage = () => { click('rhythm-muted');
-      for(let part=0;part<3;part++){
-        for(const n of state.talk.run.notes){frame(state.talk.startedAt+n.time*1000);doc.querySelector(`[data-lane="${TALK_LANES[n.lane].key}"]`).click();}
-        frame(state.talk.startedAt+(RHYTHM.duration+.05)*1000);assert.equal(state.talk.phase,'qte');
-        if(part===0){frame(state.talk.qteStartedAt+1400);click('qte-button');}
-        if(part===1){window.dispatchEvent(new window.KeyboardEvent('keydown',{key:' '}));frame(frameClock+800);window.dispatchEvent(new window.KeyboardEvent('keyup',{key:' '}));}
-        if(part===2)window.dispatchEvent(new window.KeyboardEvent('keydown',{key:'ArrowRight'}));
-        assert.equal(state.talk.phase,'clear');if(part<2)click('part-next');
-      }
+    const playPart = () => {
+      if(!state.talk.started)click('rhythm-muted');
+      for(const n of state.talk.run.notes){frame(state.talk.startedAt+n.time*1000);doc.querySelector(`[data-lane="${TALK_LANES[n.lane].key}"]`).click();}
+      frame(state.talk.startedAt+(RHYTHM.duration+.05)*1000);assert.equal(state.talk.phase,'qte');
+      const kind=state.talk.qte.kind;
+      if(kind==='tap'){frame(state.talk.qteStartedAt+1400);click('qte-button');}
+      if(kind==='hold'){window.dispatchEvent(new window.KeyboardEvent('keydown',{key:' '}));frame(frameClock+800);window.dispatchEvent(new window.KeyboardEvent('keyup',{key:' '}));}
+      if(kind==='swipe')window.dispatchEvent(new window.KeyboardEvent('keydown',{key:'ArrowRight'}));
+      assert.equal(state.talk.phase,'clear');
+    };
+    const playStage=()=>{playPart();t.mock.timers.tick(1210);};
+    const finishStages=()=>{
+      world.player.position.copy(world.goal);world.companion.mesh.position.copy(world.goal);
+      for(const part of [1,2,3]){assert.equal(state.talk.progress.index,part);playPart();if(part<3)click('part-next');}
       t.mock.timers.tick(1210);
     };
     assert.equal(state.mode, 'intro'); assert.match(doc.getElementById('intro').textContent, /ナンパシミュレーター/);
@@ -83,31 +90,24 @@ test('explore → observe → conversation → escort → arrival, help resume, 
     // A map change during conversation must not discard its state.
     doc.querySelector('[data-map="nagoya"]').click(); assert.equal(state.map, 'kabukicho');
     playStage();
-    assert.equal(state.mode, 'invite'); assert.equal(state.score, 400);
+    assert.equal(state.mode, 'invite'); assert.equal(state.score, 130);
     assert.equal(world.companion, null, 'a conversation alone does not start following');
     doc.querySelector('[data-destination="hotel-i"]').click();
     assert.equal(doc.getElementById('invite-confirm').hidden, true, 'waiting person declines hotel invitation');
     click('invite-confirm'); assert.equal(state.mode, 'invite');
     doc.querySelector('[data-destination="customa"]').click();
     assert.equal(doc.getElementById('invite-confirm').hidden, false);
-    click('invite-confirm'); assert.equal(state.mode, 'escort'); assert.equal(state.score, 520); assert.equal(world.companion, npc);
-    assert.equal(world.escortDestination.id, 'customa');
-    const starting=world.player.position.clone(), direction=world.goal.clone().sub(starting).normalize();
-    for(let i=1;i<=9;i++){world.player.position.copy(starting).addScaledVector(direction,i*.2);npc.mesh.position.copy(world.player.position).add(new Vector3(0,0,1));frame(performance.now()+i*80);}
-    assert.equal(doc.getElementById('walk-response').hidden,false);
-    const walkClock=state.escort.walk.elapsed;click('menu-toggle');frame(performance.now()+1000);assert.equal(state.escort.walk.elapsed,walkClock,'menu pauses walk timer');click('menu-resume');
-    const beforeResponse=state.score;click('walk-response');assert.ok(state.score>=beforeResponse+40);assert.equal(world.gestures,1);
-    const afterResponse=state.score;click('walk-response');assert.equal(state.score,afterResponse,'double taps do not score');
-    click('menu-toggle'); assert.equal(state.mode, 'menu');
-    click('menu-resume'); assert.equal(state.mode, 'escort'); assert.equal(world.companion, npc);
-    click('menu-toggle'); click('help'); assert.equal(state.mode, 'help');
-    assert.equal(doc.getElementById('game-menu').open, false);
-    click('start');
-    assert.equal(state.mode, 'escort'); assert.equal(world.companion, npc, 'help must preserve the companion');
-    assert.equal(doc.getElementById('escort').hidden, false);
-    click('goal-walk'); assert.deepEqual(world.destination, world.goal);
-    npc.mesh.position.copy(world.goal); frame(performance.now() + 16);
-    assert.equal(state.mode, 'result'); assert.ok(state.score>=860); assert.equal(state.clears, 1);
+    click('invite-confirm');assert.equal(state.mode,'talk');assert.equal(state.score,250);assert.equal(world.companion,npc);assert.equal(state.talk.progress.index,1);
+    assert.equal(world.escortDestination.id,'customa');assert.equal(doc.getElementById('walk-response').hidden,true);
+    // A completed travel phrase cannot skip the actual walk or bank a second copy of its score.
+    click('rhythm-muted');world.player.position.copy(world.goal);npc.mesh.position.copy(world.goal).add(new Vector3(0,0,4));
+    for(const n of state.talk.run.notes){frame(state.talk.startedAt+n.time*1000);doc.querySelector(`[data-lane="${TALK_LANES[n.lane].key}"]`).click();}
+    frame(state.talk.startedAt+(RHYTHM.duration+.1)*1000);
+    assert.equal(state.talk.progress.index,1);assert.equal(state.talk.phase,'rhythm');assert.equal(state.talk.travelLap,1);assert.equal(state.attempt.conversation,80);
+    // Physical arrival alone cannot clear: entrance and goal each have their own rhythm stage.
+    world.player.position.copy(world.goal);npc.mesh.position.copy(world.goal);frame(frameClock+50);
+    assert.equal(state.mode,'talk');assert.equal(state.clears,0);
+    finishStages();assert.equal(state.mode,'result');assert.ok(state.score>=860);assert.equal(state.clears,1);
     assert.match(doc.getElementById('result-body').textContent, /カスタマカフェ/);
     assert.equal(doc.getElementById('goal-memory').hidden,false);assert.equal(world.photoSubject,npc);
     const completedScore=state.score;assert.equal(doc.getElementById('result-points').textContent,`${completedScore} pt`);
@@ -151,7 +151,7 @@ test('explore → observe → conversation → escort → arrival, help resume, 
     world.npcs = [practice]; world.onSelect(practice); click('approach-start');
     playStage();
     doc.querySelector('[data-destination="gold"]').click(); click('invite-confirm');
-    click('goal-walk'); practice.mesh.position.copy(world.goal); frame(performance.now() + 100);
+    finishStages();
     assert.equal(state.clears, 1); assert.doesNotMatch(doc.getElementById('result-title').textContent, /CLEAR|デート成立/); assert.equal(doc.getElementById('goal-memory').hidden,true); click('result-next');
     doc.querySelector('[data-map="kabukicho"]').click();
     // Every added woman starts a real conversation from the primary button and can complete a date.
@@ -168,10 +168,10 @@ test('explore → observe → conversation → escort → arrival, help resume, 
       playStage();
       assert.equal(state.mode, 'invite', profile.name);
       doc.querySelector('[data-destination="hotel-i"]').click(); click('invite-confirm');
-      assert.equal(state.mode, 'escort'); assert.equal(world.companion, added);
-      click('goal-walk'); added.mesh.position.copy(world.goal).add(new Vector3(0,0,4)); frame(performance.now() + 100);
-      assert.equal(state.mode, 'escort', 'player alone at the entrance does not clear');
-      added.mesh.position.copy(world.goal); frame(performance.now() + 150);
+      assert.equal(state.mode, 'talk'); assert.equal(world.companion, added);
+      world.player.position.copy(world.goal);added.mesh.position.copy(world.goal).add(new Vector3(0,0,4));frame(frameClock+50);
+      assert.equal(state.mode,'talk','player alone at entrance does not clear');
+      finishStages();
       assert.equal(state.mode, 'result', `${profile.name}: date arrival`);
       assert.match(doc.getElementById('result-title').textContent, /デート成立/);
       click('result-next');
@@ -200,8 +200,7 @@ test('explore → observe → conversation → escort → arrival, help resume, 
     click('part-next');assert.equal(state.talk.progress.index,0);click('part-retry');
     frame(state.talk.qteStartedAt+1400);click('qte-button');assert.equal(state.talk.progress.cleared.length,1);
     const paid=state.score;click('qte-button');assert.equal(state.score,paid,'QTE cannot pay twice');
-    click('part-next');assert.equal(state.talk.progress.index,1);assert.equal(state.talk.phase,'rhythm');
-    click('talk-exit');assert.equal(world.challengePartner,null);t.mock.timers.tick(2000);assert.equal(state.mode,'result');
+    click('part-next');assert.equal(state.talk.progress.index,0,'voice clear waits for the invitation');t.mock.timers.tick(1210);assert.equal(state.mode,'invite');click('invite-cancel');assert.equal(world.challengePartner,null);assert.equal(state.mode,'explore');
   } finally {
     t.mock.timers.reset(); window.happyDOM.abort();
     for (const [name, descriptor] of previous) { if (descriptor) Object.defineProperty(globalThis, name, descriptor); else delete globalThis[name]; }

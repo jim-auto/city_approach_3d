@@ -29,7 +29,7 @@ export function advanceWalk(run, dt, player, companion, goal) {
   else if (gap > 4) run.comfort = clamp(run.comfort - dt * 9,0,100);
   run.points = Math.min(300, Math.floor(run.together * 2) + run.eventPoints);
   if (run.prompt && run.elapsed > run.prompt.expires) { run.misses++; run.combo = 0; run.comfort = Math.max(0,run.comfort-10); run.prompt = null; run.waiting = false; }
-  if (!run.prompt && run.count < cues.length && run.progress >= [1.5,7,15,25][run.count]) {
+  if (!run.rhythmMode && !run.prompt && run.count < cues.length && run.progress >= [1.5,7,15,25][run.count]) {
     const cue = gap > 3.3 ? {line:'「少し待って。一緒に歩こう？」',button:'立ち止まって待つ',reply:'「待ってくれてありがとう」',wait:true} : cues[run.count];
     run.prompt = {...cue, expires:run.elapsed+5}; run.count++;
   }
