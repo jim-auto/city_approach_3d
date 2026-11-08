@@ -1,3 +1,4 @@
+import { crowdSpawns, visibleCrowd } from './crowd.js';
 import { createChallengeEffects, updateChallengeEffects } from './challenge-effects.js';
 import { REWARDS } from './challenge.js';
 import { disposeCharacterSkeletons } from './authored-characters.js';
@@ -75,14 +76,18 @@ export class CityWorld {
       const label = this.makeLabel(profile.role ? profile.name : `♡ ${profile.name}`, profile.zone === 'nightlife' ? 'nightlife-label' : profile.role === 'toyoko' ? 'gathering-label' : profile.role ? 'street-label' : profile.guarded ? 'guarded' : 'date-label'); const n = { profile, mesh, label, home: mesh.position.clone(), phase: i * 1.8, cooldown: 0 };
       mesh.traverse(o => { if (o.isMesh) o.userData.npc = n; }); label.addEventListener('click', e => { e.stopPropagation(); this.onSelect(n); }); return n;
     });
-    for (let i = 0; i < (this.mobile ? (night ? 6 : 4) : (night ? 18 : 12)); i++) {
-      const mesh = createCharacter(['#72778d', '#9b8392', '#b3a184', '#758e8d'][i % 4], '#3b3440', PROFILES[i % PROFILES.length].id, { detailed: false });
-      const spawn = night ? this.layout.people[(i * 3) % 8] : [(i % 2 ? 1 : -1) * (2.7 + (i * .7) % 3.5), -24 + (i * 4.3) % 48];
-      const ambientSpawn = resolveDestination({ x: spawn[0] + (i % 2 ? 1.3 : -1.3), z: spawn[1] + 2.4 + (i % 4) * .8 }, this.layout);
-      mesh.position.set(ambientSpawn.x, 0, ambientSpawn.z); mesh.scale.setScalar(.88 + (i % 3) * .06); this.city.add(mesh);
-      this.npcs.push({ mesh, ambient: true, speed: .45 + (i % 4) * .2, direction: i % 2 ? 1 : -1, phase: i });
+    for (const [i, spawn] of crowdSpawns(map, this.mobile).entries()) {
+      const mesh = createCharacter(['#72778d', '#9b8392', '#b3a184', '#758e8d', '#5e697d', '#bd9da3'][i % 6], '#3b3440', spawn.kind, { detailed: false });
+      const point = resolveDestination(spawn, this.layout);
+      mesh.position.set(point.x, 0, point.z); mesh.scale.setScalar(.88 + (i % 3) * .06); this.city.add(mesh);
+      this.npcs.push({ mesh, ambient: true, home: mesh.position.clone(), axis: spawn.axis, speed: .55 + (i % 5) * .16, direction: i % 2 ? 1 : -1, phase: i });
     }
     this.player.position.set(this.layout.start[0], 0, this.layout.start[1]); this.player.rotation.y = Math.PI; this.cameraTarget.copy(this.player.position); this.cameraTarget.y = 1; this.resetCamera();
+    this.updateCrowdVisibility();
+  }
+  updateCrowdVisibility() {
+    const visible = visibleCrowd(this.npcs, this.player.position, this.mobile);
+    for (const n of this.npcs) if (n.ambient) n.mesh.visible = visible.has(n);
   }
   // Static scenery shares geometry/material draw calls; animated people stay separate.
   batchScenery() {
@@ -257,6 +262,7 @@ export class CityWorld {
       this.camera.position.lerp(this.challengeView.desired, 1 - Math.exp(-dt * 9)); this.camera.lookAt(this.challengeView.focus); this.camera.updateMatrixWorld();
       this.renderer.render(this.scene, this.camera); return;
     }
+    this.updateCrowdVisibility();
     const nearbyLabels = new Set(this.npcs.filter(n => !n.ambient && this.distanceTo(n) <= 9 && segmentClear(this.player.position, n.mesh.position, this.layout))
       .sort((a, b) => this.distanceTo(a) - this.distanceTo(b)).slice(0, 2));
     for (const n of this.npcs) {
@@ -274,9 +280,9 @@ export class CityWorld {
             else { const step = n.mesh.position.clone().addScaledVector(dir.normalize(), Math.min(distance, 3.8 * dt)); if (isWalkable(step, this.layout)) { n.mesh.position.copy(step); n.mesh.rotation.y = Math.atan2(dir.x, dir.z); moving = true; } else n.followTarget = null; }
           }
         } else if (n.ambient) {
-          const next = n.mesh.position.clone(); next.z += n.speed * n.direction * dt;
-          if (isWalkable(next, this.layout)) { n.mesh.position.copy(next); moving = true; } else n.direction *= -1;
-          n.mesh.rotation.y = n.direction === 1 ? 0 : Math.PI;
+          const axis = n.axis || 'z', next = n.mesh.position.clone(); next[axis] += n.speed * n.direction * dt;
+          if (isWalkable(next, this.layout) && (!n.home || Math.abs(next[axis] - n.home[axis]) < 12)) { n.mesh.position.copy(next); moving = true; } else n.direction *= -1;
+          n.mesh.rotation.y = (axis === 'x' ? Math.PI / 2 : 0) + (n.direction === 1 ? 0 : Math.PI);
         } else if (n.profile.speed > .2) {
           const next = n.mesh.position.clone(); next.z = n.home.z + Math.sin(time * .15 + n.phase) * (n.profile.guarded ? 3 : 1.4);
           if (isWalkable(next, this.layout)) n.mesh.position.copy(next);
@@ -285,7 +291,7 @@ export class CityWorld {
       }
       // Keep navigation responsive; sample distant authored poses less often on phones.
       const interval = this.mobile && this.distanceTo(n) > 14 && n !== this.companion && n !== this.selected ? .12 : 0;
-      if (!n.lastAnimation || time - n.lastAnimation >= interval) { animateCharacter(n.mesh, moving, time, n.phase); n.lastAnimation = time; }
+      if ((!n.ambient || n.mesh.visible) && (!n.lastAnimation || time - n.lastAnimation >= interval)) { animateCharacter(n.mesh, moving, time, n.phase); n.lastAnimation = time; }
       if (!n.ambient) {
         n.label.style.opacity = n === this.companion || n.cooldown > time ? '.25' : '1';
         if (!nearbyLabels.has(n) && n !== this.selected) n.label.style.display = 'none';

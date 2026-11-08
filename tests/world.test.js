@@ -46,7 +46,7 @@ test('both detailed maps build and repeated switches clean up NPC labels and GPU
       assert.equal(world.destination, null);
     }
     world.mobile = true; world.setMap('kabukicho');
-    assert.equal(world.npcs.filter(n => n.ambient).length, 6);
+    assert.equal(world.npcs.filter(n => n.ambient).length, 16);
     assert.equal(world.npcs.filter(n => !n.ambient && !n.profile.role).length, 8, 'all women remain available on mobile');
     assert.equal(world.npcs.filter(n => n.profile?.role && ['catch', 'scout'].includes(n.profile.role)).length, 2, 'catch and scout remain available on mobile' );
     assert.equal(world.npcs.filter(n => n.profile?.role === 'toyoko').length, 3, 'plaza group remains available on mobile');

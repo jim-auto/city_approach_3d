@@ -1,3 +1,4 @@
+import { CROWD_LIMIT } from '../src/crowd.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -89,8 +90,8 @@ test('all characters and background people use authored faces, retain props and 
     assert.ok(bounds.max.x - bounds.min.x < 1.3, `${id}: relaxed arms`);
   }
   assert.ok(triangles < 400_000); assert.ok(draws < 320);
-  for (let i = 0; i < 6; i++) {
-    const model = createCharacter('#72778d', '#333333', PROFILES[i].id, { detailed: false });
+  for (let i = 0; i < CROWD_LIMIT.mobile; i++) {
+    const model = createCharacter('#72778d', '#333333', i < 3 ? 'scout' : 'eye', { detailed: false });
     model.traverse(o => { if (o.isMesh) { triangles += (o.geometry.index?.count ?? o.geometry.attributes.position.count) / 3; draws++; } });
   }
   assert.ok(triangles < 550_000, `phone crowd: ${triangles}`); assert.ok(draws < 440, `phone crowd: ${draws}`);
