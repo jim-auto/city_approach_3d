@@ -29,10 +29,12 @@ test('Kabukicho map connects central road, parallel Ichibangai, west plaza and n
 });
 test('invitations require readiness and respect schedule; spoken replies exist for every turn', () => {
   const destinations = destinationsFor('kabukicho'), ready = { favor: 90, discomfort: 12 };
-  assert.equal(evaluateInvitation(PROFILES[0], destinations[2], ready).accepted, false);
+  assert.equal(evaluateInvitation(PROFILES[0], destinations[1], ready).accepted, false);
   assert.equal(evaluateInvitation(PROFILES[0], destinations[0], ready).accepted, true);
-  assert.equal(evaluateInvitation(PROFILES[1], destinations[2], ready).accepted, true);
+  assert.equal(evaluateInvitation(PROFILES[1], destinations[1], ready).accepted, true);
   assert.equal(evaluateInvitation(PROFILES[3], destinations[0], ready).accepted, false);
   for (const talk of [{ favor: 67, discomfort: 0 }, { favor: 100, discomfort: 60 }]) assert.equal(evaluateInvitation(PROFILES[1], destinations[0], talk).accepted, false);
+  assert.equal(evaluateInvitation(PROFILES[1], destinations[1], {favor: 80, discomfort: 15}).accepted, false);
+  assert.equal(evaluateInvitation(PROFILES[1], destinations[1], {favor: 95, discomfort: 35}).accepted, false);
   for (let turn = 0; turn < 5; turn++) assert.equal(spokenReplies(turn, 'kabukicho').length, 4);
 });

@@ -1,3 +1,4 @@
+import { arrivedTogether } from '../src/venues.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
@@ -75,10 +76,10 @@ test('a companion physically follows through the Kabukicho junctions to the chos
       world.update(.05, i * .05);
       assert.ok(isWalkable(world.player.position, world.layout), 'player stays on connected streets');
       assert.ok(isWalkable(npc.mesh.position, world.layout), 'companion stays on connected streets');
-      if (world.player.position.distanceTo(world.goal) < 1.4 && world.distanceTo(npc) < 3.1) break;
+      if (arrivedTogether(world.player.position, npc.mesh.position, world.goal)) break;
     }
     assert.ok(world.player.position.distanceTo(world.goal) < 1.4, `player reached ${destination.id}`);
-    assert.ok(world.distanceTo(npc) < 3.1, `companion reached ${destination.id}`);
+    assert.ok(arrivedTogether(world.player.position, npc.mesh.position, world.goal), `both reached ${destination.id}`);
   }
 });
 

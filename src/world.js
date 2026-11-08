@@ -333,6 +333,10 @@ export class CityWorld {
       if (this.map === 'nagoya' && item.id.includes('clock')) ctx.fillText(item.id === 'gold-clock' ? '金' : '銀', x + 13, y + 3);
       if (item.id === 'toho-cinemas') ctx.fillText('TOHO', x, y + 12);
     }
+    for (const venue of (this.layout.destinations || []).filter(v => v.clearsGoal)) {
+      const [x, y] = point(venue); ctx.fillStyle = venue.type === 'netcafe' ? '#e4b68a' : '#dc9dbe';
+      ctx.fillRect(x - 3, y - 3, 6, 6); ctx.fillText(venue.type === 'netcafe' ? 'カスタマ' : 'ホテルi', x, y - 7);
+    }
     const [gx, gy] = point(this.goal); ctx.fillStyle = '#c5a3f2'; ctx.fillRect(gx - 3, gy - 3, 6, 6);
     const [px, py] = point(this.player.position); ctx.fillStyle = '#a2e8c7'; ctx.shadowBlur = 9; ctx.shadowColor = '#a2e8c7'; ctx.beginPath(); ctx.arc(px, py, 3.5, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
     ctx.strokeStyle = '#a2e8c755'; ctx.beginPath(); ctx.arc(px, py, 8, 0, Math.PI * 2); ctx.stroke();

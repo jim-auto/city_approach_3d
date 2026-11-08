@@ -8,7 +8,8 @@ export function destinationsFor(map) {
 }
 export function evaluateInvitation(profile, destination, talk) {
   if (!destination || profile.role || profile.guarded || talk.favor < 68 || talk.discomfort >= 60) return { accepted: false, answer: '今日はここで。また機会があれば。' };
-  if (profile.id === 'waiting' && destination.id === 'lounge') return { accepted: false, answer: '友達が来るので、ラウンジはやめておきます。近くを歩くくらいなら。' };
+  if (profile.id === 'waiting' && destination.type === 'lovehotel') return { accepted: false, answer: '友達が来るので、ホテルには行けません。カスタマカフェで少し話すくらいなら。' };
+  if (destination.type === 'lovehotel' && (talk.favor < 86 || talk.discomfort >= 30)) return { accepted: false, answer: 'ホテルにはまだ行く気になれないです。もう少しお話ししたいです。' };
   return { accepted: true, answer: destination.answer };
 }
 export function spokenReplies(turn, map) {

@@ -69,13 +69,13 @@ test('explore → observe → conversation → escort → arrival, help resume, 
     choose('listen'); choose('empathy'); choose('empathy'); choose('listen'); choose('proposal');
     assert.equal(state.mode, 'invite'); assert.equal(state.score, 0);
     assert.equal(world.companion, null, 'a conversation alone does not start following');
-    doc.querySelector('[data-destination="lounge"]').click();
-    assert.equal(doc.getElementById('invite-confirm').hidden, true, 'waiting person declines a long lounge visit');
+    doc.querySelector('[data-destination="hotel-i"]').click();
+    assert.equal(doc.getElementById('invite-confirm').hidden, true, 'waiting person declines hotel invitation');
     click('invite-confirm'); assert.equal(state.mode, 'invite');
-    doc.querySelector('[data-destination="plaza"]').click();
+    doc.querySelector('[data-destination="customa"]').click();
     assert.equal(doc.getElementById('invite-confirm').hidden, false);
     click('invite-confirm'); assert.equal(state.mode, 'escort'); assert.equal(state.score, 120); assert.equal(world.companion, npc);
-    assert.equal(world.escortDestination.id, 'plaza');
+    assert.equal(world.escortDestination.id, 'customa');
     click('menu-toggle'); assert.equal(state.mode, 'menu');
     click('menu-resume'); assert.equal(state.mode, 'escort'); assert.equal(world.companion, npc);
     click('menu-toggle'); click('help'); assert.equal(state.mode, 'help');
@@ -85,8 +85,8 @@ test('explore → observe → conversation → escort → arrival, help resume, 
     assert.equal(doc.getElementById('escort').hidden, false);
     click('goal-walk'); assert.deepEqual(world.destination, world.goal);
     npc.mesh.position.copy(world.goal); nextFrame(performance.now() + 16);
-    assert.equal(state.mode, 'result'); assert.equal(state.score, 220);
-    assert.match(doc.getElementById('result-body').textContent, /シネシティ広場/);
+    assert.equal(state.mode, 'result'); assert.equal(state.score, 220); assert.equal(state.clears, 1);
+    assert.match(doc.getElementById('result-body').textContent, /カスタマカフェ/);
     click('result-next'); assert.equal(state.mode, 'explore'); assert.equal(world.companion, null);
     for (const profile of STREET_PROFILES) {
       const streetNpc = { profile, mesh: { position: world.player.position.clone() }, cooldown: 0 };
@@ -119,6 +119,15 @@ test('explore → observe → conversation → escort → arrival, help resume, 
     doc.querySelector('[data-destination="towers"]').click();
     click('invite-cancel'); assert.equal(state.mode, 'explore'); assert.equal(state.score, afterAbort);
     click('invite-confirm'); assert.equal(world.companion, null); assert.equal(state.score, afterAbort);
+    assert.equal(state.clears, 1, 'points alone cannot produce another goal clear');
+    // Nagoya remains a practice area: reaching a clock must not clear the game.
+    const practice = {profile: PROFILES[8], mesh: {position: world.player.position.clone()}, cooldown: 0};
+    world.npcs = [practice]; world.onSelect(practice); click('approach-start');
+    for (const line of buildLines(practice.profile, state.map)) choose(line.correct[0]);
+    doc.querySelector('[data-destination="gold"]').click(); click('invite-confirm');
+    click('goal-walk'); practice.mesh.position.copy(world.goal); nextFrame(performance.now() + 100);
+    assert.equal(state.clears, 1); assert.doesNotMatch(doc.getElementById('result-title').textContent, /CLEAR|デート成立/); click('result-next');
+    doc.querySelector('[data-map="kabukicho"]').click();
     // Every added woman starts a real conversation from the primary button and can complete a date.
     for (const profile of PROFILES.slice(8)) {
       const added = { profile, mesh: { position: world.player.position.clone() }, cooldown: 0 };
@@ -132,13 +141,16 @@ test('explore → observe → conversation → escort → arrival, help resume, 
       assert.match(doc.getElementById('talk-feedback').textContent, /あなた/);
       for (const line of buildLines(profile, state.map)) choose(line.correct[0]);
       assert.equal(state.mode, 'invite', profile.name);
-      doc.querySelector('[data-destination="gold"]').click(); click('invite-confirm');
+      doc.querySelector('[data-destination="hotel-i"]').click(); click('invite-confirm');
       assert.equal(state.mode, 'escort'); assert.equal(world.companion, added);
-      click('goal-walk'); added.mesh.position.copy(world.goal); nextFrame(performance.now() + 100);
+      click('goal-walk'); added.mesh.position.copy(world.goal).add(new Vector3(0,0,4)); nextFrame(performance.now() + 100);
+      assert.equal(state.mode, 'escort', 'player alone at the entrance does not clear');
+      added.mesh.position.copy(world.goal); nextFrame(performance.now() + 150);
       assert.equal(state.mode, 'result', `${profile.name}: date arrival`);
       assert.match(doc.getElementById('result-title').textContent, /デート成立/);
       click('result-next');
     }
+    assert.equal(state.clears, 9, 'only eight actual hotel arrivals add to the cafe goal');
   } finally {
     t.mock.timers.reset(); window.happyDOM.abort();
     for (const [name, descriptor] of previous) { if (descriptor) Object.defineProperty(globalThis, name, descriptor); else delete globalThis[name]; }

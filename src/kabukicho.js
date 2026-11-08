@@ -1,3 +1,4 @@
+import { KABUKICHO_VENUES } from './venues.js';
 import * as THREE from 'three';
 import { box, cylinder, textSign, material } from './scenery.js';
 import { buildTohoBuilding } from './toho.js';
@@ -7,7 +8,7 @@ import { buildTohoBuilding } from './toho.js';
 const rect = (id, name, minX, maxX, minZ, maxZ) => ({ id, name, minX, maxX, minZ, maxZ });
 export const KABUKICHO_LAYOUT = {
   bounds: { minX: -65, maxX: 38, minZ: -59, maxZ: 49 },
-  start: [0, 29], goal: [9.8, -25.8], goalLabel: 'ホテル入口', obstacles: [],
+  start: [0, 29], goal: [-25.5, -7], goalLabel: 'カスタマカフェのビル入口', obstacles: [],
   people: [[-3.8, 23], [3.5, -7], [-21, -20], [22, 4], [3.7, 0], [-34, -32], [-23, 18], [3, -19], [-2.8, 30], [3.8, 20], [-4, 8], [4.5, -15], [-32, -20], [18.5, 10], [-21, 32], [-17, -40]],
   walkways: [
     rect('central-road', 'ゴジラロード', -6.5, 6.5, -22, 49),
@@ -34,11 +35,7 @@ export const KABUKICHO_LAYOUT = {
     { id: 'ichibangai-gate', name: '一番街ゲート', x: -22.5, z: 38, color: '#f08794' },
     { id: 'godzilla-head', name: 'ゴジラヘッド', x: -6.8, z: -28.8, color: '#9bb3a1' },
   ],
-  destinations: [
-    { id: 'cinema', label: '映画館の入口', x: 0, z: -26, invitation: '一緒に映画を観ませんか？', answer: 'いいですね。TOHOの入口まで一緒に行きましょう。' },
-    { id: 'plaza', label: 'シネシティ広場', x: -35, z: -32, invitation: '広場のほうで、もう少し話しませんか？', answer: '少しなら。広場のほうに歩きましょう。' },
-    { id: 'lounge', label: 'ホテルのラウンジ入口', x: 9.8, z: -25.8, invitation: 'ラウンジで続きを話しませんか？', answer: 'もう少し話したいです。まず入口まで一緒に行きましょう。' },
-  ],
+  destinations: KABUKICHO_VENUES,
 };
 function group(parent, name, x, z) { const g = new THREE.Group(); g.name = name; g.position.set(x, 0, z); parent.add(g); return g; }
 function sign(parent, text, x, y, z, w, h, bg, fg = '#faf0d9', rotation = 0) {
@@ -80,8 +77,8 @@ export function buildKabukichoDistrict(parent) {
     ['ラーメン', 23, 13, '#9a9384', '#c77337'], ['ゲーム', 33, 20, '#7a858b', '#366fb3'],
   ];
   const east = [
-    ['ネットカフェ', -7.5, 19, '#949c9b', '#4d914d'], ['カラオケ', 1, 15, '#89818c', '#477aab'],
-    ['焼肉', 24, 16, '#99847f', '#a22c39'], ['ドン・キホーテ', 34, 14, '#57748d', '#245395'],
+    ['ダイニング', -7.5, 19, '#949c9b', '#3d6388'], ['カラオケ', 1, 15, '#89818c', '#477aab'],
+    ['ドン・キホーテ', 34, 14, '#57748d', '#245395'],
   ];
   for (const [side, row] of [[-1, west], [1, east]]) for (const [i, [name, z, h, color, accent]] of row.entries()) {
     const g = storefront(parent, name, side * 11.3, z, 7.8, 10, h, color, -side * Math.PI / 2, accent);
@@ -94,7 +91,7 @@ export function buildKabukichoDistrict(parent) {
   }
   // Large road-facing red/green boards are the silhouette visible in the reference street view.
   vertical(parent, 'カラオケ歌広場', -5.8, 10.0, -7.0, '#bc2f49', 0, 1.55);
-  vertical(parent, 'ネットカフェ', 5.8, 11.0, -7.0, '#4a8c45', 0, 1.55);
+  vertical(parent, 'ダイニング', 5.8, 11.0, -7.0, '#3d6388', 0, 1.55);
   vertical(parent, 'ドン・キホーテ', 5.8, 8.0, 32.0, '#245099', 0, 1.4);
   // Restrained neon reflections use shared instanced materials, without postprocessing.
   for (const [i, color] of ['#d6537f', '#63bfd0', '#ccaa62'].entries()) {
@@ -117,8 +114,26 @@ export function buildKabukichoDistrict(parent) {
   box(gate, 0, 6.25, 0, 7.6, 1.0, .6, '#bf2b40');
   sign(gate, '歌舞伎町一番街', 0, 6.25, .33, 7.1, .7, '#b62d3f');
   for (const [i, z] of [-7, 3, 25, 34].entries()) {
+    if (i === 0) continue;
     const g = storefront(parent, ['寿司', 'カラオケ館', '焼鳥', '居酒屋'][i], -32, z, 8, 12, 11 + i * 2, '#6e6471', Math.PI / 2, ['#bb4a4d', '#3b88b5', '#a77a36', '#99516c'][i]);
     vertical(g, ['寿司', 'カラオケ館', '焼鳥', '居酒屋'][i], -2.8, 7, 6.2, '#943f56');
+  }
+  // Verified venues replace the old generic storefronts at these approaches.
+  for (const venue of KABUKICHO_VENUES) {
+    const b = venue.building, cafe = venue.type === 'netcafe';
+    const g = storefront(parent, venue.name, b.x, b.z, b.width, b.depth, b.height, cafe ? '#b5b0a4' : '#65535e', b.rotation, cafe ? '#9d352c' : '#8a405f');
+    g.name = venue.id; g.userData.venue = venue.id;
+    const front = b.depth / 2;
+    sign(g, cafe ? 'カスタマカフェ 7F' : 'HOTEL i', 0, cafe ? 20.8 : 8.2, front + .18, b.width - .3, 1.4, cafe ? '#9f3029' : '#492438');
+    sign(g, cafe ? '第二東亜会館' : 'ホテル アイ', 0, 4.2, front + .2, b.width - .6, .9, '#252735');
+    vertical(g, cafe ? 'カスタマカフェ' : 'HOTEL i', -b.width / 2 + .65, 9, front + .3, cafe ? '#a73329' : '#8a405f', 0, .85);
+    const entrance = group(parent, `${venue.id}-entrance`, venue.x, venue.z);
+    entrance.rotation.y = b.rotation;
+    box(entrance, 0, 1.2, -.35, 1.6, 2.4, .15, '#192232');
+    for (const side of [-1, 1]) box(entrance, side * .85, 1.25, -.3, .1, 2.5, .15, '#d1beb5');
+    box(entrance, 0, 2.55, -.3, 1.9, .12, .2, cafe ? '#ebc99d' : '#d9a5bc', true);
+    sign(entrance, cafe ? '7F ↑ エレベーター' : 'HOTEL i 入口', 0, 2.95, -.2, 3.5, .65, cafe ? '#9f3029' : '#492438');
+    entrance.userData.venueEntrance = venue.id;
   }
   // Cinema front and its western square. Keep these passages open all the way around the block.
   buildTohoBuilding(parent);

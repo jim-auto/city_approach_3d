@@ -91,3 +91,5 @@
 
 #approach-start { width: 100%; min-height: 50px; font-size: 16px; }
 #partner-play { font-size: 12px; min-height: 44px; margin-top: 8px; }
+
+#app .escort h2 { display: block; font-size: 13px; margin: 0 0 8px; line-height: 1.5; }

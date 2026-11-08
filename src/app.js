@@ -1,3 +1,4 @@
+import { arrivedTogether } from './venues.js';
 import { createChallengeUI } from './challenge-ui.js';
 import { streetLines } from './street-encounters.js';
 import { destinationsFor, evaluateInvitation, spokenReplies } from './encounters.js';
@@ -8,7 +9,7 @@ import { OPENERS, RESPONSES, evaluateOpener, buildLines, applyResponse, rank, lo
 export function startGame(CityWorld) {
 const $ = id => document.getElementById(id);
 let storage; try { storage = window.localStorage; } catch { storage = null; }
-const state = { score: 0, best: loadBest(storage), map: 'kabukicho', mode: 'intro', selected: null, talk: null, sound: false, elapsed: 0, clearShown: false };
+const state = { score: 0, best: loadBest(storage), map: 'kabukicho', mode: 'intro', selected: null, talk: null, sound: false, elapsed: 0, clears: 0 };
 let world, toastTimer, talkTimer, resultAction, audio;
 let resetTouch = () => {};
 function tone(kind = 'click') {
@@ -23,12 +24,12 @@ function tone(kind = 'click') {
 }
 function toast(text) { $('toast').textContent = text; $('toast').classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => $('toast').classList.remove('show'), 4300); }
 function score(points) { state.score += points; state.best = Math.max(state.best, state.score); saveBest(storage, state.best); updateScore(); }
-function updateScore() { $('score').textContent = String(state.score).padStart(3, '0'); $('best').textContent = String(state.best).padStart(3, '0'); $('rank').textContent = rank(state.score); $('score-progress').style.width = `${Math.min(100, state.score / 5)}%`; $('clear-progress').textContent = state.score >= 500 ? 'CITY CLEAR · 街のつながりが広がった！' : `CITY CLEAR まで ${500 - state.score} pt`; }
+function updateScore() { $('score').textContent = String(state.score).padStart(3, '0'); $('best').textContent = String(state.best).padStart(3, '0'); $('rank').textContent = rank(state.score); $('score-progress').style.width = `${Math.min(100, state.score / 5)}%`; $('clear-progress').textContent = state.clears ? `GOAL CLEAR · ${state.clears}回` : '相手とホテルかネットカフェの入口へ'; }
 function mission(step, title, text, number = '01') { $('mission-step').textContent = step; $('mission-title').textContent = title; $('mission-text').textContent = text; $('mission-number').textContent = number; }
 function setMode(mode) { closeActions(); world.cancelAction?.(); resetTouch(); $('app').dataset.mode = mode; state.mode = mode; world.paused = !['explore', 'escort'].includes(mode); if (world.paused) world.keys.clear(); $('touch-controls').style.visibility = ['explore', 'escort'].includes(mode) ? '' : 'hidden'; $('guide').hidden = mode !== 'explore'; $('labels').hidden = ['challenge', 'challenge-result'].includes(mode); }
 function openModal(id) { $(id).showModal(); }
 function closeInspect() { delete $('app').dataset.panel; $('inspect').hidden = true; state.selected = null; world.select(null); }
-function explore() { state.touring = false; $('guide-text').textContent = '女の子に声をかける → 会話 → デートに誘う'; state.invitation = null; state.escort = null; closeInspect(); $('escort').hidden = true; world.companion = null; setMode('explore'); mission('OBSERVE', 'まずは、街を歩こう。', '近くの人を選んで、サインを観察。'); }
+function explore() { state.touring = false; $('guide-text').textContent = state.map === 'nagoya' ? '名古屋駅は会話・同行の練習。ゴールは歌舞伎町で。' : '声をかける → 誘う → ホテル・ネカフェの入口へ'; state.invitation = null; state.escort = null; closeInspect(); $('escort').hidden = true; world.companion = null; setMode('explore'); mission('OBSERVE', 'まずは、街を歩こう。', '近くの人を選んで、サインを観察。'); }
 function result(title, body, points, button, action, good = false) {
   setMode('result'); $('conversation').close(); $('result-title').textContent = title; $('result-body').textContent = body; $('result-points').textContent = points ? `+${points} POINTS` : 'A MOMENT TO LEARN'; $('result-symbol').textContent = good ? '↗' : '◌'; $('result-eyebrow').textContent = good ? 'A NEW CONNECTION' : 'RESPECT THEIR PACE'; $('result-next').textContent = button; resultAction = action; if (points) score(points); tone(good ? 'success' : 'miss'); openModal('result');
 }
@@ -133,21 +134,27 @@ function beginEscort() {
   world.companion = npc; npc.followTarget = null; state.talk = null; state.invitation = null;
   state.escort = { destination, distance: 0, chatted: false, previous: world.player.position.clone() };
   score(120); setMode('escort'); $('escort').hidden = false;
-  $('goal-walk').textContent = `${destination.label}へ`;
-  $('escort-description').textContent = `${destination.label}まで、一緒に歩こう。`;
-  mission('WALK TOGETHER', `${destination.label}へ、一緒に。`, '紫のマーカーへ、ふたりのペースで歩こう。', '03');
+  document.querySelector('#escort h2').textContent = destination.name || destination.label;
+  $('goal-walk').textContent = destination.clearsGoal ? '入口まで歩く' : '目的地へ歩く';
+  $('escort-description').textContent = destination.routeHint || `${destination.label}まで、一緒に歩こう。`;
+  mission('WALK TOGETHER', `${destination.label}へ、一緒に。`, destination.routeHint || '紫のマーカーへ、ふたりのペースで歩こう。', '03');
   toast(`デートOK！「一緒に行きましょう」 ${destination.label}へ。`); tone('success');
 }
 function completeEscort() {
   const n = world.companion, destination = state.escort.destination;
   finishNpc(n); world.faceEachOther?.(n); world.companion = null; $('escort').hidden = true; state.escort = null;
-  const clear = state.score + 100 >= 500 && !state.clearShown; if (clear) state.clearShown = true;
-  result(clear ? 'CITY CLEAR · デート成立' : 'デート成立！', `「一緒に歩けて楽しかった。続きを話しましょう」${destination.label}まで、ふたりで歩いた。` + (clear ? ' 500ポイント達成！' : ''), 100, 'また街を歩く ↗', explore, true);
+  const clear = destination.clearsGoal === true && ['netcafe', 'lovehotel'].includes(destination.type);
+  if (clear) state.clears++;
+  result(clear ? 'GOAL CLEAR · デート成立！' : '同行の練習、おつかれさま！',
+    clear ? `${n.profile.name}と${destination.name}の入口に到着！「一緒に来られてうれしいです」` : `${destination.label}へ一緒に歩いた。ゴールは歌舞伎町のホテルかネットカフェ。次は歌舞伎町で誘ってみよう。`,
+    100, 'また街を歩く ↗', explore, true);
+
 }
 function changeMap(map) {
   if (state.map === map) return;
   if (state.mode !== 'explore') { toast('今の会話や同行を終えてから、エリアを切り替えよう。'); return; }
   resetTouch(); closeInspect(); state.map = map; world.setMap(map); document.querySelectorAll('[data-map]').forEach(b => b.classList.toggle('active', b.dataset.map === map));
+  $('guide-text').textContent = map === 'nagoya' ? '名古屋駅は会話・同行の練習。ゴールは歌舞伎町で。' : '声をかける → 誘う → ホテル・ネカフェの入口へ';
   const night = map === 'kabukicho'; $('location-name').innerHTML = night ? '歌舞伎町<span> KABUKICHO</span>' : '名古屋駅<span> 中央コンコース</span>';
   $('location-description').textContent = night ? '東宝ビル・一番街・シネシティ広場を歩く。' : '桜通口から太閤通口へ、駅構内を歩く。'; $('weather').innerHTML = night ? '◐ 21:30 <span>夜のにぎわい · 警戒度 高め</span>' : '◷ 15:00 <span>駅構内 · 金時計と銀時計を結ぶ通路</span>'; $('map-coord').textContent = night ? 'ゴジラロード' : '金時計 ↔ 銀時計'; document.querySelector('.compass span').textContent = night ? 'N' : 'W';
   mission('OBSERVE', 'まずは、街を歩こう。', '近くの人を選んで、サインを観察。'); toast(night ? 'ゴジラロードへ。通りの奥がTOHOシネマズ新宿。' : '名古屋駅の構内へ。金時計から中央通路を進むと銀時計。');
@@ -244,7 +251,7 @@ function frame(now) {
   lastRender = interval ? now - ((now - lastRender) % interval) : now;
   const dt = Math.min((now - previous) / 1000, .05); previous = now; state.elapsed += dt;
   arcade.update(dt); world.update(dt, state.elapsed); mapTick += dt;
-  if (state.touring && !world.destination) { state.touring = false; $('guide-text').textContent = '女の子に声をかける → 会話 → デートに誘う'; }
+  if (state.touring && !world.destination) { state.touring = false; $('guide-text').textContent = state.map === 'nagoya' ? '名古屋駅は会話・同行の練習。ゴールは歌舞伎町で。' : '声をかける → 誘う → ホテル・ネカフェの入口へ'; }
   if (state.mode === 'explore' && !state.selected && !state.touring) {
     const street = (world.npcs || []).find(n => n.profile?.autoApproach && n.cooldown <= state.elapsed && world.distanceTo(n) < 2.7);
     if (street) openStreet(street);
@@ -256,7 +263,7 @@ function frame(now) {
   if (state.mode === 'escort') {
     state.escort.distance += state.escort.previous.distanceTo(world.player.position); state.escort.previous.copy(world.player.position);
     if (!state.escort.chatted && state.escort.distance > 12 && world.distanceTo(world.companion) < 4) { state.escort.chatted = true; toast('「さっきの話の続き、気になります」ふたりで話しながら歩いている。'); }
-    const dist = world.player.position.distanceTo(world.goal); $('goal-distance').textContent = `${Math.ceil(dist)} m`; if (dist < 1.4 && world.distanceTo(world.companion) < 3.1) completeEscort(); }
+    const dist = world.player.position.distanceTo(world.goal); $('goal-distance').textContent = `${Math.ceil(dist)} m`; if (arrivedTogether(world.player.position, world.companion?.mesh.position, world.goal)) completeEscort(); }
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
