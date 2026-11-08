@@ -154,7 +154,7 @@ export class CityWorld {
     scene.add(new THREE.HemisphereLight('#fff4e4', '#66768f', 2.5));
     const key = new THREE.DirectionalLight('#fff0dc', 3); key.position.set(-2, 4, 3); scene.add(key);
     const camera = new THREE.PerspectiveCamera(27, 1, .1, 12);
-    const faceY = person.userData.authored ? 1.94 : 1.96;
+    const faceY = person.userData.faceY || 1.96;
     camera.position.set(.15, faceY + .07, 1.48); camera.lookAt(0, faceY, 0);
     const previous = this.renderer.getRenderTarget();
     try {
@@ -230,7 +230,9 @@ export class CityWorld {
           n.mesh.rotation.y = Math.cos(time * .15 + n.phase) > 0 ? 0 : Math.PI; moving = true;
         }
       }
-      animateCharacter(n.mesh, moving, time, n.phase);
+      // Keep navigation responsive; sample distant authored poses less often on phones.
+      const interval = this.mobile && this.distanceTo(n) > 14 && n !== this.companion && n !== this.selected ? .12 : 0;
+      if (!n.lastAnimation || time - n.lastAnimation >= interval) { animateCharacter(n.mesh, moving, time, n.phase); n.lastAnimation = time; }
       if (!n.ambient) {
         n.label.style.opacity = n === this.companion || n.cooldown > time ? '.25' : '1';
         if (!nearbyLabels.has(n) && n !== this.selected) n.label.style.display = 'none';

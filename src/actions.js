@@ -1,3 +1,4 @@
+import { animateAuthoredAction } from './authored-characters.js';
 export const ACTIONS = [
   { id: 'wave', label: '手を振る', icon: '👋', key: 'e', duration: 1.8 },
   { id: 'bow', label: '会釈', icon: '🙇', key: 'b', duration: 1.5 },
@@ -10,6 +11,7 @@ export const ACTIONS = [
 export function animateAction(model, id, elapsed) {
   const action = ACTIONS.find(a => a.id === id);
   if (!action || elapsed < 0 || elapsed >= action.duration) return false;
+  if (animateAuthoredAction(model, action, elapsed)) return true;
   const { body, head, arms, elbows, legs, knees } = model.userData;
   const t = elapsed / action.duration;
   const envelope = Math.min(1, elapsed / .2, (action.duration - elapsed) / .2);

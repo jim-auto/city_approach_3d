@@ -8,6 +8,8 @@ export async function loadOfflineAvatar() {
     return { data, width: info.width, height: info.height, close() {} };
   };
   const { loadAuthoredCharacters } = await import('../src/authored-characters.js');
-  const data = await fs.readFile('public/models/yui.vrm');
-  return loadAuthoredCharacters(data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength));
+  const { MODEL_FILES } = await import('../src/cast.js');
+  const buffers = {};
+  for (const [key, file] of Object.entries(MODEL_FILES)) { const data = await fs.readFile('public/models/' + file); buffers[key] = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength); }
+  return loadAuthoredCharacters(buffers);
 }

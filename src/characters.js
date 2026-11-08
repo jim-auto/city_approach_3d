@@ -184,7 +184,7 @@ function buildTemplate(color, hairColor, kind, detailed) {
 
 // Clone the hierarchy, share immutable geometry/materials, and rebind every joint.
 export function createCharacter(color, hair, kind = 'player', { detailed = true } = {}) {
-  const authored = createAuthoredCharacter(kind, detailed);
+  const authored = createAuthoredCharacter(kind, detailed, color);
   if (authored) return authored;
   const key = `${color}/${hair}/${kind}/${detailed}`;
   if (!templates.has(key)) {

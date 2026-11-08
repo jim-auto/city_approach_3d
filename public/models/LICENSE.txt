@@ -1,31 +1,75 @@
-VRM1_Constraint_Twist_Sample v1.0.1
-(c) 2022 pixiv Inc.
+Character models: pixiv Inc. / VRoid / VRoid Project
 
+All characters in this game are fictional adults. The original model authors are not
+associated with the game and do not endorse it. This notice does not relicense the
+models under the software license. Original embedded VRM permissions are retained.
+
+1. yui.vrm: VRM1_Constraint_Twist_Sample v1.0.1
+(c) 2022 pixiv Inc.
 Source:
 https://github.com/pixiv/three-vrm/blob/3caf7a21ee68f0d5dfa363ab3d577450bbf60136/packages/three-vrm/examples/models/VRM1_Constraint_Twist_Sample.vrm
-Upstream model documentation:
+Documentation:
 https://github.com/vrm-c/vrm-specification/tree/master/samples/VRM1_Constraint_Twist_Sample
-
-License: VRM Public License 1.0
-https://vrm.dev/en/licenses/1.0/
-The model is provided AS IS without warranties. See the linked license, particularly Section 4.
-
-The embedded VRMC_vrm.meta settings remain in yui.vrm and form part of its license:
-- avatarPermission: everyone
-- commercialUsage: corporation
-- creditNotation: unnecessary
-- allowRedistribution: true
-- modification: allowModificationRedistribution
-- allowExcessivelySexualUsage: true
-- allowExcessivelyViolentUsage: true
-- allowPoliticalOrReligiousUsage: true
-- allowAntisocialOrHateUsage: false
-
-Modifications for this project: embedded PNG textures resized to a maximum of 512 pixels
-(1024 for face/iris), PNG palette compression, material outline passes disabled.
-Geometry, humanoid rig, morphs, UVs, node constraints and license metadata retained.
-Hair physics are disabled at runtime; the authored rest hairstyle is retained.
-The character role Yui (24) is fictional and belongs to this game. No affiliation with
-or endorsement by pixiv Inc. is claimed.
-
+VRM Public License 1.0: https://vrm.dev/en/licenses/1.0/
 Original SHA-256: 12c2b97e95e700783a6a550dc0eee2d7880aeedccef9ae67bc4c5a2f0f2631a2
+Embedded settings: avatarPermission=everyone, commercialUsage=corporation,
+creditNotation=unnecessary, allowRedistribution=true,
+modification=allowModificationRedistribution, allowExcessivelySexualUsage=true,
+allowExcessivelyViolentUsage=true, allowPoliticalOrReligiousUsage=true,
+allowAntisocialOrHateUsage=false.
+
+2. bob.vrm: AvatarSample_A, author: VRoid (pixiv Inc.)
+Source (unmodified export, retrieved from this public mirror):
+https://github.com/madjin/vrm-samples/blob/e16eb187100149a315ad92c3c9968f1d5baa6c7d/vroid/stable/AvatarSample_A.vrm
+Original SHA-256: b86b0b8a66d48911431d6f920a5211a974226f83aa672eca3f3dfade58ac346e
+Original model page:
+https://hub.vroid.com/characters/2843975675147313744/models/5644550979324015604
+Embedded VRM 0 permissions: allowedUserName=Everyone, violentUssageName=Allow,
+sexualUssageName=Allow, commercialUssageName=Allow, licenseName=Other.
+This export omits a license URL. Its model-specific terms are the official
+VRoidPreset A-Z conditions below, not CC0 and not this repository's software license.
+
+3. ribbon.vrm: AvatarSample_B v1.1, VRoid Project / pixiv Inc.
+Source:
+https://github.com/pixiv/ChatVRM/blob/b542aa00e19dccf9fc48ba340cf7eee011d2329a/public/AvatarSample_B.vrm
+Original SHA-256: ffbd8c92a9e67c0a948f69c7a2eec91e5c282c9ae70e9184309fc164d74cbc27
+VRM Public License 1.0: https://vrm.dev/en/licenses/1.0/
+Additional conditions: the official VRoidPreset A-Z conditions below.
+Embedded settings: avatarPermission=everyone, commercialUsage=corporation,
+creditNotation=unnecessary, allowRedistribution=true,
+modification=allowModificationRedistribution, allowExcessivelySexualUsage=true,
+allowExcessivelyViolentUsage=true, allowPoliticalOrReligiousUsage=true,
+allowAntisocialOrHateUsage=false.
+
+4. male.vrm: AvatarSample_C v1.0, VRoid Project / pixiv Inc.
+Source (export obtained from this public mirror):
+https://github.com/ad-042/gaze-aware-avatar-study-kit/blob/98ee8e61693cd4d3885db6feef7e9faf498761da/frontend/public/avatars/AvatarSample_C.vrm
+Original SHA-256: 6ad4acb74c2ea91b46a2c6755243efd9da4e0857635b659acd55d0de5832330a
+Embedded model-specific license URL:
+https://hub.vroid.com/license?allowed_to_use_user=everyone&characterization_allowed_user=everyone&corporate_commercial_use=allow&credit=unnecessary&modification=allow&personal_commercial_use=profit&redistribution=allow&sexual_expression=allow&version=1&violent_expression=allow
+Embedded VRM 0 permissions: allowedUserName=Everyone, violentUssageName=Allow,
+sexualUssageName=Allow, commercialUssageName=Allow, licenseName=Other.
+Additional conditions: the official VRoidPreset A-Z conditions below.
+
+Official conditions for AvatarSample A/B/C:
+https://vroid.pixiv.help/hc/en-us/articles/4402394424089-VRoidPreset-A-Z
+Consult the linked conditions in full. These models are NOT CC0. Modification and
+free redistribution are permitted subject to the conditions; do not relicense them
+as CC0, sell the asset files, use them in a character creation service, imply pixiv
+endorsement, or violate the other prohibited conduct. The game offers fixed
+characters; it does not provide a character creation service or sell model data.
+
+Changes made for this project:
+- Embedded PNG textures resized to 512 pixels (1024 for identified face/iris maps),
+  with PNG palette compression.
+- Same-material primitives merged; unused buffers removed; morph vectors stored
+  sparsely without changing nonzero values.
+- Body/hair triangle reduction for A/B/C; face triangles retained. Yui's original
+  triangle geometry retained.
+- Material outline passes disabled. Runtime hair physics disabled.
+- Runtime changes to hair/clothing colors, character height, facial expressions,
+  handheld objects and accessories. Different instances share authored bases.
+- Software and gameplay-specific additions do not replace the original asset terms.
+
+The models are provided AS IS without warranties. See the applicable license and
+conditions, including Section 4 of the VRM Public License where applicable.
