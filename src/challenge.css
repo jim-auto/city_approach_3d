@@ -40,3 +40,51 @@
 @media (max-height: 560px) and (orientation: landscape) {
   #app .action-menu { max-height: calc(100dvh - 140px); overflow-y: auto; }
 }
+/* The street keeps one interaction button; optional tools live in the menu. */
+#app .topbar { width: 48px; left: auto; right: max(16px, var(--safe-right)); }
+#app .play-guide { max-width: calc(100% - 92px); padding: 10px 12px; }
+#app .play-guide strong { display: none; }
+#app .play-guide span { font-size: 12px; }
+#app #nearby-person { width: 132px; min-height: 52px; }
+#app #traits, #app #person-status, #app #person-distance, #app #approach-status { display: none; }
+#app .inspect { max-width: 380px; padding: 16px; }
+#app .inspect .panel-heading { margin-bottom: 4px; }
+#app .inspect .person-heading { margin: 0 0 8px; }
+#app .inspect #person-cue { margin: 8px 0 12px; font-size: 12px; }
+#partner-play { width: 100%; min-height: 48px; font-size: 14px; }
+#opener-choices { margin-top: 10px; border: 1px solid #ffffff22; border-radius: 12px; }
+#opener-choices summary { cursor: pointer; padding: 14px; font-size: 14px; }
+#opener-actions { padding: 0 10px 10px; }
+#app .inspect .leave { margin-top: 8px; min-height: 40px; font-size: 12px; }
+.game-menu .action-dock { position: static; margin: 12px 0; }
+.game-menu #action-toggle { width: 100%; min-height: 44px; }
+.game-menu .action-menu { position: static; display: grid; grid-template-columns: 1fr 1fr; width: 100%; margin-bottom: 8px; }
+.game-menu .action-menu button { min-height: 44px; }
+.game-menu .map-switch { position: static; display: flex; width: 100%; margin: 12px 0; }
+.game-menu .map-switch button { flex: 1; min-height: 44px; }
+.intro details { text-align: left; margin: 16px 0; font-size: 13px; }
+.intro details summary { padding: 10px; cursor: pointer; }
+.challenge-top { max-width: 380px; margin: auto; padding: 6px 10px 6px 16px; }
+.challenge-top strong { font-size: 13px; }
+.challenge-top span { font-variant-numeric: tabular-nums; }
+.challenge-bottom { padding: 12px; width: min(340px, calc(100% - 32px)); }
+#challenge-cue { font-size: 16px; margin-bottom: 6px; }
+#challenge-feedback { margin-bottom: 10px; font-size: 12px; }
+#challenge-tap { min-height: 56px; font-size: 20px; }
+#challenge-reaction { font-size: 15px; line-height: 1.8; color: #b9e8d4; }
+#challenge-result-score { font-size: 12px; }
+#challenge-earned { font-size: 22px; }
+#challenge-unlocked p { margin: 4px 0; padding: 6px; }
+@media (max-height: 560px) and (orientation: landscape) {
+  .challenge-top { left: 12px; margin: 0; width: 240px; }
+  .challenge-bottom { width: 240px; }
+  #app .inspect { max-height: calc(100dvh - 24px); }
+}
+#app .topbar { position: absolute; top: 0; right: max(16px, var(--safe-right)); width: 46px; padding: var(--safe-top) 0 0; }
+#menu-toggle { flex-shrink: 0; }
+#app .play-guide { top: calc(20px + var(--safe-top)); }
+#app summary { pointer-events: auto; }
+.game-menu .action-menu kbd { margin-left: 8px; opacity: .5; }
+.challenge-result details { text-align: left; margin-top: 12px; font-size: 12px; }
+.challenge-result summary { padding: 12px 0; cursor: pointer; }
+#challenge-return { margin-top: 16px; }

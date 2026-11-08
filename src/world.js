@@ -58,7 +58,7 @@ export class CityWorld {
     this.city.add(new THREE.HemisphereLight(night ? '#a9bafa' : '#f5ecdc', night ? '#3d344b' : '#737e7b', night ? 1.3 : 2.8));
     const sun = new THREE.DirectionalLight(night ? '#b7c8ff' : '#ffe3ad', night ? 1.6 : 3.6); sun.position.set(-12, 27, 15); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -28, right: 28, top: 30, bottom: -30, far: 85 }); sun.shadow.bias = -.001; this.city.add(sun);
     if (night) buildKabukichoLandmarks(this.city); else buildNagoyaConcourse(this.city);
-    if (this.camera) { this.camera.fov = night ? 55 : 43; this.camera.updateProjectionMatrix(); }
+    if (this.camera) { this.camera.fov = night ? 55 : 43; this.camera.updateProjectionMatrix(); if (this.challengeActive) this.updateChallengeView(); }
     this.goal = new THREE.Vector3(this.layout.goal[0], 0, this.layout.goal[1]);
     const goalRing = new THREE.Mesh(new THREE.RingGeometry(1.1, 1.25, 48), new THREE.MeshBasicMaterial({ color: '#c6a0fa', side: THREE.DoubleSide, transparent: true, opacity: .75 }));
     this.goalRing = goalRing; goalRing.visible = false;
@@ -110,24 +110,38 @@ export class CityWorld {
     this.destination = null; this.waypoints = []; this.marker.visible = false; this.keys.clear();
     this.action = { id, elapsed: 0 }; return true;
   }
-  beginChallenge() {
+  beginChallenge(partner) {
+    if (!partner?.mesh) return false;
     this.cancelAction(); this.destination = null; this.waypoints = []; this.marker.visible = false; this.keys.clear();
-    this.challengeActive = true;
-    for (const n of this.npcs || []) { n.challengeVisible = n.mesh.visible; n.mesh.visible = false; }
+    this.challengeActive = true; this.challengePartner = partner; this.challengePartnerRotation = partner.mesh.rotation.y;
+    for (const n of this.npcs || []) { n.challengeVisible = n.mesh.visible; n.mesh.visible = n === partner; }
     this.challengeRotation = this.player.rotation.y;
-    const focus = this.player.position.clone().add(new THREE.Vector3(0, 1.5, 0));
-    let angle = this.yaw;
-    for (let i = 0; i < 8; i++) {
-      const candidate = this.yaw + i * Math.PI / 4, desired = focus.clone().add(new THREE.Vector3(Math.sin(candidate) * 4.4, .6, Math.cos(candidate) * 4.4));
-      if (!cameraView(focus, desired, this.cameraBlockers, candidate).obstructed) { angle = candidate; break; }
-    }
-    this.challengeView = { focus, desired: focus.clone().add(new THREE.Vector3(Math.sin(angle) * 4.4, .6, Math.cos(angle) * 4.4)) };
-    this.player.rotation.y = angle;
+    this.updateChallengeView();
+    return true;
   }
+  updateChallengeView() {
+    const partner = this.challengePartner; if (!partner) return;
+    const focus = this.player.position.clone().add(partner.mesh.position).multiplyScalar(.5).add(new THREE.Vector3(0, 1.55, 0));
+    // Look perpendicular to the pair so both silhouettes stay visible on narrow phones.
+    const separation = partner.mesh.position.clone().sub(this.player.position);
+    let angle = Math.atan2(separation.x, separation.z) + Math.PI / 2;
+    const aspect = Math.max(.3, this.camera.aspect || 1);
+    const distance = Math.max(6.8, (separation.length() + 1.8) / (2 * Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)) * aspect) * 1.15);
+    const view = candidate => focus.clone().add(new THREE.Vector3(Math.sin(candidate) * distance, .6, Math.cos(candidate) * distance));
+    for (const offset of [0, Math.PI, .5, -.5, Math.PI + .5, Math.PI - .5]) {
+      const candidate = angle + offset;
+      if (!cameraView(focus, view(candidate), this.cameraBlockers, candidate).obstructed) { angle = candidate; break; }
+    }
+    this.challengeView = { focus, desired: cameraView(focus, view(angle), this.cameraBlockers, angle).position };
+    this.player.rotation.y = angle; partner.mesh.rotation.y = angle;
+  }
+  challengeCue(id) { if (this.challengePartner) this.partnerAction = { id, elapsed: 0 }; }
   endChallenge() {
     this.cancelAction(); this.challengeActive = false; this.challengeView = null;
     for (const n of this.npcs || []) if (n.challengeVisible !== undefined) { n.mesh.visible = n.challengeVisible; delete n.challengeVisible; }
-    if (this.challengeRotation !== undefined) this.player.rotation.y = this.challengeRotation;
+    if (this.challengeRotation !== undefined) { this.player.rotation.y = this.challengeRotation; delete this.challengeRotation; }
+    if (this.challengePartner) { this.challengePartner.mesh.rotation.y = this.challengePartnerRotation; animateCharacter(this.challengePartner.mesh, false, 0); }
+    this.challengePartner = null; this.partnerAction = null;
   }
   challengeFeedback(grade) {
     this.challengeEffects ||= createChallengeEffects(this.player);
@@ -172,7 +186,7 @@ export class CityWorld {
     const w = this.container.clientWidth, h = this.container.clientHeight;
     if (!w || !h) return;
     const wasPortrait = this.camera.aspect < .75;
-    this.camera.aspect = w / h; this.camera.updateProjectionMatrix(); this.renderer.setSize(w, h);
+    this.camera.aspect = w / h; this.camera.updateProjectionMatrix(); if (this.challengeActive) this.updateChallengeView(); this.renderer.setSize(w, h);
     // Browser address-bar resizing must preserve the chosen angle and zoom.
     if (this.mobile && wasPortrait !== (this.camera.aspect < .75)) this.distance = this.camera.aspect < .75 ? 32 : 23;
   }
@@ -238,6 +252,8 @@ export class CityWorld {
     }
     updateChallengeEffects(this.challengeEffects, dt, time);
     if (this.challengeActive && this.challengeView) {
+      animateCharacter(this.challengePartner.mesh, false, time);
+      if (this.partnerAction) { this.partnerAction.elapsed += dt; if (!animateAction(this.challengePartner.mesh, this.partnerAction.id, this.partnerAction.elapsed)) this.partnerAction = null; }
       this.camera.position.lerp(this.challengeView.desired, 1 - Math.exp(-dt * 9)); this.camera.lookAt(this.challengeView.focus); this.camera.updateMatrixWorld();
       this.renderer.render(this.scene, this.camera); return;
     }

@@ -48,7 +48,7 @@ test('explore → observe → conversation → escort → arrival, help resume, 
     doc.getElementById('game-menu').dispatchEvent(new window.Event('cancel', { cancelable: true }));
     assert.equal(state.mode, 'explore'); assert.equal(world.paused, false);
     assert.equal(doc.getElementById('game-menu').open, false);
-    click('action-toggle'); assert.equal(doc.getElementById('action-menu').hidden, false);
+    click('menu-toggle'); click('action-toggle'); assert.equal(doc.getElementById('action-menu').hidden, false);
     doc.querySelector('[data-action="jump"]').click(); assert.equal(world.action, 'jump');
     assert.equal(doc.getElementById('action-menu').hidden, true); assert.equal(state.score, 0);
     window.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'e' })); assert.equal(world.action, 'wave');
