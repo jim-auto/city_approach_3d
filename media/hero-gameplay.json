@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-11-08T11:39:25.857Z",
+  "capturedAt": "2026-11-08T13:39:17.899Z",
   "source": "Actual local game, isolated headless browser; UI clicks and normal movement only.",
   "viewport": {
     "width": 960,
@@ -8,61 +8,67 @@
   "edits": [
     {
       "label": "歌舞伎町で、ナンパしてみた。",
-      "start": 16.844,
+      "start": 15.182,
       "duration": 1.6,
       "speed": 1
     },
     {
       "label": "声をかけて、リアクションじゃんけん。",
-      "start": 25.003,
+      "start": 24.789,
       "duration": 1.1,
       "speed": 1
     },
     {
-      "label": "勝つ手で返して、会話コンボ。",
-      "start": 28.793,
-      "duration": 3.5,
-      "speed": 1.4
+      "label": "勝つ手に、笑顔でリアクション。",
+      "start": 35.48,
+      "duration": 1,
+      "speed": 0.65
+    },
+    {
+      "label": "連勝すると、もっと喜んでくれる。",
+      "start": 42.532,
+      "duration": 1,
+      "speed": 0.65
     },
     {
       "label": "「もう少し話したい。場所変えない？」",
-      "start": 43.632999999999996,
+      "start": 53.397999999999996,
       "duration": 1.15,
       "speed": 1
     },
     {
       "label": "ふたりで歩いて、会話コンボ。",
-      "start": 51.068999999999996,
+      "start": 63.954,
       "duration": 4.8,
       "speed": 1.8
     },
     {
       "label": "歩調を合わせて、コンボをつなぐ。",
-      "start": 88.755,
+      "start": 121.685,
       "duration": 4.5,
       "speed": 2
     },
     {
       "label": "置いていかず、一緒にゴール。",
-      "start": 119.51599999999999,
+      "start": 159.351,
       "duration": 4.4,
       "speed": 2.8
     },
     {
       "label": "ゴールで、ふたりの記念写真。",
-      "start": 124.51599999999999,
+      "start": 164.351,
       "duration": 1,
       "speed": 1
     },
     {
       "label": "スマホ・PCで、すぐ遊べる。",
-      "start": 126.827,
+      "start": 167.246,
       "duration": 1.5,
       "speed": 1
     }
   ],
   "result": {
-    "score": "1059 pt",
+    "score": "1067 pt",
     "rank": "RANK S",
     "title": "GOAL CLEAR · デート成立！",
     "walkingCues": 4
@@ -77,8 +83,8 @@
       }
     ],
     "format": {
-      "duration": "15.400000",
-      "size": "5684187"
+      "duration": "16.000000",
+      "size": "4125797"
     }
   }
 }

@@ -2,11 +2,11 @@
 
 **歌舞伎町で、ナンパしてみた。声掛けから、ふたりでゴールするまで。**
 
-[![CITY APPROACH 3Dの実プレイ。声掛け、会話、同行コンボ、ゴール記念写真まで](media/hero-gameplay.gif)](https://jim-auto.github.io/city_approach_3d/)
+[![CITY APPROACH 3Dの実プレイ。声掛け、会話、同行コンボ、ゴール記念写真まで](media/hero-gameplay.gif?v=expressions)](https://jim-auto.github.io/city_approach_3d/)
 
 **[▶ 今すぐ遊ぶ](https://jim-auto.github.io/city_approach_3d/)** · [投稿用MP4](media/hero-gameplay.mp4?raw=true) · [GIFを開く](media/hero-gameplay.gif?raw=true)
 
-実際のゲーム画面を録画したハイライトです。カット・一部早送りを含みます。スマホ・PCのブラウザで遊べます。
+女の子の表情・仕草・連勝時のリアクションを含む、実際のゲーム画面を録画したハイライトです。カット・一部速度調整を含みます。スマホ・PCのブラウザで遊べます。
 
 [city_approach](https://github.com/jim-auto/city_approach) の「相手のサインを観察 → 声かけ → 会話 → 同行」を、Three.jsの街で遊べるようにした3Dナンパシミュレーターです。女性キャラクターは全員20歳以上の架空の人物で、声掛け・会話・デートの誘い・同行までを遊べます。
 

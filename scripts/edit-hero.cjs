@@ -11,7 +11,8 @@ const fs=require('node:fs/promises');const path=require('node:path');const {exec
  const add=(label,start,duration,speed=1)=>clips.push({label,start:Math.max(0,start),duration,speed});
  add('歌舞伎町で、ナンパしてみた。',m.street,1.6);
  add('声をかけて、リアクションじゃんけん。',m.approach,1.1);
- add('勝つ手で返して、会話コンボ。',m.conversation+.7,3.5,1.4);
+ add('勝つ手に、笑顔でリアクション。',m.reaction1?m.reaction1-.35:m.conversation+.7,1.0,.65);
+ if(m.reaction3)add('連勝すると、もっと喜んでくれる。',m.reaction3-.35,1.0,.65);
  if(m.decline)add('ホテルの誘い、普通に断られた。',m.decline,1.4);
  add('「もう少し話したい。場所変えない？」',m.accepted+.4,1.15);
  add('ふたりで歩いて、会話コンボ。',Math.max(m.walking,m.cue1-.6),4.8,1.8);
@@ -22,7 +23,7 @@ const fs=require('node:fs/promises');const path=require('node:path');const {exec
  const segments=[];
  for(const [i,c] of clips.entries()){
   const textfile=path.resolve(root,`caption-${i}.txt`), file=path.resolve(root,`clip-${i}.mp4`);await fs.writeFile(textfile,c.label);
-  const filter=`setpts=(PTS-STARTPTS)/${c.speed},fps=24,scale=960:600:flags=lanczos,setsar=1,pad=960:660:0:60:color=0x111b29,drawtext=fontfile='${font}':textfile='${textfile}':fontcolor=0xf2f1e9:fontsize=25:x=22:y=14,drawtext=fontfile='${font}':text='CITY APPROACH 3D':fontcolor=0xa2dfc5:fontsize=16:x=w-tw-22:y=14,drawtext=fontfile='${font}':text='実プレイ / 一部早送り':fontcolor=0xaab7c4:fontsize=11:x=w-tw-22:y=38`;
+  const filter=`setpts=(PTS-STARTPTS)/${c.speed},fps=24,scale=960:600:flags=lanczos,setsar=1,pad=960:660:0:60:color=0x111b29,drawtext=fontfile='${font}':textfile='${textfile}':fontcolor=0xf2f1e9:fontsize=25:x=22:y=14,drawtext=fontfile='${font}':text='CITY APPROACH 3D':fontcolor=0xa2dfc5:fontsize=16:x=w-tw-22:y=14,drawtext=fontfile='${font}':text='実プレイ / 一部速度調整':fontcolor=0xaab7c4:fontsize=11:x=w-tw-22:y=38`;
   execFileSync('ffmpeg',['-hide_banner','-loglevel','error','-y','-ss',String(c.start),'-t',String(c.duration),'-i',raw,'-vf',filter,'-an','-c:v','libx264','-preset','fast','-crf','20','-pix_fmt','yuv420p',file],{stdio:'inherit'});segments.push(file);
  }
  const concat=path.resolve(root,'concat.txt');await fs.writeFile(concat,segments.map(file=>`file '${file}'`).join('\n'));

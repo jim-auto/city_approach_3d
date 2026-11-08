@@ -7,6 +7,7 @@ const path = require('node:path');
 const {chromium} = require('playwright');
 (async()=>{
   const out=process.env.HERO_OUT||'artifacts/hero';await fs.mkdir(out,{recursive:true});
+  await fs.rm(path.join(out,'recording.json'),{force:true});
   const browser=await chromium.launch({headless:true,...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE?{executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE}:{}),args:['--no-sandbox','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
   const context=await browser.newContext({viewport:{width:960,height:600},deviceScaleFactor:1,isMobile:true,hasTouch:true,recordVideo:{dir:out,size:{width:960,height:600}}});
   const t0=Date.now(), marks={}, errors=[];let rawVideo;
@@ -33,7 +34,8 @@ const {chromium} = require('playwright');
       const signal=await page.locator('#talk-line').innerText();
       const key=signal.includes('グー')?'paper':signal.includes('チョキ')?'rock':'scissors';
       await page.locator(`[data-hand="${key}"]`).click();
-      if(round===0){await pause(300);mark('reaction');await shot('reaction');}
+      await pause(300);mark(`reaction${round+1}`);
+      if(round===0)marks.reaction=marks.reaction1;
       await pause(1800);
     }
     mark('invite');await pause(600);
@@ -46,7 +48,7 @@ const {chromium} = require('playwright');
       const mode=await page.locator('#app').getAttribute('data-mode');if(mode==='result')break;
       const button=page.locator('#walk-response');
       if(await button.isVisible()&&await button.isEnabled()){
-        mark(`cue${++cues}`);await shot(`cue${cues}`);await pause(650);await button.click();await pause(900);await shot(`combo${cues}`);
+        mark(`cue${++cues}`);await pause(650);await button.click();await pause(900);
         if(await page.locator('#app').getAttribute('data-mode')==='escort')await page.locator('#goal-walk').click();
       }else await pause(150);
     }
