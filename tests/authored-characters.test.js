@@ -207,3 +207,15 @@ test('all four rhythm scenes keep the real rig moving between hits without leaki
   delete a.userData.groove;animateCharacter(a,false,0);assert.deepEqual(bones(a),idle);assert.deepEqual(face(a),idleFace);
  }
 });
+
+test('musical choreography keeps dancing through hit reactions and restores a held book after the song',()=>{
+ const model=createCharacter('#dc9aab','#42293a','reader'),origin=model.position.clone();
+ animateCharacter(model,false,0);const idleBook=model.userData.items.get('book').position.clone();
+ model.userData.reaction={id:'delight',elapsed:.5,duration:1.55};model.userData.groove={part:3,time:.6};animateCharacter(model,false,0);
+ const before=model.userData.pairs.map(([,b])=>b.quaternion.toArray());
+ model.userData.groove.time=.9;animateCharacter(model,false,0);
+ assert.notDeepEqual(model.userData.pairs.map(([,b])=>b.quaternion.toArray()),before);
+ assert.notDeepEqual(model.userData.items.get('book').position,idleBook);assert.deepEqual(model.position,origin);
+ delete model.userData.reaction;delete model.userData.groove;animateCharacter(model,false,0);
+ assert.deepEqual(model.userData.items.get('book').position,idleBook);assert.equal(model.userData.avatar.position.z,0);
+});

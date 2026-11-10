@@ -135,10 +135,10 @@ export class CityWorld {
   updateChallengeView() {
     const partner = this.challengePartner; if (!partner) return;
     if(this.talkActive){
-      const focus=partner.mesh.position.clone().add(new THREE.Vector3(0,this.camera.aspect<1?.85:1.35,0));
-      const shot=this.talkPartIndex||0,distance=3.4-shot*.15;
+      const focus=partner.mesh.position.clone().add(new THREE.Vector3(0,this.camera.aspect<1?-.12:1.35,0));
+      const shot=this.talkPartIndex||0,distance=this.camera.aspect<1?5.2:3.4-shot*.15;
       let angle=this.challengePartnerRotation;
-      const view=a=>focus.clone().add(new THREE.Vector3(Math.sin(a)*distance,.2,Math.cos(a)*distance));
+      const view=a=>focus.clone().add(new THREE.Vector3(Math.sin(a)*distance,this.camera.aspect<1?1.7:.2,Math.cos(a)*distance));
       for(const offset of [0,.6,-.6,Math.PI]){const a=this.challengePartnerRotation+offset+(shot-1)*.08;if(!cameraView(focus,view(a),this.cameraBlockers,a).obstructed){angle=a;break;}}
       partner.mesh.rotation.y=angle;
       this.challengeView={focus,desired:cameraView(focus,view(angle),this.cameraBlockers,angle).position};return;
@@ -311,7 +311,8 @@ export class CityWorld {
       if(reaction){reaction.elapsed+=dt;if(reaction.elapsed>=reaction.duration)delete this.challengePartner.mesh.userData.reaction;}
       animateCharacter(this.challengePartner.mesh, false, time);
       if (this.partnerAction) { this.partnerAction.elapsed += dt; if (!animateAction(this.challengePartner.mesh, this.partnerAction.id, this.partnerAction.elapsed)) this.partnerAction = null; }
-      const cameraPosition=this.challengeView.desired.clone();
+      const cameraPosition=this.challengeView.desired.clone(),groove=this.challengePartner.mesh.userData.groove;
+      if(groove){const beat=groove.time*112/60;cameraPosition.sub(this.challengeView.focus).multiplyScalar(1.16+Math.sin(beat*Math.PI/4)*.035).add(this.challengeView.focus);if(cameraView(this.challengeView.focus,cameraPosition,this.cameraBlockers).obstructed)cameraPosition.copy(this.challengeView.desired);}
       if(this.talkCameraPulse){const p=this.talkCameraPulse;p.elapsed+=dt;cameraPosition.y+=Math.sin(Math.min(1,p.elapsed)*Math.PI)*p.strength;if(p.elapsed>=1)this.talkCameraPulse=null;}
       this.camera.position.lerp(cameraPosition, 1 - Math.exp(-dt * 9)); this.camera.lookAt(this.challengeView.focus); this.camera.updateMatrixWorld();
       this.renderer.render(this.scene, this.camera); return;

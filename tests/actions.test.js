@@ -153,7 +153,9 @@ test('talk close-up hides the nearby player, frames the partner and restores the
     world.beginTalk(partner);assert.equal(world.player.visible,false);assert.equal(bystander.mesh.visible,false);
     world.camera.position.copy(world.challengeView.desired);world.camera.lookAt(world.challengeView.focus);world.camera.updateMatrixWorld();
     const head=partner.mesh.position.clone().add(new THREE.Vector3(0,1.7,0)).project(world.camera);
-    assert.ok(Math.abs(head.x)<.8&&Math.abs(head.y)<.9);assert.deepEqual(partner.mesh.position,position);
+    assert.ok(Math.abs(head.x)<.8&&Math.abs(head.y)<.9);
+    if(aspect<1){const foot=partner.mesh.position.clone().project(world.camera);assert.ok(foot.y>.03,'feet stay above the phone rhythm panel');}
+    assert.deepEqual(partner.mesh.position,position);
     world.endChallenge();assert.equal(world.player.visible,true);assert.equal(bystander.mesh.visible,true);assert.equal(world.talkActive,false);assert.equal(partner.mesh.rotation.y,.2);
   }
 });

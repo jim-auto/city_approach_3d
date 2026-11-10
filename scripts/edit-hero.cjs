@@ -14,7 +14,7 @@ const fs=require('node:fs/promises');const path=require('node:path');const {exec
  const add=(label,start,duration,speed=1)=>clips.push({label,start:Math.max(0,start-timingOffset),duration,speed});
  add('歌舞伎町で、ナンパしてみた。',m.street,1.2);
  add('声かけ → 連れ出し → ホテ前 → ゴール！',m.approach,.8);
- add('リズムに合わせて、ふたりが動く。',m.rhythm+2.1,2.2);
+ add('街がステージ。全身でリズムを刻もう。',m.rhythm+2.1,2.2);
  if(m.qte1)add('目が合ったら、タイミングタップ。',m.qte1+.15,1.2);
  if(m.clear1)add('声かけ CLEAR！場所を変えて、もう少し。',m.clear1+.2,.5,.625);
  add('「もう少し話したい。場所変えない？」',m.accepted+.2,.9);
@@ -22,7 +22,7 @@ const fs=require('node:fs/promises');const path=require('node:path');const {exec
  if(m.travelLoop)add('ふたりで実際の道を歩いて、入口へ。',m.travelLoop,3.0,1.8);
  if(m.scene3)add('ホテ前も、リズムで気持ちを確かめる。',m.scene3+2.0,2.1);
  if(m.qte3)add('最後は、笑顔でうなずく長押し。',m.qte3,1.0);
- if(m.scene4)add('ゴールのステージで、喜びのステップ！',m.scene4+2.0,2.2);
+ if(m.scene4)add('回って、跳ねて、ミュージカルのフィナーレ！',m.scene4+2.0,2.2);
  if(m.qte4)add('タイミングを合わせて、ふたりでゴール。',m.qte4+.2,1.2);
  add('ゴールで、ふたりの記念写真。',m.goal+.6,1.0);
  add('スマホ・PCで、すぐ遊べる。',m.score,1.3);

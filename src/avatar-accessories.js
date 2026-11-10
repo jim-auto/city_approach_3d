@@ -51,7 +51,8 @@ export function placeAccessories(model, source, humanoid) {
     object.position.copy(point).add(new THREE.Vector3(...offset)); object.rotation.set(0, source.rotation.y ? Math.PI : 0, 0);
   };
   locate('phone', 'rightHand'); locate('menu', 'rightHand'); locate('coffee', 'rightHand');
-  if (items.has('book')) {
+  if(items.has('book')&&model.userData.groove)locate('book','rightHand');
+  else if (items.has('book')) {
     const left = humanoid.getNormalizedBoneNode('leftHand').getWorldPosition(new THREE.Vector3()), right = humanoid.getNormalizedBoneNode('rightHand').getWorldPosition(new THREE.Vector3());
     source.worldToLocal(left.add(right).multiplyScalar(.5));
     items.get('book').position.copy(left); items.get('book').rotation.set(.45, source.rotation.y ? Math.PI : 0, 0);

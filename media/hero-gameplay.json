@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-11-08T15:21:36.109Z",
+  "capturedAt": "2026-11-10T10:46:13.562Z",
   "source": "Actual local game, isolated headless browser; UI clicks and normal movement only.",
   "viewport": {
     "width": 960,
@@ -9,94 +9,94 @@
   "edits": [
     {
       "label": "歌舞伎町で、ナンパしてみた。",
-      "start": 10.568,
+      "start": 8.896,
       "duration": 1.2,
       "speed": 1
     },
     {
       "label": "声かけ → 連れ出し → ホテ前 → ゴール！",
-      "start": 14.996,
+      "start": 12.884,
       "duration": 0.8,
       "speed": 1
     },
     {
-      "label": "リズムに合わせて、ふたりが動く。",
-      "start": 20.923000000000002,
+      "label": "街がステージ。全身でリズムを刻もう。",
+      "start": 18.221,
       "duration": 2.2,
       "speed": 1
     },
     {
       "label": "目が合ったら、タイミングタップ。",
-      "start": 26.439,
+      "start": 23.726,
       "duration": 1.2,
       "speed": 1
     },
     {
       "label": "声かけ CLEAR！場所を変えて、もう少し。",
-      "start": 27.622,
+      "start": 24.794,
       "duration": 0.5,
       "speed": 0.625
     },
     {
       "label": "「もう少し話したい。場所変えない？」",
-      "start": 31.79,
+      "start": 27.509,
       "duration": 0.9,
       "speed": 1
     },
     {
       "label": "道中もリズム！歩調を合わせて進もう。",
-      "start": 39.257,
+      "start": 32.06,
       "duration": 3.6,
       "speed": 1.5
     },
     {
       "label": "ふたりで実際の道を歩いて、入口へ。",
-      "start": 46.025,
+      "start": 39.325,
       "duration": 3,
       "speed": 1.8
     },
     {
       "label": "ホテ前も、リズムで気持ちを確かめる。",
-      "start": 57.316,
+      "start": 48.479,
       "duration": 2.1,
       "speed": 1
     },
     {
       "label": "最後は、笑顔でうなずく長押し。",
-      "start": 62.22,
+      "start": 53.917,
       "duration": 1,
       "speed": 1
     },
     {
-      "label": "ゴールのステージで、喜びのステップ！",
-      "start": 66.903,
+      "label": "回って、跳ねて、ミュージカルのフィナーレ！",
+      "start": 57.873,
       "duration": 2.2,
       "speed": 1
     },
     {
       "label": "タイミングを合わせて、ふたりでゴール。",
-      "start": 72.391,
+      "start": 63.477000000000004,
       "duration": 1.2,
       "speed": 1
     },
     {
       "label": "ゴールで、ふたりの記念写真。",
-      "start": 78.47399999999999,
+      "start": 68.627,
       "duration": 1,
       "speed": 1
     },
     {
       "label": "スマホ・PCで、すぐ遊べる。",
-      "start": 82.737,
+      "start": 70.41,
       "duration": 1.3,
       "speed": 1
     }
   ],
   "result": {
-    "score": "933 pt",
+    "score": "984 pt",
     "rank": "RANK A",
     "title": "GOAL CLEAR · デート成立！",
-    "travelNotes": 22
+    "travelNotes": 24
   },
   "gif": {
     "programs": [],
@@ -109,7 +109,7 @@
     ],
     "format": {
       "duration": "20.100000",
-      "size": "7320964"
+      "size": "9243598"
     }
   }
 }

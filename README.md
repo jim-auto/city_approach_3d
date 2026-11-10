@@ -2,7 +2,7 @@
 
 **歌舞伎町で、ナンパしてみた。声掛けから、ふたりでゴールするまで。**
 
-[![CITY APPROACH 3Dの実プレイ。声掛け、会話、同行コンボ、ゴール記念写真まで](media/hero-gameplay.gif?v=journey)](https://jim-auto.github.io/city_approach_3d/)
+[![CITY APPROACH 3Dの実プレイ。声掛け、会話、同行コンボ、ゴール記念写真まで](media/hero-gameplay.gif?v=musical)](https://jim-auto.github.io/city_approach_3d/)
 
 **[▶ 今すぐ遊ぶ](https://jim-auto.github.io/city_approach_3d/)** · [投稿用MP4](media/hero-gameplay.mp4?raw=true) · [GIFを開く](media/hero-gameplay.gif?raw=true)
 
@@ -37,6 +37,8 @@ npm run dev
 6. 相手が了承した後に「一緒に向かう」を押すと同行開始。リズムに合わせながら、建物を避ける道順をふたりで自動で歩きます。相手が離れたら待ち、ふたりが到着するまでは道中の譜面が続きます。入口前・ゴールのパートもクリアするとGOAL CLEARです（名古屋駅は同行練習）。
 
 歌舞伎町で誘いがOKになった相手と、ホテルアイかカスタマカフェの入口にふたりで到着し、4パートのリズムとQTEをクリアするとGOAL CLEAR。会話・ミニゲームの点数だけではクリアになりません。名古屋駅は会話・同行の練習エリアです。最高スコアは、このブラウザに保存されます。スコアはエリアを切り替えても維持されます。
+
+演奏中は8拍の振り付けで、横ステップ・膝上げ・腕を開くポーズをつなぎます。ゴールのフィナーレでは一回転。成功時の笑顔や喜ぶ動きもダンスに重なり、持ち物のあるキャラクターは片手に持ち替えて踊ります。
 
 ## 操作
 

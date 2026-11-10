@@ -232,10 +232,15 @@ export function animateCharacter(model, moving, time, seed = 0) {
   if (kind === 'earphones' && !moving) head.rotation.z = Math.sin(time * 2 + seed) * .04;
   else head.rotation.z = 0;
   const groove=model.userData.groove,g=groove?sampleGroove(groove.part,groove.time):null;
-  if(g){head.rotation.x=g.headX;body.rotation.z=g.chestZ;body.rotation.y=g.turnY;if(!moving){body.position.x=g.shiftX;body.position.y+=g.lift;legs[0].rotation.x=g.leg;legs[1].rotation.x=-g.leg;}arms[0].rotation.z+=g.arm;}
+  if(g){
+    head.rotation.x=g.headX;head.rotation.y=g.headY;body.rotation.x=g.chestX;body.rotation.z=g.chestZ;body.rotation.y=g.turnY;
+    if(!moving){body.position.x=g.shiftX;body.position.z=g.shiftZ;body.position.y+=g.lift;legs[0].rotation.x=g.leftLeg;legs[1].rotation.x=g.rightLeg;knees[0].rotation.x=g.leftKnee;knees[1].rotation.x=g.rightKnee;}
+    arms[0].rotation.z+=g.leftArm;elbows[0].rotation.x=-g.leftElbow;
+    if(!['waiting','busy','cafe','reader'].includes(kind)){arms[1].rotation.z-=g.rightArm;elbows[1].rotation.x=-g.rightElbow;}
+  }
   const reaction=model.userData.reaction;
-  if(reaction){const r=sampleReaction(reaction.id,reaction.elapsed,reaction.duration);head.rotation.x=r.headX;head.rotation.y=r.headY;head.rotation.z=r.headZ;body.rotation.x=r.chestX;body.rotation.z=r.chestZ;body.position.y+=r.lift;body.position.x=r.shiftX;body.rotation.y=r.turnY;
-    if(r.gesture!=='none'){arms[0].rotation.x=-.3*r.energy;elbows[0].rotation.x=-(r.gesture==='cheek'?1.8:1.2)*r.energy;}
+  if(reaction){const r=sampleReaction(reaction.id,reaction.elapsed,reaction.duration);head.rotation.x+=r.headX;head.rotation.y+=r.headY;head.rotation.z+=r.headZ;body.rotation.x+=r.chestX;body.rotation.z+=r.chestZ;body.position.y+=r.lift;body.position.x+=r.shiftX;body.rotation.y+=r.turnY;
+    if(!g&&r.gesture!=='none'){arms[0].rotation.x=-.3*r.energy;elbows[0].rotation.x=-(r.gesture==='cheek'?1.8:1.2)*r.energy;}
   }
 }
 
